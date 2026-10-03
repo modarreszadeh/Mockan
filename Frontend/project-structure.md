@@ -38,7 +38,7 @@ panel/
     │   ├── onboarding/  overview/  rules/  services/  settings/  admin/
     │   └── design/              # /__design style guide (dev only)
     ├── hooks/                   # generic hooks (media queries)
-    ├── lib/                     # validation (zod), precedence, format, config
+    ├── lib/                     # checks (zod-free), validation (zod schemas), precedence, format, http, config
     ├── mocks/                   # MSW: fixtures, db (scenarios), handlers/, browser.ts, server.ts
     ├── styles/globals.css       # tokens + @theme inline + type utilities
     └── test/                    # setup, render helpers, axe matcher types

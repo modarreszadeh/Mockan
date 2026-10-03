@@ -2,7 +2,7 @@ import { lazy, Suspense, useMemo } from "react"
 
 import { Button } from "@/components/ui/button"
 import { formatBytes } from "@/lib/format"
-import { byteLength, formatJsonProblem, jsonProblem, MAX_BODY_BYTES } from "@/lib/validation"
+import { byteLength, formatJsonProblem, jsonProblem, MAX_BODY_BYTES } from "@/lib/checks"
 import { cn } from "@/lib/utils"
 
 /** Monaco is lazy-loaded so it stays out of the initial bundle (prompt §8). */

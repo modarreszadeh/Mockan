@@ -37,7 +37,7 @@ flowchart LR
 | SCR-04 Rules | `/rules` | Built (M3) |
 | SCR-05 Rule editor | `/rules/new`, `/rules/:ruleId` | Built (M3) |
 | SCR-06 Services | `/services` | Built (M2) |
-| SCR-07 Service catalog (admin) | `/admin/services` | Planned (M4) |
+| SCR-07 Service catalog (admin) | `/admin/services` | Built (M4) |
 | SCR-08 Settings | `/settings` | Built (M2) |
 | SCR-09 Live log | `/logs` | Phase 2 — not in navigation |
 | SCR-10 Test route | `/test-route` | Phase 2 — not in navigation |
@@ -115,10 +115,11 @@ flowchart LR
 - **Visible only when `isAdmin`.** Non-admins hitting the route see a 403 page.
 - **Data:** `POST/PUT/DELETE /services[/{id}]`, `POST/PUT/DELETE /services/{id}/environments[/{envId}]`.
 - **Content:** Services table; create/edit in a right `Sheet`: name, path prefix, strip prefix, rewrite origin, default environment; environments (environment, base URL, timeout seconds default 100, extra headers).
-- **Accept:**
-  - [ ] A base URL whose host is not in the allowlist shows the server's rejection inline on the base URL field: "Only allowlisted dev/stage hosts can be used."
-  - [ ] Duplicate name / path prefix errors appear on the field.
-  - [ ] Deletes use `ConfirmDialog` naming the Service.
+- **Behaviour:** saving runs `POST/PUT /services[/{id}]`, then deletes removed environments and `POST`/`PUT`s the rest (`useSaveService`). If an environment fails after the Service was created, the sheet keeps the new Service and the next save updates it. Stacked cards below 768 px.
+- **Accept** (tests: `src/features/admin/service-catalog.test.tsx`):
+  - [x] A base URL whose host is not in the allowlist shows the server's rejection inline on the base URL field: "Only allowlisted dev/stage hosts can be used."
+  - [x] Duplicate name / path prefix errors appear on the field.
+  - [x] Deletes use `ConfirmDialog` naming the Service.
 
 ## SCR-08 Settings — PR-03, US-54
 
@@ -127,6 +128,20 @@ flowchart LR
 - **Behaviour:** one form; Save is enabled only when something changed; server field errors map onto `displayName` / `allowedOrigins.N`.
 - **Accept** (tests: `src/features/settings/settings.test.tsx`):
   - [x] Saving an empty origins list asks for confirmation ("browser calls will fail CORS").
+
+## Screenshots
+
+Supplementary only (C-01: the Markdown above is the source of truth). Captured from the MSW dev backend at 1440 px and 390 px in [`screenshots/`](screenshots/):
+
+| Screen | Desktop | Mobile |
+| --- | --- | --- |
+| SCR-02 Onboarding | [1440](screenshots/scr-02-onboarding-1440.png) | [390](screenshots/scr-02-onboarding-390.png) |
+| SCR-03 Overview | [1440](screenshots/scr-03-overview-1440.png) · [empty](screenshots/scr-03-overview-empty-1440.png) | [390](screenshots/scr-03-overview-390.png) · [empty](screenshots/scr-03-overview-empty-390.png) |
+| SCR-04 Rules | [1440](screenshots/scr-04-rules-1440.png) | [390](screenshots/scr-04-rules-390.png) |
+| SCR-05 Rule editor | [1440](screenshots/scr-05-rule-editor-1440.png) | [390](screenshots/scr-05-rule-editor-390.png) |
+| SCR-06 Services | [1440](screenshots/scr-06-services-1440.png) | [390](screenshots/scr-06-services-390.png) |
+| SCR-07 Service catalog | [1440](screenshots/scr-07-service-catalog-1440.png) | [390](screenshots/scr-07-service-catalog-390.png) |
+| SCR-08 Settings | [1440](screenshots/scr-08-settings-1440.png) | [390](screenshots/scr-08-settings-390.png) |
 
 ## Phase 2 (M5, only when asked)
 

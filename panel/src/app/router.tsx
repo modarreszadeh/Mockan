@@ -84,7 +84,16 @@ export const routes: RouteObject[] = [
               {
                 path: "admin",
                 element: <AdminGate />,
-                children: [],
+                children: [
+                  {
+                    path: "services",
+                    handle: crumb("Service catalog"),
+                    lazy: () =>
+                      import("@/features/admin/service-catalog-page").then((m) => ({
+                        Component: m.ServiceCatalogPage,
+                      })),
+                  },
+                ],
               },
               { path: "*", element: <NotFoundPage /> },
             ],

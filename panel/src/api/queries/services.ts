@@ -97,3 +97,72 @@ export const useDeleteEnvironment = () =>
   useCatalogMutation(({ serviceId, envId }: { serviceId: string; envId: string }) =>
     api.delete(`/services/${serviceId}/environments/${envId}`),
   )
+
+/** Thrown by useSaveService: the step that failed, so field errors land on the right environment row. */
+export class CatalogSaveError extends Error {
+  readonly cause: unknown
+  /** Set once the Service exists (a create that failed on an environment still created the Service). */
+  readonly serviceId: string | undefined
+  /** Index into the submitted environments, or undefined when the Service itself failed. */
+  readonly environmentIndex: number | undefined
+
+  constructor(cause: unknown, serviceId: string | undefined, environmentIndex: number | undefined) {
+    super(cause instanceof Error ? cause.message : "Couldn't save the Service")
+    this.name = "CatalogSaveError"
+    this.cause = cause
+    this.serviceId = serviceId
+    this.environmentIndex = environmentIndex
+  }
+}
+
+export interface SaveServiceInput {
+  serviceId?: string
+  service: ServiceInput
+  /** Desired environments; `id` set for existing ones. Existing environments missing here are deleted. */
+  environments: (ServiceEnvironmentInput & { id?: string })[]
+  /** Environments the Service had when the form opened. */
+  previous: ServiceEnvironment[]
+}
+
+/**
+ * Create/update a Service and reconcile its environments (POST/PUT/DELETE per environment, arch §10).
+ * Admin only (PR-10); the server enforces the upstream allowlist (PR-15).
+ */
+export function useSaveService() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ serviceId, service, environments, previous }: SaveServiceInput): Promise<Service> => {
+      let id = serviceId
+      try {
+        id = serviceId
+          ? (await api.put<Service>(`/services/${serviceId}`, service)).id
+          : (await api.post<Service>("/services", service)).id
+      } catch (error) {
+        throw new CatalogSaveError(error, serviceId, undefined)
+      }
+      const keep = new Set(environments.map((e) => e.id).filter(Boolean))
+      for (const old of previous) {
+        if (keep.has(old.id)) continue
+        try {
+          await api.delete(`/services/${id}/environments/${old.id}`)
+        } catch (error) {
+          throw new CatalogSaveError(error, id, undefined)
+        }
+      }
+      for (const [index, { id: envId, ...input }] of environments.entries()) {
+        try {
+          if (envId) await api.put(`/services/${id}/environments/${envId}`, input)
+          else await api.post(`/services/${id}/environments`, input)
+        } catch (error) {
+          throw new CatalogSaveError(error, id, index)
+        }
+      }
+      const services = await api.get<Service[]>("/services")
+      return services.find((s) => s.id === id)!
+    },
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: serviceKeys.all })
+      void queryClient.invalidateQueries({ queryKey: serviceSettingKeys.all })
+    },
+  })
+}

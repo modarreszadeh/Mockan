@@ -23,8 +23,9 @@ audience: Frontend engineers and AI coding agents working in `panel/`
 | Code location | `panel/` → build output copied to `server/src/mockan/admin/static/` (`npm run build:server`) |
 | UI kit | shadcn/ui (Radix) + Tailwind CSS v4, re-themed with tokens in `panel/src/styles/globals.css` |
 | Server state | TanStack Query; forms with react-hook-form + zod |
+| Bundle | Initial JS ≈ 184 KB gzip (budget 250 KB); Monaco and every screen are lazy-loaded |
 | API | Admin API at `/api/v1` (arch §10), cookie session; dev uses MSW handlers in `panel/src/mocks/` |
-| Phase | Phase 1 (M0–M4) built; Phase 2 (M5) not started |
+| Phase | **Phase 1 (M0–M4) complete**, awaiting review. Phase 2 (M5) not started. |
 
 ## Quick start
 
