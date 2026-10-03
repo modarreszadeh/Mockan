@@ -50,6 +50,28 @@ export const routes: RouteObject[] = [
                 lazy: () => import("@/features/overview/overview-page").then((m) => ({ Component: m.OverviewPage })),
               },
               {
+                path: "rules",
+                handle: crumb("Rules"),
+                children: [
+                  {
+                    index: true,
+                    lazy: () => import("@/features/rules/rules-page").then((m) => ({ Component: m.RulesPage })),
+                  },
+                  {
+                    path: "new",
+                    handle: crumb("New rule"),
+                    lazy: () =>
+                      import("@/features/rules/rule-editor-page").then((m) => ({ Component: m.RuleEditorPage })),
+                  },
+                  {
+                    path: ":ruleId",
+                    handle: crumb("Edit rule"),
+                    lazy: () =>
+                      import("@/features/rules/rule-editor-page").then((m) => ({ Component: m.RuleEditorPage })),
+                  },
+                ],
+              },
+              {
                 path: "services",
                 handle: crumb("Services"),
                 lazy: () => import("@/features/services/services-page").then((m) => ({ Component: m.ServicesPage })),

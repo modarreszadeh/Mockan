@@ -12,7 +12,8 @@ export const ALLOWED_UPSTREAM_HOSTS = ["identity.stage.internal", "*.dev.interna
 export const TAKEN_SLUGS = ["qoolak", "sara", "admin-team"]
 
 const T0 = "2026-09-01T08:00:00.000Z"
-const at = (daysAgo: number, hour = 9) => new Date(Date.UTC(2026, 9, 3 - daysAgo, hour, 0, 0)).toISOString()
+/** Timestamps relative to now, so "Updated" reads naturally in the dev Panel. */
+const hoursAgo = (hours: number) => new Date(Date.now() - hours * 3_600_000).toISOString()
 
 export const DEVELOPER_ID = "0192f5a0-0000-7000-8000-00000000e001"
 
@@ -166,8 +167,8 @@ export function rulesFixture(): MockRule[] {
       priority: 100,
       activeResponseId: r.id,
       responses: [r],
-      createdAt: at(10 - n),
-      updatedAt: at(5 - n, 10 + n),
+      createdAt: hoursAgo((10 - n) * 24),
+      updatedAt: hoursAgo(n * 7 + 1),
       ...rest,
     }
   }

@@ -20,7 +20,7 @@ related:
 | Component | Vitest + Testing Library | `src/components/mockan/*.test.tsx` | Every domain component's states. |
 | Screen | Vitest + Testing Library + MSW (Node) | `src/features/<x>/*.test.tsx`, `src/app/*.test.tsx` | Loading / empty / error / success per screen; acceptance criteria from [screens.md](screens.md). |
 | Accessibility | `vitest-axe` | in component and screen tests | `expect(await axe(container)).toHaveNoViolations()` on every screen in its success **and** empty state. `color-contrast` is checked by hand (jsdom has no layout) — see design-tokens.md §4. |
-| E2E | Playwright | `e2e/` | The PRD §6 journey. |
+| E2E | Playwright | `e2e/journey.spec.ts` | The PRD §6 journey: first login → claim slug → copy base URL → create Exact `GET /limsa/api/v1/dashboard` with JSON → see it in Rules and Overview → disable it → kill switch on/off. |
 
 Name tests after requirement IDs where they apply, e.g. `PR-05 template pattern rejects {*rest} in the middle`.
 

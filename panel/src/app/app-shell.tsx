@@ -125,14 +125,18 @@ function AppSidebar({ isAdmin }: { isAdmin: boolean }) {
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupContent>
-            <NavItems items={MAIN_NAV} />
+            <nav aria-label="Main">
+              <NavItems items={MAIN_NAV} />
+            </nav>
           </SidebarGroupContent>
         </SidebarGroup>
         {isAdmin ? (
           <SidebarGroup>
             <SidebarGroupLabel className="type-overline text-muted-foreground">Admin</SidebarGroupLabel>
             <SidebarGroupContent>
-              <NavItems items={ADMIN_NAV} />
+              <nav aria-label="Admin">
+                <NavItems items={ADMIN_NAV} />
+              </nav>
             </SidebarGroupContent>
           </SidebarGroup>
         ) : null}

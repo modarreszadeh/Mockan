@@ -34,8 +34,8 @@ flowchart LR
 | --- | --- | --- |
 | SCR-02 Onboarding | `/onboarding` | Built (M1) |
 | SCR-03 Overview | `/` | Built (M2) |
-| SCR-04 Rules | `/rules` | Planned (M3) |
-| SCR-05 Rule editor | `/rules/new`, `/rules/:ruleId` | Planned (M3) |
+| SCR-04 Rules | `/rules` | Built (M3) |
+| SCR-05 Rule editor | `/rules/new`, `/rules/:ruleId` | Built (M3) |
 | SCR-06 Services | `/services` | Built (M2) |
 | SCR-07 Service catalog (admin) | `/admin/services` | Planned (M4) |
 | SCR-08 Settings | `/settings` | Built (M2) |
@@ -79,11 +79,12 @@ flowchart LR
 - **Content:** `PageHeader` "Mock rules" + primary "New rule"; toolbar: search (name or pattern), filters (state, method, match type, Service); "Disable all / Enable all".
 - **Columns:** Switch · Name · Method · Match type · Pattern (mono, truncated with tooltip) · Service (or "Any") · Active scenario (`StatusCode` + name) · Priority · Updated · row menu (Edit, Duplicate, Delete). Stacked cards below 768 px.
 - **Sort:** gateway precedence (arch §7.2), labelled "Sorted by match precedence".
-- **Accept:**
-  - [ ] Disabled rules stay in the list, dimmed, and can be re-enabled without opening them (PR-08).
-  - [ ] Row click opens the editor; the switch and row menu don't trigger navigation.
-  - [ ] Empty state uses the PRD copy.
-  - [ ] Toggles are optimistic with rollback + toast on error; success toast "Saved — live in about 2 seconds" (PR-07).
+- **Behaviour:** filters live in the URL (`?q=&state=&method=&type=&service=`); "Disable all" confirms when more than one rule is enabled; Duplicate creates a disabled copy "<name> (copy)"; the header's "New rule" is hidden in the empty state so the view keeps one primary button.
+- **Accept** (tests: `src/features/rules/rules.test.tsx`):
+  - [x] Disabled rules stay in the list, dimmed, and can be re-enabled without opening them (PR-08).
+  - [x] Row click opens the editor; the switch and row menu don't trigger navigation.
+  - [x] Empty state uses the PRD copy.
+  - [x] Toggles are optimistic with rollback + toast on error; success toast "Saved — live in about 2 seconds" (PR-07).
 
 ## SCR-05 Rule editor — PR-05, PR-06, US-03, US-04, US-12
 
@@ -93,11 +94,12 @@ flowchart LR
 - **Conditions** (collapsible, collapsed when empty): query and header conditions (`equals` / `exists`).
 - **Response:** status (combobox with presets 200, 201, 204, 400, 401, 403, 404, 409, 422, 500, 502, 503; 100–599); content type (default `application/json`); headers; body (`JsonEditor` for JSON, mono textarea otherwise); delay slider 0–30 000 ms + number input + presets 0 / 300 ms / 1 s / 3 s. Phase 1 edits the active response only (`TODO(OQ-P1)`).
 - **Live summary:** "`GET` requests to `/limsa/api/v1/orders/{id}` return **200** after **300 ms**" + response headers preview incl. `X-Mockan-Source: mock`.
-- **Accept:**
-  - [ ] Invalid JSON blocks save and shows line/column (PR-06).
-  - [ ] Leaving with unsaved changes asks for confirmation.
-  - [ ] Server validation errors land on the right field, not only in a toast.
-  - [ ] Delete lives in a "Danger zone" at the bottom with `ConfirmDialog`.
+- **Behaviour:** creating a rule returns to `/rules`; saving an existing rule stays on the editor. Server field paths map onto form fields (`responses.0.statusCode` → `response.statusCode`); unmapped errors show a `ProblemAlert` above the form. Unsaved changes also trigger the browser's leave-page prompt.
+- **Accept** (tests: `src/features/rules/rule-editor.test.tsx`):
+  - [x] Invalid JSON blocks save and shows line/column (PR-06).
+  - [x] Leaving with unsaved changes asks for confirmation.
+  - [x] Server validation errors land on the right field, not only in a toast.
+  - [x] Delete lives in a "Danger zone" at the bottom with `ConfirmDialog`.
 
 ## SCR-06 Services — PR-04, US-07
 
