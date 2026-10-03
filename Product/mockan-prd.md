@@ -1,9 +1,9 @@
 ---
 title: Mockan — Product Requirements Document
-status: Draft (v0.1)
+status: Draft (v0.2)
 date: 2026-10-03
 owner: Product / Backend team
-source: Agent/mockan-architecture.md (Approved baseline v1.0)
+source: Agent/mockan-architecture.md (Approved baseline v1.1)
 audience: Product, frontend & backend engineering leads, platform/DevOps, AI coding agents
 ---
 
@@ -165,7 +165,7 @@ Each Developer gets a workspace at `https://mock.novin-tools.com/{developerSlug}
 - [ ] Given developers A and B both have rules on the same path, when A's app calls it, then only A's rules are evaluated.
 - [ ] A disabled Developer's address returns `404 developer_not_found`.
 
-#### PR-02 Transparent reverse proxy — FR-02, NFR-04, D-04
+#### PR-02 Transparent reverse proxy — FR-02, NFR-04, D-15
 Any request that matches no enabled rule is forwarded to the right upstream as-is.
 - [ ] Method, path (after slug), query, headers and body are preserved.
 - [ ] Large bodies, file uploads/downloads, SSE and WebSockets work without full buffering.
@@ -188,12 +188,12 @@ Proxied and mocked responses must be readable by a browser app on `localhost`.
 - [ ] Per Developer, each Service's environment (`dev`/`stage`) can be chosen; the default is the Service default (`stage`).
 - [ ] Changing the environment takes effect within 2 s.
 
-#### PR-05 Mock rule matching — FR-05, D-09, §7
+#### PR-05 Mock rule matching — FR-05, D-17, §7
 - [ ] Match types: `Exact` (case-insensitive, trailing slash ignored), `Template` (`/orders/{id}`), `Prefix`, `Regex`.
 - [ ] Optional method filter (or `ANY`), optional query conditions and header conditions (equals / exists).
 - [ ] When several rules match, the winner is chosen by: Priority (lower first) → match type (Exact > Template > Prefix > Regex) → longer pattern → older rule.
 - [ ] Rules match the path **after** the slug, so they don't depend on the Mockan host name.
-- [ ] Regex rules use a non-backtracking engine with a 50 ms timeout; an invalid regex is rejected when saved.
+- [ ] Regex rules use a linear-time (RE2) engine, so matching time is bounded; patterns longer than 512 characters or that RE2 can't compile (backreferences, lookaround) are rejected when saved.
 - [ ] Patterns for Exact/Template/Prefix must start with `/`.
 
 #### PR-06 Static mock responses — FR-06, §7.3
@@ -223,7 +223,7 @@ Proxied and mocked responses must be readable by a browser app on `localhost`.
 #### PR-15 Security guardrails — NFR-05, NFR-06, NFR-07, D-12
 - [ ] Gateway and panel are reachable only from the internal network/VPN.
 - [ ] The panel and Admin API require company SSO; developers can only see and change their own workspace.
-- [ ] Upstream base URLs must have a host in `Mockan:AllowedUpstreamHosts`; production hosts are never allowed. Saving a non-allowed host is rejected.
+- [ ] Upstream base URLs must have a host in `MOCKAN_ALLOWED_UPSTREAM_HOSTS`; production hosts are never allowed. Saving a non-allowed host is rejected.
 - [ ] `Authorization`, `Cookie`, `Set-Cookie` and any header/JSON field matching `token|secret|password|api-key` are masked in all logs.
 - [ ] Rule changes are recorded in an audit log (who, when, what).
 
@@ -247,7 +247,7 @@ The core use case works without these, but they cut the time to create and debug
 - [ ] Switching the active response is one action and takes effect within 2 s.
 > Note: the data model supports this from Phase 1 (`active_response_id`); Phase 1 UI may expose only one response per rule. See OQ-P1.
 
-#### PR-12 Live request log and "Mock this" — FR-09, D-10
+#### PR-12 Live request log and "Mock this" — FR-09, D-18
 - [ ] The panel shows the developer's recent requests live, with a `Proxied` / `Mocked` / `Error` badge, method, path, status and duration.
 - [ ] Filter by source and path; a details drawer shows masked headers and body samples (≤ 16 KB).
 - [ ] "Mock this" creates a rule pre-filled with the request's method/path and the real response's status, headers and body.
@@ -371,20 +371,20 @@ No hard external deadline is known. Phases follow the architecture's delivery pl
 | PRD requirement | Architecture refs | Priority |
 | --- | --- | --- |
 | PR-01 Workspaces | FR-01, D-01, D-02 | P0 |
-| PR-02 Transparent proxy | FR-02, NFR-01, NFR-03, NFR-04, D-04 | P0 |
+| PR-02 Transparent proxy | FR-02, NFR-01, NFR-03, NFR-04, D-15 | P0 |
 | PR-03 CORS / cookies / redirects | D-13, §6.3, §6.4 | P0 |
 | PR-04 Multi-service + environment | FR-03, FR-04 | P0 |
-| PR-05 Matching | FR-05, NFR-08, D-09, §7.1–7.2 | P0 |
+| PR-05 Matching | FR-05, NFR-08, D-17, §7.1–7.2 | P0 |
 | PR-06 Static responses | FR-06, §7.3 | P0 |
 | PR-07 Hot reload | FR-08, NFR-02, D-07 | P0 |
 | PR-08 Enable/disable | FR-11 | P0 |
 | PR-09 Source headers | §6.3, §14 rule 7 | P0 |
 | PR-10 Service catalog | D-08, §10 | P0 |
-| PR-15 Security guardrails | NFR-05, NFR-06, NFR-07, D-12, §12.1 | P0 |
+| PR-15 Security guardrails | NFR-05, NFR-06, NFR-07, D-12, §8 `audit_logs`, §12.1 | P0 |
 | PR-16 Error contract | §6.1, §14 rule 8 | P0 |
 | PR-18 Panel + onboarding | D-11, §11 | P0 |
 | PR-11 Scenarios | FR-07 | P1 |
-| PR-12 Live log + Mock this | FR-09, D-10 | P1 |
+| PR-12 Live log + Mock this | FR-09, D-18 | P1 |
 | PR-13 Test route | FR-10 | P1 |
 | PR-14 Export/import | FR-12 | P1 |
 | PR-17 Operability | §12.2, §12.3 | P1 |
