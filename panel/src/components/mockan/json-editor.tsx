@@ -66,7 +66,12 @@ export function JsonEditor({ id, value, onChange, onBlur, label, error, height =
         </div>
         <Suspense
           fallback={
-            <div className="animate-pulse bg-surface-dark-soft" style={{ height }} aria-label="Loading editor" />
+            <div
+              className="animate-pulse bg-surface-dark-soft"
+              style={{ height }}
+              role="status"
+              aria-label="Loading editor"
+            />
           }
         >
           <MonacoSurface

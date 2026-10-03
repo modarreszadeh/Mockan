@@ -10,7 +10,7 @@ import { useLogout } from "@/api/queries/me"
 
 export function FullPageLoading() {
   return (
-    <div className="flex min-h-svh" aria-busy="true" aria-label="Loading Mockan">
+    <div className="flex min-h-svh" role="status" aria-busy="true" aria-label="Loading Mockan">
       <div className="hidden w-64 shrink-0 space-y-3 bg-sidebar p-4 md:block">
         <Skeleton className="h-7 w-28 bg-surface-card" />
         {Array.from({ length: 4 }, (_, i) => (

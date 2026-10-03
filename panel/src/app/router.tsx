@@ -50,6 +50,16 @@ export const routes: RouteObject[] = [
                 lazy: () => import("@/features/overview/overview-page").then((m) => ({ Component: m.OverviewPage })),
               },
               {
+                path: "services",
+                handle: crumb("Services"),
+                lazy: () => import("@/features/services/services-page").then((m) => ({ Component: m.ServicesPage })),
+              },
+              {
+                path: "settings",
+                handle: crumb("Settings"),
+                lazy: () => import("@/features/settings/settings-page").then((m) => ({ Component: m.SettingsPage })),
+              },
+              {
                 path: "admin",
                 element: <AdminGate />,
                 children: [],
