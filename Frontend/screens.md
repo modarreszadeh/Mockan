@@ -32,7 +32,7 @@ flowchart LR
 
 | Screen | Route | Status |
 | --- | --- | --- |
-| SCR-02 Onboarding | `/onboarding` | Planned (M1) |
+| SCR-02 Onboarding | `/onboarding` | Built (M1) |
 | SCR-03 Overview | `/` | Planned (M2) |
 | SCR-04 Rules | `/rules` | Planned (M3) |
 | SCR-05 Rule editor | `/rules/new`, `/rules/:ruleId` | Planned (M3) |
@@ -45,21 +45,23 @@ flowchart LR
 
 **Sidebar:** Overview · Rules · Services · Settings; Admin group (only when `isAdmin`): Service catalog. Phase 2 screens are added only when they work.
 
-**Auth guard (`src/app/auth-gate.tsx`):**
-- [ ] Any `401` → full-page navigation to `/api/v1/auth/login`.
-- [ ] `GET /me` with `slug: null` → every route except `/onboarding` redirects there.
-- [ ] `isEnabled: false` → full-page explanation, not the app.
-- [ ] `/admin/*` for a non-admin → 403 page.
+**Auth guard (`src/app/auth-gate.tsx`, tests in `auth-gate.test.tsx`):**
+- [x] Any `401` → full-page navigation to `/api/v1/auth/login` (in dev, a dev-only route simulates SSO and returns).
+- [x] `GET /me` with `slug: null` → every route except `/onboarding` redirects there.
+- [x] `isEnabled: false` → full-page explanation, not the app.
+- [x] `/admin/*` for a non-admin → 403 page (`AdminGate`).
+- [x] `GET /me` failing (not 401) → full-page `ProblemAlert` with retry.
 
 ## SCR-02 Onboarding — PR-01, PR-18, US-01
 
 - **Data:** `GET /me`, `PUT /me` (`{ slug }`, once).
 - **Content:** serif title "Claim your workspace"; slug input (mono, live-validated); live preview of the resulting base URL; confirm step stating the slug "cannot be changed later"; after success a two-step panel: (1) `BaseUrlCard` with the `.env` line, (2) "Start your app — everything is proxied until you add a mock" with the primary button "Create your first mock".
 - **Validation:** `^[a-z][a-z0-9-]{1,31}$`; reserved `_*`, `api`, `hubs`, `health`; server conflict (`409 slug_taken`) shows inline under the field.
-- **Accept:**
-  - [ ] Invalid slug shows the reason inline before submit; the submit button stays enabled but submit is blocked with focus moved to the field.
-  - [ ] The slug is shown as "cannot be changed later" before confirming.
-  - [ ] After success, the `.env` line is copyable with one click.
+- **Behaviour:** the field is pre-filled with a slug suggested from the display name; "Continue" opens a confirm dialog; an already-onboarded Developer is sent to `/`.
+- **Accept** (tests: `src/features/onboarding/onboarding.test.tsx`):
+  - [x] Invalid slug shows the reason inline before submit; the submit button stays enabled but submit is blocked with focus moved to the field.
+  - [x] The slug is shown as "cannot be changed later" before confirming.
+  - [x] After success, the `.env` line is copyable with one click.
 
 ## SCR-03 Overview — PR-18, US-06, US-53, G4
 

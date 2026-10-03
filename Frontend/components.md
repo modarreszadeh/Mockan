@@ -12,6 +12,23 @@ related:
 
 > **Summary:** catalogue of the Mockan components in `panel/src/components/mockan/` (built on shadcn primitives): props, states and a usage snippet. Every component is rendered in all its states at `/__design` (dev only). Import from `@/components/mockan`.
 
+## AppShell (`src/app/app-shell.tsx`)
+
+shadcn `Sidebar` (`surface-soft`) + 56 px header. Lives in `app/` because it composes routes and queries.
+
+| Area | Contents |
+| --- | --- |
+| Sidebar | Wordmark; Overview · Rules · Services · Settings; **Admin** group (Service catalog) only when `isAdmin`. Active item: `surface-card` fill + 2 px coral marker. Hover: `canvas`. Footer note. |
+| Responsive | Expanded ≥ 1024 px, icon rail (tooltips) 768–1023 px, sheet < 768 px. The user can toggle; the choice holds until the breakpoint changes. |
+| Header | Sidebar trigger · breadcrumb from route `handle.crumb` (last crumb only on mobile) · workspace slug pill (mono, ≥ 768 px) · `MockKillSwitch` · user menu (Settings, Sign out → `POST /auth/logout`). |
+| A11y | "Skip to content" link → `#main`; `SidebarInset` is the only `<main>`. |
+
+## MockKillSwitch
+
+Header "Mocks on / off" switch with the enabled count (`3/6`). Turning off calls `POST /me/rules/toggle-all` with `{ isEnabled: false }`; when more than one rule is enabled it first confirms ("Turn off all n mocks?"). Turning on enables every rule. Optimistic with rollback (shared `useToggleAllRules`).
+
+States: loading (skeleton) · no rules ("No mocks", disabled) · on · off · confirming.
+
 ## PageHeader
 
 Serif `<h1>` (`type-display-sm`), a one-line description in `body`, right-aligned actions.
