@@ -108,6 +108,9 @@ class SnapshotBuilder:
         headers: Sequence[Condition] = (),
         status: int = 200,
         body: str = "{}",
+        response_headers: Mapping[str, str] | None = None,
+        content_type: str = "application/json",
+        delay_ms: int = 0,
         created_at: datetime | None = None,
     ) -> CompiledRule:
         self._tick += 1
@@ -115,10 +118,11 @@ class SnapshotBuilder:
             response_id=uuid.uuid7(),
             name="default",
             status_code=status,
-            headers={},
-            content_type="application/json",
+            headers=response_headers or {},
+            content_type=content_type,
             body=body,
             body_mode=BodyMode.STATIC,
+            delay_ms=delay_ms,
         )
         rule = compile_rule(
             match_type=match_type,

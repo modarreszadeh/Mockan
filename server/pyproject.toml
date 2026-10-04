@@ -59,8 +59,8 @@ packages = ["mockan"]
 plugins = ["pydantic.mypy"]
 
 [[tool.mypy.overrides]]
-# google-re2 ships no type information; compile.py types the part it uses with a Protocol.
-module = ["re2"]
+# These ship no type information (compile.py types the part of re2 it uses with a Protocol).
+module = ["re2", "asyncpg", "asyncpg.*"]
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]

@@ -51,7 +51,7 @@ server/
 │   ├── gateway/
 │   │   ├── app.py                  # create_app(): lifespan, middleware order (arch §6.2), routes
 │   │   ├── context.py              # MockanContext stored in scope["state"]["mockan"]
-│   │   ├── middleware/             # cors.py, developer_resolution.py, mock_matching.py, request_log_capture.py
+│   │   ├── middleware/             # cors.py, error_boundary.py, developer_resolution.py, mock_matching.py, request_log_capture.py
 │   │   ├── proxy/                  # forwarder.py (httpx/websockets), transform.py (ProxyTransformer)
 │   │   ├── snapshot_service.py     # LISTEN + debounce + periodic reload (D-07)
 │   │   ├── problems.py             # problem+json responses

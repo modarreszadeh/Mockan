@@ -12,7 +12,12 @@ from mockan.infrastructure.settings import MockanSettings
 
 
 def create_engine(settings: MockanSettings) -> AsyncEngine:
-    return create_async_engine(settings.database_url, pool_pre_ping=True)
+    return create_async_engine(
+        settings.database_url,
+        pool_pre_ping=True,
+        # A half-open connection must fail rather than hang the Gateway's reloads forever.
+        connect_args={"timeout": 10, "command_timeout": 30},
+    )
 
 
 def create_session_factory(engine: AsyncEngine) -> async_sessionmaker[AsyncSession]:
