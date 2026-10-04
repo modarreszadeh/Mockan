@@ -83,4 +83,5 @@ IDs are stable and never renumbered. Defaults are implemented with a `TODO(OQ-xx
 | `POST /me/rules/{id}/toggle`, `POST /me/rules/toggle-all` | Body `{ "isEnabled": boolean }` (idempotent). `toggle-all` returns `{ "updated": n }`. |
 | `GET/PUT /me/service-settings` | `DeveloperServiceSetting[]` = `[{ serviceId, serviceEnvironmentId }]`; PUT replaces the whole set; a missing Service = its default environment. |
 | `GET /me` | `Developer` incl. `isEnabled`, `isAdmin`; `isEnabled: false` → full-page "workspace disabled". |
+| `DELETE /me/rules/{id}/responses/{responseId}` | Deleting the rule's **last** response → `409 last_response` (a rule always has an active response, G-3). The MSW handler does the same. |
 | Catalog errors | Upstream host not allowed → `422` with `code: upstream_host_not_allowed` and a `baseUrl` field error. |

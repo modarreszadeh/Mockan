@@ -33,3 +33,21 @@ MIN_TIMEOUT_SECONDS = 1
 MAX_TIMEOUT_SECONDS = 3600
 DEFAULT_TIMEOUT_SECONDS = 100
 MAX_EXTRA_HEADERS = 50
+
+# MockRule / MockResponse input limits (B6). The DB columns are 200 / 100 / 255 characters.
+MAX_RULE_NAME_LENGTH = 200
+MAX_RESPONSE_NAME_LENGTH = 100
+MAX_CONTENT_TYPE_LENGTH = 255
+MAX_PATTERN_LENGTH = 2048
+MAX_PRIORITY = 2_147_483_647  # the database column is a 32-bit integer
+MAX_CONDITIONS = 20
+MAX_CONDITION_TEXT_LENGTH = 200
+MAX_RESPONSE_HEADERS = 50
+MAX_RESPONSES_PER_RULE = 50
+
+# Framing and connection headers are the server's business; a mock may not set them. The Admin
+# rejects them on save and the Gateway drops them when answering (defence in depth).
+FORBIDDEN_MOCK_HEADERS = frozenset(
+    {"content-length", "content-type", "transfer-encoding", "connection", "keep-alive"}
+    | {"proxy-authenticate", "proxy-authorization", "te", "trailer", "upgrade"}
+)

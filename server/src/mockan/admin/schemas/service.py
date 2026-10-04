@@ -1,6 +1,5 @@
 """Service catalog and per-Developer environment choice (`/services*`, `/me/service-settings`)."""
 
-import re
 import uuid
 from datetime import datetime
 from typing import Annotated
@@ -8,6 +7,7 @@ from typing import Annotated
 from pydantic import AfterValidator, Field, StrictBool, StrictInt
 
 from mockan.admin.schemas.base import CamelInput, CamelModel
+from mockan.admin.schemas.common import check_headers
 from mockan.domain.constants import (
     DEFAULT_TIMEOUT_SECONDS,
     MAX_BASE_URL_LENGTH,
@@ -20,8 +20,6 @@ from mockan.domain.constants import (
     SERVICE_NAME_REGEX,
 )
 from mockan.domain.enums import EnvironmentName
-
-_HEADER_NAME = re.compile(r"^[!#$%&'*+.^_`|~0-9A-Za-z-]+$")
 
 
 def _name(value: str) -> str:
@@ -41,14 +39,7 @@ def _path_prefix(value: str) -> str:
 
 
 def _extra_headers(value: dict[str, str]) -> dict[str, str]:
-    if len(value) > MAX_EXTRA_HEADERS:
-        raise ValueError(f"Use at most {MAX_EXTRA_HEADERS} headers.")
-    for name, content in value.items():
-        if _HEADER_NAME.fullmatch(name) is None:
-            raise ValueError(f"“{name}” isn't a valid header name.")
-        if any(char in content for char in "\r\n\0"):
-            raise ValueError(f"The value of “{name}” can't contain line breaks.")
-    return value
+    return check_headers(value, MAX_EXTRA_HEADERS)
 
 
 class ServiceEnvironmentIn(CamelInput):

@@ -7,17 +7,13 @@ from urllib.parse import parse_qs
 from starlette.responses import Response
 from starlette.types import ASGIApp, Receive, Scope, Send
 
+from mockan.domain.constants import FORBIDDEN_MOCK_HEADERS
 from mockan.domain.enums import RequestSource
 from mockan.gateway.context import MockanContext, get_context, is_internal
 from mockan.gateway.problems import RULE_ID_HEADER, SOURCE_HEADER
 from mockan.matching.matcher import match_request
 from mockan.matching.model import CompiledResponse, CompiledRule, RequestFacts
 
-# Framing and connection headers are the server's business; a mock may not set them.
-_FORBIDDEN_HEADERS = frozenset(
-    {"content-length", "content-type", "transfer-encoding", "connection", "keep-alive"}
-    | {"proxy-authenticate", "proxy-authorization", "te", "trailer", "upgrade"}
-)
 _BODYLESS = frozenset({204, 304}) | frozenset(range(100, 200))
 
 
@@ -62,7 +58,7 @@ def _safe_headers(headers: Mapping[str, str]) -> dict[str, str]:
     safe: dict[str, str] = {}
     for name, value in headers.items():
         lowered = name.strip().lower()
-        if not lowered or lowered in _FORBIDDEN_HEADERS:
+        if not lowered or lowered in FORBIDDEN_MOCK_HEADERS:
             continue
         if any(ch in text for text in (name, value) for ch in "\r\n\0"):
             continue  # header injection (defence in depth; the Admin rejects these on save)

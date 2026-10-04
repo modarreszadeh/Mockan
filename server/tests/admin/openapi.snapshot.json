@@ -1,6 +1,81 @@
 {
   "components": {
     "schemas": {
+      "BodyMode": {
+        "enum": [
+          "Static",
+          "Template",
+          "ProxyAndPatch"
+        ],
+        "title": "BodyMode",
+        "type": "string"
+      },
+      "ConditionIn": {
+        "additionalProperties": false,
+        "description": "A query or header condition. `value` is required for `equals` and ignored for `exists`.",
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "operator": {
+            "$ref": "#/components/schemas/ConditionOperator"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          }
+        },
+        "required": [
+          "key",
+          "operator"
+        ],
+        "title": "ConditionIn",
+        "type": "object"
+      },
+      "ConditionOperator": {
+        "enum": [
+          "equals",
+          "exists"
+        ],
+        "title": "ConditionOperator",
+        "type": "string"
+      },
+      "ConditionOut": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "operator": {
+            "$ref": "#/components/schemas/ConditionOperator"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          }
+        },
+        "required": [
+          "key",
+          "operator"
+        ],
+        "title": "ConditionOut",
+        "type": "object"
+      },
       "DeveloperOut": {
         "properties": {
           "allowedOrigins": {
@@ -119,6 +194,425 @@
         ],
         "title": "EnvironmentName",
         "type": "string"
+      },
+      "MatchType": {
+        "enum": [
+          "Exact",
+          "Template",
+          "Prefix",
+          "Regex"
+        ],
+        "title": "MatchType",
+        "type": "string"
+      },
+      "MockResponseIn": {
+        "additionalProperties": false,
+        "properties": {
+          "body": {
+            "default": "",
+            "title": "Body",
+            "type": "string"
+          },
+          "bodyMode": {
+            "$ref": "#/components/schemas/BodyMode",
+            "default": "Static"
+          },
+          "contentType": {
+            "default": "application/json",
+            "title": "Contenttype",
+            "type": "string"
+          },
+          "delayMs": {
+            "default": 0,
+            "maximum": 30000.0,
+            "minimum": 0.0,
+            "title": "Delayms",
+            "type": "integer"
+          },
+          "headers": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Headers",
+            "type": "object"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "statusCode": {
+            "maximum": 599.0,
+            "minimum": 100.0,
+            "title": "Statuscode",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "name",
+          "statusCode"
+        ],
+        "title": "MockResponseIn",
+        "type": "object"
+      },
+      "MockResponseOut": {
+        "properties": {
+          "body": {
+            "title": "Body",
+            "type": "string"
+          },
+          "bodyMode": {
+            "$ref": "#/components/schemas/BodyMode"
+          },
+          "contentType": {
+            "title": "Contenttype",
+            "type": "string"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "title": "Createdat",
+            "type": "string"
+          },
+          "delayMs": {
+            "title": "Delayms",
+            "type": "integer"
+          },
+          "headers": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Headers",
+            "type": "object"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "ruleId": {
+            "format": "uuid",
+            "title": "Ruleid",
+            "type": "string"
+          },
+          "statusCode": {
+            "title": "Statuscode",
+            "type": "integer"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "title": "Updatedat",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "ruleId",
+          "name",
+          "statusCode",
+          "headers",
+          "contentType",
+          "body",
+          "bodyMode",
+          "delayMs",
+          "createdAt",
+          "updatedAt"
+        ],
+        "title": "MockResponseOut",
+        "type": "object"
+      },
+      "MockRuleCreateIn": {
+        "additionalProperties": false,
+        "description": "Body of `POST /me/rules`. The first response becomes the active one.",
+        "properties": {
+          "headerConditions": {
+            "items": {
+              "$ref": "#/components/schemas/ConditionIn"
+            },
+            "maxItems": 20,
+            "title": "Headerconditions",
+            "type": "array"
+          },
+          "isEnabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Isenabled"
+          },
+          "matchType": {
+            "$ref": "#/components/schemas/MatchType"
+          },
+          "method": {
+            "default": "ANY",
+            "enum": [
+              "ANY",
+              "GET",
+              "POST",
+              "PUT",
+              "PATCH",
+              "DELETE",
+              "HEAD",
+              "OPTIONS"
+            ],
+            "title": "Method",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "pattern": {
+            "title": "Pattern",
+            "type": "string"
+          },
+          "priority": {
+            "default": 100,
+            "maximum": 2147483647.0,
+            "minimum": 0.0,
+            "title": "Priority",
+            "type": "integer"
+          },
+          "queryConditions": {
+            "items": {
+              "$ref": "#/components/schemas/ConditionIn"
+            },
+            "maxItems": 20,
+            "title": "Queryconditions",
+            "type": "array"
+          },
+          "responses": {
+            "items": {
+              "$ref": "#/components/schemas/MockResponseIn"
+            },
+            "maxItems": 50,
+            "minItems": 1,
+            "title": "Responses",
+            "type": "array"
+          },
+          "serviceId": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Serviceid"
+          }
+        },
+        "required": [
+          "name",
+          "matchType",
+          "pattern",
+          "responses"
+        ],
+        "title": "MockRuleCreateIn",
+        "type": "object"
+      },
+      "MockRuleOut": {
+        "properties": {
+          "activeResponseId": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Activeresponseid"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "title": "Createdat",
+            "type": "string"
+          },
+          "developerId": {
+            "format": "uuid",
+            "title": "Developerid",
+            "type": "string"
+          },
+          "headerConditions": {
+            "items": {
+              "$ref": "#/components/schemas/ConditionOut"
+            },
+            "title": "Headerconditions",
+            "type": "array"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "isEnabled": {
+            "title": "Isenabled",
+            "type": "boolean"
+          },
+          "matchType": {
+            "$ref": "#/components/schemas/MatchType"
+          },
+          "method": {
+            "title": "Method",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "pattern": {
+            "title": "Pattern",
+            "type": "string"
+          },
+          "priority": {
+            "title": "Priority",
+            "type": "integer"
+          },
+          "queryConditions": {
+            "items": {
+              "$ref": "#/components/schemas/ConditionOut"
+            },
+            "title": "Queryconditions",
+            "type": "array"
+          },
+          "responses": {
+            "items": {
+              "$ref": "#/components/schemas/MockResponseOut"
+            },
+            "title": "Responses",
+            "type": "array"
+          },
+          "serviceId": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Serviceid"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "title": "Updatedat",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "developerId",
+          "serviceId",
+          "name",
+          "method",
+          "matchType",
+          "pattern",
+          "queryConditions",
+          "headerConditions",
+          "priority",
+          "isEnabled",
+          "activeResponseId",
+          "responses",
+          "createdAt",
+          "updatedAt"
+        ],
+        "title": "MockRuleOut",
+        "type": "object"
+      },
+      "MockRuleUpdateIn": {
+        "additionalProperties": false,
+        "description": "Body of `PUT /me/rules/{id}`: the rule's own fields (responses have their own routes).\n\n`isEnabled` left out keeps the current value.",
+        "properties": {
+          "headerConditions": {
+            "items": {
+              "$ref": "#/components/schemas/ConditionIn"
+            },
+            "maxItems": 20,
+            "title": "Headerconditions",
+            "type": "array"
+          },
+          "isEnabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Isenabled"
+          },
+          "matchType": {
+            "$ref": "#/components/schemas/MatchType"
+          },
+          "method": {
+            "default": "ANY",
+            "enum": [
+              "ANY",
+              "GET",
+              "POST",
+              "PUT",
+              "PATCH",
+              "DELETE",
+              "HEAD",
+              "OPTIONS"
+            ],
+            "title": "Method",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "pattern": {
+            "title": "Pattern",
+            "type": "string"
+          },
+          "priority": {
+            "default": 100,
+            "maximum": 2147483647.0,
+            "minimum": 0.0,
+            "title": "Priority",
+            "type": "integer"
+          },
+          "queryConditions": {
+            "items": {
+              "$ref": "#/components/schemas/ConditionIn"
+            },
+            "maxItems": 20,
+            "title": "Queryconditions",
+            "type": "array"
+          },
+          "serviceId": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Serviceid"
+          }
+        },
+        "required": [
+          "name",
+          "matchType",
+          "pattern"
+        ],
+        "title": "MockRuleUpdateIn",
+        "type": "object"
       },
       "Problem": {
         "properties": {
@@ -394,6 +888,33 @@
         ],
         "title": "ServiceSettingOut",
         "type": "object"
+      },
+      "ToggleAllOut": {
+        "properties": {
+          "updated": {
+            "title": "Updated",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "updated"
+        ],
+        "title": "ToggleAllOut",
+        "type": "object"
+      },
+      "ToggleIn": {
+        "additionalProperties": false,
+        "properties": {
+          "isEnabled": {
+            "title": "Isenabled",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "isEnabled"
+        ],
+        "title": "ToggleIn",
+        "type": "object"
       }
     }
   },
@@ -596,6 +1117,761 @@
         "summary": "Update Me",
         "tags": [
           "me"
+        ]
+      }
+    },
+    "/api/v1/me/rules": {
+      "get": {
+        "operationId": "list_rules_api_v1_me_rules_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/MockRuleOut"
+                  },
+                  "title": "Response List Rules Api V1 Me Rules Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Not signed in (`unauthenticated`)."
+          }
+        },
+        "summary": "List Rules",
+        "tags": [
+          "rules"
+        ]
+      },
+      "post": {
+        "operationId": "create_rule_api_v1_me_rules_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MockRuleCreateIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MockRuleOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Not signed in (`unauthenticated`)."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`forbidden` (not an admin) or `developer_disabled`."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`validation_failed` (or `upstream_host_not_allowed`) with field `errors`."
+          }
+        },
+        "summary": "Create Rule",
+        "tags": [
+          "rules"
+        ]
+      }
+    },
+    "/api/v1/me/rules/toggle-all": {
+      "post": {
+        "description": "Turn every rule on or off at once (FR-11). `updated` counts the rules that changed.",
+        "operationId": "toggle_all_rules_api_v1_me_rules_toggle_all_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ToggleIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ToggleAllOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Not signed in (`unauthenticated`)."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`forbidden` (not an admin) or `developer_disabled`."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`validation_failed` (or `upstream_host_not_allowed`) with field `errors`."
+          }
+        },
+        "summary": "Toggle All Rules",
+        "tags": [
+          "rules"
+        ]
+      }
+    },
+    "/api/v1/me/rules/{rule_id}": {
+      "delete": {
+        "operationId": "delete_rule_api_v1_me_rules__rule_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "rule_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Rule Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Not signed in (`unauthenticated`)."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`forbidden` (not an admin) or `developer_disabled`."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`not_found`: unknown, or someone else's."
+          }
+        },
+        "summary": "Delete Rule",
+        "tags": [
+          "rules"
+        ]
+      },
+      "get": {
+        "operationId": "get_rule_api_v1_me_rules__rule_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "rule_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Rule Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MockRuleOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Not signed in (`unauthenticated`)."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`not_found`: unknown, or someone else's."
+          }
+        },
+        "summary": "Get Rule",
+        "tags": [
+          "rules"
+        ]
+      },
+      "put": {
+        "description": "Replaces the rule's own fields; its responses are untouched.",
+        "operationId": "update_rule_api_v1_me_rules__rule_id__put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "rule_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Rule Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MockRuleUpdateIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MockRuleOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Not signed in (`unauthenticated`)."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`forbidden` (not an admin) or `developer_disabled`."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`not_found`: unknown, or someone else's."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`validation_failed` (or `upstream_host_not_allowed`) with field `errors`."
+          }
+        },
+        "summary": "Update Rule",
+        "tags": [
+          "rules"
+        ]
+      }
+    },
+    "/api/v1/me/rules/{rule_id}/responses": {
+      "post": {
+        "description": "The first response of a rule becomes its active one; later ones wait to be activated.",
+        "operationId": "create_response_api_v1_me_rules__rule_id__responses_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "rule_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Rule Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MockResponseIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MockResponseOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Not signed in (`unauthenticated`)."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`forbidden` (not an admin) or `developer_disabled`."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`not_found`: unknown, or someone else's."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`validation_failed` (or `upstream_host_not_allowed`) with field `errors`."
+          }
+        },
+        "summary": "Create Response",
+        "tags": [
+          "responses"
+        ]
+      }
+    },
+    "/api/v1/me/rules/{rule_id}/responses/{response_id}": {
+      "delete": {
+        "description": "The last response of a rule can't be deleted (`409 last_response`, G-3).",
+        "operationId": "delete_response_api_v1_me_rules__rule_id__responses__response_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "rule_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Rule Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "response_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Response Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Not signed in (`unauthenticated`)."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`forbidden` (not an admin) or `developer_disabled`."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`not_found`: unknown, or someone else's."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "A conflict; `code` says which (`slug_taken`, `name_taken`, ...)."
+          }
+        },
+        "summary": "Delete Response",
+        "tags": [
+          "responses"
+        ]
+      },
+      "put": {
+        "operationId": "update_response_api_v1_me_rules__rule_id__responses__response_id__put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "rule_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Rule Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "response_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Response Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MockResponseIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MockResponseOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Not signed in (`unauthenticated`)."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`forbidden` (not an admin) or `developer_disabled`."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`not_found`: unknown, or someone else's."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`validation_failed` (or `upstream_host_not_allowed`) with field `errors`."
+          }
+        },
+        "summary": "Update Response",
+        "tags": [
+          "responses"
+        ]
+      }
+    },
+    "/api/v1/me/rules/{rule_id}/responses/{response_id}/activate": {
+      "post": {
+        "description": "Makes this response the one the Gateway serves; returns the rule.",
+        "operationId": "activate_response_api_v1_me_rules__rule_id__responses__response_id__activate_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "rule_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Rule Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "response_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Response Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MockRuleOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Not signed in (`unauthenticated`)."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`forbidden` (not an admin) or `developer_disabled`."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`not_found`: unknown, or someone else's."
+          }
+        },
+        "summary": "Activate Response",
+        "tags": [
+          "responses"
+        ]
+      }
+    },
+    "/api/v1/me/rules/{rule_id}/toggle": {
+      "post": {
+        "description": "Idempotent: sets `isEnabled` to the given value.",
+        "operationId": "toggle_rule_api_v1_me_rules__rule_id__toggle_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "rule_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Rule Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ToggleIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MockRuleOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Not signed in (`unauthenticated`)."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`forbidden` (not an admin) or `developer_disabled`."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`not_found`: unknown, or someone else's."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`validation_failed` (or `upstream_host_not_allowed`) with field `errors`."
+          }
+        },
+        "summary": "Toggle Rule",
+        "tags": [
+          "rules"
         ]
       }
     },

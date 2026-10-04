@@ -1,6 +1,6 @@
 ---
 title: Mockan Backend — Admin API
-status: Draft (v0.1, B5 foundation: auth, /me, catalog, service settings)
+status: Draft (v0.2, B5 foundation; B6 rules and responses)
 date: 2026-10-04
 owner: Backend team
 related:
@@ -14,7 +14,7 @@ audience: Backend engineers, Panel engineers and AI coding agents
 
 # Mockan Backend — Admin API
 
-> **Summary:** what the control plane serves today, what every route accepts and returns, the validation limits, the error codes and the decisions that are not obvious from the code. The route list is [architecture §10](../Agent/mockan-architecture.md#10-admin-api-control-plane); the wire contract is the one the Panel ships against ([`panel/src/api/types.ts`](../panel/src/api/types.ts)); the live schema is `/api/v1/openapi.json`, pinned by `server/tests/admin/openapi.snapshot.json`. Rules and responses (`/me/rules*`) arrive in B6, the request log and test route in Phase 2.
+> **Summary:** what the control plane serves today, what every route accepts and returns, the validation limits, the error codes and the decisions that are not obvious from the code. The route list is [architecture §10](../Agent/mockan-architecture.md#10-admin-api-control-plane); the wire contract is the one the Panel ships against ([`panel/src/api/types.ts`](../panel/src/api/types.ts)); the live schema is `/api/v1/openapi.json`, pinned by `server/tests/admin/openapi.snapshot.json`. The request log, test route, export/import and live log are Phase 2 (B8).
 
 ## 1. Conventions
 
@@ -80,8 +80,18 @@ A **disabled** Developer can still read (`GET /me` returns `isEnabled: false`, w
 | DELETE | `/services/{id}/environments/{envId}` | Admin | → `204` | Settings that chose it cascade (the Developer falls back to the default). The Service's **default** environment can't be deleted (§6). |
 | GET | `/me/service-settings` | session | → `DeveloperServiceSetting[]` | `[{serviceId, serviceEnvironmentId}]`; a Service with no entry uses its default environment. |
 | PUT | `/me/service-settings` | Writer | `DeveloperServiceSetting[]` → `DeveloperServiceSetting[]` | **Replaces the whole set** (G-2). `[]` clears it. |
-| — | `/me/rules*`, `…/responses*` | | | B6 |
-| — | `/me/test-route`, `/me/request-logs*`, `/me/rules/export|import`, `/hubs/request-log` | | | Phase 2 (B8) |
+| GET | `/me/rules` | session | → `MockRule[]` | The Developer's rules in creation order, each with its `responses` embedded. |
+| POST | `/me/rules` | Writer | `MockRuleCreate` → `201 MockRule` | One transaction: the rule, its responses, and `activeResponseId` = the first response. |
+| GET | `/me/rules/{id}` | session | → `MockRule` | |
+| PUT | `/me/rules/{id}` | Writer | `MockRuleUpdate` → `MockRule` | Replaces the rule's own fields; responses are untouched. |
+| DELETE | `/me/rules/{id}` | Writer | → `204` | Its responses go with it. |
+| POST | `/me/rules/{id}/toggle` | Writer | `{isEnabled}` → `MockRule` | Idempotent (FR-11). |
+| POST | `/me/rules/toggle-all` | Writer | `{isEnabled}` → `{updated}` | One bulk `UPDATE` of the rules that differ; `updated` counts them (FR-11). |
+| POST | `/me/rules/{id}/responses` | Writer | `MockResponseInput` → `201 MockResponse` | Later responses wait to be activated. |
+| PUT | `/me/rules/{id}/responses/{responseId}` | Writer | `MockResponseInput` → `MockResponse` | |
+| DELETE | `/me/rules/{id}/responses/{responseId}` | Writer | → `204` | The last response → `409 last_response` (G-3). Deleting the active one activates the next. |
+| POST | `/me/rules/{id}/responses/{responseId}/activate` | Writer | → `MockRule` | |
+| — | `/me/test-route`, `/me/request-logs*`, `/me/rules/export\|import`, `/hubs/request-log` | | | Phase 2 (B8) |
 
 ## 4. Payloads and validation
 
@@ -120,6 +130,40 @@ Order of checks: unknown field / structure (`422`) → slug immutability (`409`)
 
 Each entry's `serviceEnvironmentId` must belong to its `serviceId`, each Service may appear once, and both ids must exist; otherwise one `422` lists every problem (`0.serviceId`: unknown Service, `1.serviceEnvironmentId`: wrong Service, `1.serviceId`: listed twice). Nothing is written on error. Only changed rows are written, in one transaction with one `update` audit row (`developer_service_setting`, entity id = the Developer's id, `changes.settings = {from, to}` as `{serviceId: serviceEnvironmentId}`).
 
+### 4.4 `MockRule` and `MockResponse` (B6)
+
+`MockRule` = `id`, `developerId`, `serviceId` (`null` = any), `name`, `method`, `matchType`, `pattern`, `queryConditions`, `headerConditions`, `priority`, `isEnabled`, `activeResponseId`, `responses`, `createdAt`, `updatedAt`. `MockResponse` = `id`, `ruleId`, `name`, `statusCode`, `headers`, `contentType`, `body`, `bodyMode`, `delayMs`, `createdAt`, `updatedAt`. A condition is `{key, operator, value?}`; `value` is **absent** (not `null`) for `exists`.
+
+`MockRuleCreate` / `MockRuleUpdate` fields (create adds `responses`, 1–50 entries):
+
+| Field | Rule |
+| --- | --- |
+| `name` | Trimmed, 1–200, no NUL. |
+| `method` | Exactly one of `ANY GET POST PUT PATCH DELETE HEAD OPTIONS` (upper case). Default `ANY`. |
+| `matchType`, `pattern` | **Compiled by `mockan.matching.compile_rule`, the Gateway's own compiler**, so what is accepted is exactly what runs: `Exact`/`Template`/`Prefix` start with `/`, have no spaces; `Prefix`/`Exact` have no `{}`; a Template parses (`{name}`, `{*name}` last only, no duplicate names); a Regex is RE2, ≤ 512 characters, no lookaround or backreferences. Failure → `422` on `pattern` with the compiler's message. ≤ 2048 characters, no NUL. |
+| `queryConditions`, `headerConditions` | ≤ 20 each. `key` non-empty after trimming (stored trimmed; header keys are lower-cased when compiled), ≤ 200; `operator` `equals` or `exists`; `equals` requires `value` (`""` is allowed), `exists` drops it. Errors are keyed `queryConditions.0.key`, `headerConditions.1.value`. |
+| `priority` | Integer 0 – 2,147,483,647 (real integer; default 100). Lower wins. |
+| `serviceId` | `null` or an existing Service, else `422` on `serviceId`. Informational only: it does not restrict matching (G-7, OQ-B1). |
+| `isEnabled` | Real boolean. Create: default `true`. Update: left out keeps the current value. |
+
+`MockResponseInput` fields:
+
+| Field | Rule |
+| --- | --- |
+| `name` | Trimmed, 1–100, no NUL. |
+| `statusCode` | Integer 100–599. |
+| `delayMs` | Integer 0–30000. Default 0. |
+| `contentType` | ≤ 255, no NUL. Default `application/json`. Sent as `Content-Type`. |
+| `headers` | ≤ 50. Names are HTTP tokens; values contain no `\r`, `\n`, NUL. **Not allowed:** `Content-Type`/`Content-Length`/`Transfer-Encoding`/`Connection`/`Keep-Alive`/`Proxy-Authenticate`/`Proxy-Authorization`/`TE`/`Trailer`/`Upgrade` (`FORBIDDEN_MOCK_HEADERS`; the Gateway also drops them). |
+| `body` | ≤ 1 MiB **of UTF-8 bytes** (`"é"` counts 2), valid UTF-8 (a lone surrogate such as `"\ud800"` is `422`), no NUL. **Not required to be valid JSON** (PR-06: checking is the Panel's job, so a deliberately broken body stays possible). |
+| `bodyMode` | `Static` only (G-13): `Template` → `422` until Phase 2, `ProxyAndPatch` → `422` until Phase 3. Default `Static`. |
+
+NUL is rejected everywhere because PostgreSQL `text`/`jsonb` can't store it. All errors of a request are reported at once; in a create, a failing response is keyed `responses.<i>.<field>`. `PUT` is a full replace of the listed fields: a field left out takes its default, except `isEnabled`.
+
+**Audit.** A create writes one `create` row for the rule whose `changes` hold the rule fields and a **summary** of each response; a response's `body` is never stored (it may hold secrets). The summary has `name`, `statusCode`, masked `headers`, `contentType`, `bodyMode`, `delayMs`, `bodyBytes` and `bodySha256` (first 16 hex), so a body edit still shows as a change. Actions: `create`/`update`/`delete` for rules and responses, `toggle` for `toggle` and `toggle-all` (the latter has entity id = the Developer's id and `changes = {scope: "all", isEnabled, updated}`), `activate` for activating a response (entity `mock_response`). A write that changes nothing (same `PUT`, repeated toggle, activating the active response, `toggle-all` with `updated: 0`) writes no audit row and sends no notification.
+
+**Gateway notification.** ORM writes notify with the Developer id (a response names its rule's owner). `toggle-all` is a bulk `UPDATE`, which skips the ORM events, so it calls `notify.mark(session, developer.id)` explicitly; `tests/admin/test_admin_to_gateway.py` fails without it.
+
 ## 5. Errors
 
 Every error is `application/problem+json`, `Cache-Control: no-store`:
@@ -142,7 +186,7 @@ Every error is `application/problem+json`, `Cache-Control: no-store`:
 | `unauthenticated` | 401 | No valid session or bearer token; a failed OIDC callback. |
 | `forbidden` | 403 | Not an admin. |
 | `developer_disabled` | 403 | A write by a disabled Developer. |
-| `not_found` | 404 | Unknown or foreign id, malformed id, unknown route. |
+| `not_found` | 404 | Unknown or foreign id (rule, response), a response that belongs to another rule, a malformed id, an unknown route. |
 | `validation_failed` | 422 | Field errors. Also any other 4xx FastAPI raises on its own (e.g. `405`, with its `Allow` header). |
 | `upstream_host_not_allowed` | 422 | `baseUrl` host outside the allowlist. |
 | `slug_taken` | 409 | The slug belongs to another Developer. |
@@ -150,13 +194,14 @@ Every error is `application/problem+json`, `Cache-Control: no-store`:
 | `name_taken` | 409 | Service name in use. |
 | `path_prefix_taken` | 409 | Service PathPrefix in use (case-insensitive). |
 | `environment_exists` | 409 | The Service already has that environment. |
-| `last_response` | 409 | B6: deleting a rule's last response (G-3). |
+| `last_response` | 409 | Deleting a rule's last response (G-3): a rule always has an active response. |
 | `internal_error` | 500 | Unhandled exception. Logged through structlog (masked); the body never carries internals. |
 
 Gateway codes (`developer_not_found`, …) are listed in [gateway.md](gateway.md).
 
 ## 6. Decisions and deliberate differences
 
+- **A rule's responses are written in a strict order.** `mock_rules.active_response_id` and `mock_responses.rule_id` point at each other (`use_alter`). Create inserts the rule, then its responses, then sets the active pointer; deleting the active response moves the pointer (and flushes) before the row goes.
 - **Parallel writes are safe.** Pre-checks give friendly `409`s; a race that slips past them is caught as the unique-constraint `IntegrityError` (`uq_developers_slug`, `uq_services_name`, `uq_services_path_prefix`, `uq_service_environments_service_id_environment`) and becomes the same `409`. Tests run both as real parallel requests.
 - **`defaultEnvironment` vs. existing environments (`OQ-B6`).** The plan said it "must exist among the environments when set". The Panel's save order (`useSaveService`) is: save the Service, then delete, update and create its environments, so a new Service has no environments yet and a switched default may point at one that is about to be created. Enforcing it on `POST`/`PUT /services` would break that flow. Default implemented: **not enforced on Service writes** (a dangling default shows up as `service_not_resolved` at request time), and enforced where it can't break the Panel: **deleting the environment that is the Service's default is `422`** ("Choose another default first."). Marker: `TODO(OQ-B6)` in `services/catalog.py`.
 - **Error keys are camelCase.** The MSW handlers return some snake_case keys (`path_prefix`, `base_url`); the Panel's client converts either, and the real API sends only camelCase.
@@ -182,6 +227,8 @@ If `src/mockan/admin/static/index.html` exists (the Panel build, git-ignored), t
 | `test_problems.py` | The problem shape, `errors` map, JSON-only writes, malformed ids, 500 without internals. |
 | `test_auth_dev.py` | Dev login, sessions, first-login upsert, admin bootstrap/promotion, parallel first logins, disabled Developers. |
 | `test_auth_oidc.py` | The real code flow (PKCE, state) and bearer validation against `tests/support/fake_idp.py` (a live provider on a real socket): wrong audience/issuer, expiry, unknown key, key rotation, HS256 confusion, unreachable provider, startup misconfiguration. |
+| `test_rules_api.py`, `test_responses_api.py` | Rules and responses: contract shape, every validation rule (pattern messages come from the shared compiler), isolation (another Developer's id is a 404 on every route), toggles, audit without bodies, notifications. `builders.py` holds the request bodies. |
+| `test_admin_to_gateway.py` | **PR-07 across processes:** the Admin takes the write, a real Gateway (own lifespan, LISTEN, debounce) on the same PostgreSQL serves it within 2 s: create → mocked, activate → other response, toggle off → proxied to a live upstream, toggle-all, edit pattern, delete; and one Developer's rules never answer another's slug (PR-01). |
 | `test_me_api.py`, `test_services_api.py`, `test_service_settings_api.py` | Every route: happy path, `422` shape, other Developer's data, non-admin `403`, audit rows, `pg_notify` payloads, races. |
 | `test_panel.py` | Static files, SPA fallback, base path, path traversal. |
 | `test_openapi.py` | `openapi.snapshot.json`; every `422` is the `Problem` schema. Regenerate with `UPDATE_OPENAPI_SNAPSHOT=1 uv run pytest tests/admin/test_openapi.py` and update `panel/src/api/types.ts` in the same change. |

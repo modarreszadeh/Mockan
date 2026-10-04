@@ -88,7 +88,10 @@ def field_errors(exc: RequestValidationError) -> dict[str, list[str]]:
     """
     result: dict[str, list[str]] = {}
     for error in exc.errors():
-        loc = [part for part in error["loc"] if part not in _LOCATION_PREFIXES]
+        # Only the leading "body"/"query"/... is a location; a field can be called `body` too.
+        loc = list(error["loc"])
+        if loc and loc[0] in _LOCATION_PREFIXES:
+            loc = loc[1:]
         if error["type"] == "json_invalid" or not loc or all(isinstance(p, int) for p in loc):
             continue
         message = str(error["msg"]).removeprefix("Value error, ")

@@ -14,7 +14,7 @@ from mockan.admin import auth
 from mockan.admin.oidc import OidcClient
 from mockan.admin.openapi import use_problem_422
 from mockan.admin.problems import install_problem_handlers
-from mockan.admin.routers import me, service_settings, services
+from mockan.admin.routers import me, responses, rules, service_settings, services
 from mockan.admin.spa import mount_panel
 from mockan.infrastructure.db.migrate import upgrade_to_head
 from mockan.infrastructure.db.session import create_engine, create_session_factory
@@ -122,6 +122,8 @@ def create_app(
     api.include_router(me.router)
     api.include_router(services.router)
     api.include_router(service_settings.router)
+    api.include_router(rules.router)
+    api.include_router(responses.router)
     app.include_router(api)
 
     panel_dir = static_dir or STATIC_DIR

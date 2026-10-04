@@ -16,7 +16,7 @@ import {
 import { byteLength, MAX_BODY_BYTES, MAX_DELAY_MS, patternProblem } from "@/lib/validation"
 
 import { db, persist } from "../db"
-import { fastApi422, guard, newId, notFound, now } from "../problem"
+import { fastApi422, guard, newId, notFound, now, problem } from "../problem"
 
 type Issue = { loc: (string | number)[]; msg: string }
 
@@ -214,8 +214,14 @@ export const ruleHandlers = [
     if (stop) return stop
     const rule = findRule(params.ruleId)
     if (!rule?.responses.some((r) => r.id === params.responseId)) return notFound("MockResponse")
+    // Like the real API (G-3): a rule always keeps an active response.
+    if (rule.responses.length === 1)
+      return problem(409, "last_response", "A rule needs at least one response", {
+        detail: "Add another response first, or delete the rule.",
+      })
     rule.responses = rule.responses.filter((r) => r.id !== params.responseId)
-    if (rule.activeResponseId === params.responseId) rule.activeResponseId = rule.responses[0]?.id ?? null
+    if (rule.activeResponseId === params.responseId) rule.activeResponseId = rule.responses[0]!.id
+    rule.updatedAt = now()
     persist()
     return new HttpResponse(null, { status: 204 })
   }),
