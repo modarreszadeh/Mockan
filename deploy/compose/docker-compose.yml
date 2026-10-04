@@ -1,0 +1,23 @@
+# Local development stack. B7 adds admin, gateway and fake-upstream services.
+name: mockan
+
+services:
+  postgres:
+    image: postgres:18
+    environment:
+      POSTGRES_USER: mockan
+      POSTGRES_PASSWORD: mockan
+      POSTGRES_DB: mockan
+    ports:
+      # Override when 5432 is taken: MOCKAN_DB_PORT=5433 docker compose up -d postgres
+      - "${MOCKAN_DB_PORT:-5432}:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mockan -d mockan"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  postgres-data:

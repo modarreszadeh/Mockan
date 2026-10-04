@@ -24,7 +24,7 @@ audience: Backend engineers and AI coding agents working in `server/`
 | Database | PostgreSQL via SQLAlchemy 2 async + asyncpg; migrations with Alembic (D-16) |
 | Proxy | `httpx.AsyncClient` streaming + `websockets` bridge (D-15) |
 | Regex engine | RE2 via `google-re2` (D-17) |
-| Phase | Not started. Build order in [implementation-plan.md](implementation-plan.md) (B0 → B7 = Phase 1). |
+| Phase | In progress: B0 (skeleton) done. Build order in [implementation-plan.md](implementation-plan.md) (B0 → B7 = Phase 1). |
 
 ## Documents
 
@@ -51,9 +51,10 @@ Covered in the architecture doc for now (split into this folder when they grow):
 ```bash
 cd server
 uv sync                                        # create .venv, install deps from uv.lock
-docker compose -f ../deploy/compose/docker-compose.yml up -d postgres
+docker compose -f ../deploy/compose/docker-compose.yml up -d postgres   # MOCKAN_DB_PORT=5433 if 5432 is taken
 uv run alembic upgrade head                    # apply migrations
 uv run uvicorn mockan.admin.app:create_app --factory --port 8081 --reload
 uv run uvicorn mockan.gateway.app:create_app --factory --port 8080 --reload
-uv run pytest                                  # all tests
+uv run pytest                                  # all tests (db tests need Docker; -m "not db" skips them)
+./scripts/check.sh                             # lint + format + mypy + import contracts + tests (the `check` command)
 ```
