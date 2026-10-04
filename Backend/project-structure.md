@@ -43,7 +43,9 @@ server/
 │   │   ├── db/
 │   │   │   ├── models.py           # SQLAlchemy declarative models (schema "mockan")
 │   │   │   ├── session.py          # engine + async_sessionmaker factory
-│   │   │   └── notify.py           # before_commit hook → pg_notify('mockan_config_changed', …)
+│   │   │   ├── notify.py           # before_commit hook → pg_notify('mockan_config_changed', …)
+│   │   │   ├── errors.py           # violated_constraint(): which unique/FK an IntegrityError hit
+│   │   │   └── migrate.py          # upgrade_to_head() for MOCKAN_MIGRATE_ON_STARTUP
 │   │   ├── snapshot_loader.py      # DB rows → mockan.matching snapshot objects (load_full, load_developer)
 │   │   ├── audit.py                # record(): masked audit_logs row in the caller's transaction
 │   │   ├── masking.py              # header/JSON secret masking (NFR-07)
@@ -58,21 +60,24 @@ server/
 │   │   └── health.py               # /_mockan/health/live, /_mockan/health/ready
 │   └── admin/
 │       ├── app.py                  # create_app(): routers under /api/v1, auth, static Panel
-│       ├── auth.py                 # OIDC (Authlib), current_developer, require_admin
+│       ├── auth.py                 # /auth/* routes, current_developer, writable_developer, require_admin
+│       ├── oidc.py                 # OidcClient: Authlib code flow + bearer JWT validation (joserfc)
 │       ├── deps.py                 # DB session dependency, settings dependency
 │       ├── schemas/                # Pydantic request/response models (camelCase JSON)
 │       ├── routers/                # me.py, services.py, service_settings.py, rules.py, responses.py
 │       ├── services/               # use-case functions (validation + persistence + audit)
-│       ├── problems.py             # exception → problem+json handlers
+│       ├── problems.py             # DomainError + exception → problem+json handlers
+│       ├── openapi.py              # drops FastAPI's generic 422 from the OpenAPI document
+│       ├── spa.py                  # serves the built Panel + index.html fallback
 │       └── static/                 # built Panel (git-ignored, filled by the Panel build)
 └── tests/
     ├── conftest.py
-    ├── support/                    # snapshot_builder.py (in-memory RuleSnapshot), fake_upstream.py, live_server.py (real Uvicorn in a thread), rss.py
+    ├── support/                    # snapshot_builder.py (in-memory RuleSnapshot), fake_upstream.py, fake_idp.py (OIDC provider), live_server.py (real Uvicorn in a thread), notify_listener.py, rss.py
     ├── domain/
     ├── infrastructure/             # settings, masking, logging (fast); database, notify, loader (db)
     ├── matching/                   # incl. precedence_parity.json, shared with the Panel's vitest
     ├── gateway/
-    └── admin/
+    └── admin/                      # conftest.py: admin_client, as_developer, audit_rows; openapi.snapshot.json
 ```
 
 > The code folder is `server/`, not `backend/`, so it can't collide with the `Backend/` docs folder on case-insensitive file systems.

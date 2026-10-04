@@ -1,0 +1,1227 @@
+{
+  "components": {
+    "schemas": {
+      "DeveloperOut": {
+        "properties": {
+          "allowedOrigins": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Allowedorigins",
+            "type": "array"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "title": "Createdat",
+            "type": "string"
+          },
+          "displayName": {
+            "title": "Displayname",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "isAdmin": {
+            "title": "Isadmin",
+            "type": "boolean"
+          },
+          "isEnabled": {
+            "title": "Isenabled",
+            "type": "boolean"
+          },
+          "publicBaseUrl": {
+            "title": "Publicbaseurl",
+            "type": "string"
+          },
+          "slug": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Slug"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "title": "Updatedat",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "slug",
+          "displayName",
+          "allowedOrigins",
+          "isEnabled",
+          "isAdmin",
+          "createdAt",
+          "updatedAt",
+          "publicBaseUrl"
+        ],
+        "title": "DeveloperOut",
+        "type": "object"
+      },
+      "DeveloperUpdateIn": {
+        "additionalProperties": false,
+        "description": "Every field is optional; `null` means \"leave it\". `slug` can be set only once.",
+        "properties": {
+          "allowedOrigins": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "maxItems": 50,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Allowedorigins"
+          },
+          "displayName": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Displayname"
+          },
+          "slug": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Slug"
+          }
+        },
+        "title": "DeveloperUpdateIn",
+        "type": "object"
+      },
+      "EnvironmentName": {
+        "enum": [
+          "dev",
+          "stage"
+        ],
+        "title": "EnvironmentName",
+        "type": "string"
+      },
+      "Problem": {
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "detail": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Detail"
+          },
+          "errors": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Errors"
+          },
+          "status": {
+            "title": "Status",
+            "type": "integer"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "type": {
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "title",
+          "status",
+          "code"
+        ],
+        "title": "Problem",
+        "type": "object"
+      },
+      "ServiceEnvironmentIn": {
+        "additionalProperties": false,
+        "properties": {
+          "baseUrl": {
+            "maxLength": 2048,
+            "title": "Baseurl",
+            "type": "string"
+          },
+          "environment": {
+            "$ref": "#/components/schemas/EnvironmentName"
+          },
+          "extraHeaders": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Extraheaders",
+            "type": "object"
+          },
+          "timeoutSeconds": {
+            "default": 100,
+            "maximum": 3600.0,
+            "minimum": 1.0,
+            "title": "Timeoutseconds",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "environment",
+          "baseUrl"
+        ],
+        "title": "ServiceEnvironmentIn",
+        "type": "object"
+      },
+      "ServiceEnvironmentOut": {
+        "properties": {
+          "baseUrl": {
+            "title": "Baseurl",
+            "type": "string"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "title": "Createdat",
+            "type": "string"
+          },
+          "environment": {
+            "$ref": "#/components/schemas/EnvironmentName"
+          },
+          "extraHeaders": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Extraheaders",
+            "type": "object"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "serviceId": {
+            "format": "uuid",
+            "title": "Serviceid",
+            "type": "string"
+          },
+          "timeoutSeconds": {
+            "title": "Timeoutseconds",
+            "type": "integer"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "title": "Updatedat",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "serviceId",
+          "environment",
+          "baseUrl",
+          "timeoutSeconds",
+          "extraHeaders",
+          "createdAt",
+          "updatedAt"
+        ],
+        "title": "ServiceEnvironmentOut",
+        "type": "object"
+      },
+      "ServiceIn": {
+        "additionalProperties": false,
+        "properties": {
+          "defaultEnvironment": {
+            "$ref": "#/components/schemas/EnvironmentName",
+            "default": "stage"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "pathPrefix": {
+            "title": "Pathprefix",
+            "type": "string"
+          },
+          "rewriteOrigin": {
+            "default": false,
+            "title": "Rewriteorigin",
+            "type": "boolean"
+          },
+          "stripPrefix": {
+            "default": false,
+            "title": "Stripprefix",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "name",
+          "pathPrefix"
+        ],
+        "title": "ServiceIn",
+        "type": "object"
+      },
+      "ServiceOut": {
+        "properties": {
+          "createdAt": {
+            "format": "date-time",
+            "title": "Createdat",
+            "type": "string"
+          },
+          "defaultEnvironment": {
+            "$ref": "#/components/schemas/EnvironmentName"
+          },
+          "environments": {
+            "items": {
+              "$ref": "#/components/schemas/ServiceEnvironmentOut"
+            },
+            "title": "Environments",
+            "type": "array"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "pathPrefix": {
+            "title": "Pathprefix",
+            "type": "string"
+          },
+          "rewriteOrigin": {
+            "title": "Rewriteorigin",
+            "type": "boolean"
+          },
+          "stripPrefix": {
+            "title": "Stripprefix",
+            "type": "boolean"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "title": "Updatedat",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "pathPrefix",
+          "stripPrefix",
+          "rewriteOrigin",
+          "defaultEnvironment",
+          "environments",
+          "createdAt",
+          "updatedAt"
+        ],
+        "title": "ServiceOut",
+        "type": "object"
+      },
+      "ServiceSettingIn": {
+        "additionalProperties": false,
+        "properties": {
+          "serviceEnvironmentId": {
+            "format": "uuid",
+            "title": "Serviceenvironmentid",
+            "type": "string"
+          },
+          "serviceId": {
+            "format": "uuid",
+            "title": "Serviceid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "serviceId",
+          "serviceEnvironmentId"
+        ],
+        "title": "ServiceSettingIn",
+        "type": "object"
+      },
+      "ServiceSettingOut": {
+        "properties": {
+          "serviceEnvironmentId": {
+            "format": "uuid",
+            "title": "Serviceenvironmentid",
+            "type": "string"
+          },
+          "serviceId": {
+            "format": "uuid",
+            "title": "Serviceid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "serviceId",
+          "serviceEnvironmentId"
+        ],
+        "title": "ServiceSettingOut",
+        "type": "object"
+      }
+    }
+  },
+  "info": {
+    "title": "Mockan Admin API",
+    "version": "0.1.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/api/v1/auth/callback": {
+      "get": {
+        "operationId": "auth_callback_api_v1_auth_callback_get",
+        "responses": {
+          "303": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Not signed in (`unauthenticated`)."
+          }
+        },
+        "summary": "OIDC redirect target",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/login": {
+      "get": {
+        "description": "OIDC: redirect to the identity provider. Dev mode (G-9): sign in as `dev:<as>` directly.",
+        "operationId": "login_api_v1_auth_login_get",
+        "parameters": [
+          {
+            "description": "Dev mode only: who to sign in as.",
+            "in": "query",
+            "name": "as",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "pattern": "^[A-Za-z0-9._-]{1,50}$",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Dev mode only: who to sign in as.",
+              "title": "As"
+            }
+          },
+          {
+            "description": "Dev mode only: sign in as an admin.",
+            "in": "query",
+            "name": "admin",
+            "required": false,
+            "schema": {
+              "default": false,
+              "description": "Dev mode only: sign in as an admin.",
+              "title": "Admin",
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "303": {
+            "description": "Redirect to the IdP (or the Panel)."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`validation_failed` (or `upstream_host_not_allowed`) with field `errors`."
+          }
+        },
+        "summary": "Start sign-in",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/logout": {
+      "post": {
+        "operationId": "logout_api_v1_auth_logout_post",
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Sign out",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/me": {
+      "get": {
+        "operationId": "get_me_api_v1_me_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeveloperOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Not signed in (`unauthenticated`)."
+          }
+        },
+        "summary": "Get Me",
+        "tags": [
+          "me"
+        ]
+      },
+      "put": {
+        "operationId": "update_me_api_v1_me_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeveloperUpdateIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeveloperOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Not signed in (`unauthenticated`)."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`forbidden` (not an admin) or `developer_disabled`."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "A conflict; `code` says which (`slug_taken`, `name_taken`, ...)."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`validation_failed` (or `upstream_host_not_allowed`) with field `errors`."
+          }
+        },
+        "summary": "Update Me",
+        "tags": [
+          "me"
+        ]
+      }
+    },
+    "/api/v1/me/service-settings": {
+      "get": {
+        "operationId": "list_service_settings_api_v1_me_service_settings_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ServiceSettingOut"
+                  },
+                  "title": "Response List Service Settings Api V1 Me Service Settings Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Not signed in (`unauthenticated`)."
+          }
+        },
+        "summary": "List Service Settings",
+        "tags": [
+          "service-settings"
+        ]
+      },
+      "put": {
+        "description": "Replace the whole set. A Service that is absent uses its default environment.",
+        "operationId": "replace_service_settings_api_v1_me_service_settings_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "items": {
+                  "$ref": "#/components/schemas/ServiceSettingIn"
+                },
+                "title": "Items",
+                "type": "array"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ServiceSettingOut"
+                  },
+                  "title": "Response Replace Service Settings Api V1 Me Service Settings Put",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Not signed in (`unauthenticated`)."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`forbidden` (not an admin) or `developer_disabled`."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`validation_failed` (or `upstream_host_not_allowed`) with field `errors`."
+          }
+        },
+        "summary": "Replace Service Settings",
+        "tags": [
+          "service-settings"
+        ]
+      }
+    },
+    "/api/v1/services": {
+      "get": {
+        "operationId": "list_services_api_v1_services_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ServiceOut"
+                  },
+                  "title": "Response List Services Api V1 Services Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Not signed in (`unauthenticated`)."
+          }
+        },
+        "summary": "List Services",
+        "tags": [
+          "services"
+        ]
+      },
+      "post": {
+        "operationId": "create_service_api_v1_services_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ServiceIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServiceOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Not signed in (`unauthenticated`)."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`forbidden` (not an admin) or `developer_disabled`."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "A conflict; `code` says which (`slug_taken`, `name_taken`, ...)."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`validation_failed` (or `upstream_host_not_allowed`) with field `errors`."
+          }
+        },
+        "summary": "Create Service",
+        "tags": [
+          "services"
+        ]
+      }
+    },
+    "/api/v1/services/{service_id}": {
+      "delete": {
+        "operationId": "delete_service_api_v1_services__service_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "service_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Service Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Not signed in (`unauthenticated`)."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`forbidden` (not an admin) or `developer_disabled`."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`not_found`: unknown, or someone else's."
+          }
+        },
+        "summary": "Delete Service",
+        "tags": [
+          "services"
+        ]
+      },
+      "put": {
+        "operationId": "update_service_api_v1_services__service_id__put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "service_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Service Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ServiceIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServiceOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Not signed in (`unauthenticated`)."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`forbidden` (not an admin) or `developer_disabled`."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`not_found`: unknown, or someone else's."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "A conflict; `code` says which (`slug_taken`, `name_taken`, ...)."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`validation_failed` (or `upstream_host_not_allowed`) with field `errors`."
+          }
+        },
+        "summary": "Update Service",
+        "tags": [
+          "services"
+        ]
+      }
+    },
+    "/api/v1/services/{service_id}/environments": {
+      "post": {
+        "operationId": "create_environment_api_v1_services__service_id__environments_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "service_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Service Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ServiceEnvironmentIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServiceEnvironmentOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Not signed in (`unauthenticated`)."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`forbidden` (not an admin) or `developer_disabled`."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`not_found`: unknown, or someone else's."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "A conflict; `code` says which (`slug_taken`, `name_taken`, ...)."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`validation_failed` (or `upstream_host_not_allowed`) with field `errors`."
+          }
+        },
+        "summary": "Create Environment",
+        "tags": [
+          "services"
+        ]
+      }
+    },
+    "/api/v1/services/{service_id}/environments/{environment_id}": {
+      "delete": {
+        "operationId": "delete_environment_api_v1_services__service_id__environments__environment_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "service_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Service Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "environment_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Environment Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Not signed in (`unauthenticated`)."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`forbidden` (not an admin) or `developer_disabled`."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`not_found`: unknown, or someone else's."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`validation_failed` (or `upstream_host_not_allowed`) with field `errors`."
+          }
+        },
+        "summary": "Delete Environment",
+        "tags": [
+          "services"
+        ]
+      },
+      "put": {
+        "operationId": "update_environment_api_v1_services__service_id__environments__environment_id__put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "service_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Service Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "environment_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Environment Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ServiceEnvironmentIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServiceEnvironmentOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Not signed in (`unauthenticated`)."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`forbidden` (not an admin) or `developer_disabled`."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`not_found`: unknown, or someone else's."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "A conflict; `code` says which (`slug_taken`, `name_taken`, ...)."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`validation_failed` (or `upstream_host_not_allowed`) with field `errors`."
+          }
+        },
+        "summary": "Update Environment",
+        "tags": [
+          "services"
+        ]
+      }
+    }
+  }
+}

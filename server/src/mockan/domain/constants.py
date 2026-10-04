@@ -17,3 +17,19 @@ MIN_STATUS = 100
 MAX_STATUS = 599
 DEFAULT_PRIORITY = 100
 SAMPLE_BYTES = 16_384
+
+# Admin API input limits. The Panel enforces the same or looser values (`panel/src/lib/checks.ts`).
+MAX_DISPLAY_NAME_LENGTH = 100
+MAX_ALLOWED_ORIGINS = 50
+MAX_ORIGIN_LENGTH = 255
+
+# Service catalog. A PathPrefix is one or more non-empty segments: `/limsa`, `/api/limsa`.
+SERVICE_NAME_REGEX = re.compile(r"^[a-z][a-z0-9-]*$")
+PATH_PREFIX_REGEX = re.compile(r"^(?:/[A-Za-z0-9._~-]+)+$")
+MAX_SERVICE_NAME_LENGTH = 100
+MAX_PATH_PREFIX_LENGTH = 200
+MAX_BASE_URL_LENGTH = 2048
+MIN_TIMEOUT_SECONDS = 1
+MAX_TIMEOUT_SECONDS = 3600
+DEFAULT_TIMEOUT_SECONDS = 100
+MAX_EXTRA_HEADERS = 50

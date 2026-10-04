@@ -59,6 +59,7 @@ audience: Backend engineers and AI coding agents building `server/`
 | OQ-B3 | Is a Regex rule matched against the original-case path or the lowercased path? | Original case (RE2 search). Authors use `(?i)` for case-insensitive. Exact/Template/Prefix stay case-insensitive per §7.1. | `matching/compile.py` |
 | OQ-B4 | Which CI system (GitLab CI / GitHub Actions)? | Ship `server/scripts/check.sh` (the `check` command) and add the pipeline file once the CI system is known. | `server/scripts/check.sh` |
 | OQ-B5 | Does `HEAD` match a `GET` rule? | No. The method must equal the rule's method, or the rule's method is `ANY`. | `matching/matcher.py` |
+| OQ-B6 | Must a Service's `defaultEnvironment` exist among its environments when the Service is saved? (B5) | No on `POST`/`PUT /services` (the Panel saves the Service before its environments); yes where it can't break the Panel: the default environment can't be deleted. | `admin/services/catalog.py` |
 
 ## 4. Milestones (Phase 1)
 

@@ -391,7 +391,7 @@ Base path `/api/v1`, JSON, FastAPI routers with Pydantic request/response models
 | GET | `/me/rules/export` · POST `/me/rules/import` | JSON export/import (FR-12). |
 | WebSocket | `/hubs/request-log` | Live stream of the caller's request log entries (D-18). |
 
-JSON field names in the API are camelCase (Pydantic `alias_generator=to_camel`, `populate_by_name=True`); Python attributes and DB columns are snake_case.
+JSON field names in the API are camelCase (Pydantic `alias_generator=to_camel`, `populate_by_name=True`); Python attributes and DB columns are snake_case. Payload shapes, limits, error codes and auth details are in [`../Backend/admin-api.md`](../Backend/admin-api.md).
 
 Validation rules (enforce in Pydantic models / services, test in `server/tests/admin`):
 - `pattern` must start with `/` for `Exact`/`Template`/`Prefix`; regexes must compile with RE2 and be ≤ 512 characters (D-17); templates must parse (`{*name}` only as last segment).

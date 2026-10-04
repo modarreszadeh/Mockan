@@ -1,10 +1,7 @@
 """`pg_notify('mockan_config_changed', …)` on commit, never on rollback (D-07, FR-08)."""
 
-import asyncio
 import uuid
-from collections.abc import AsyncIterator
 
-import asyncpg
 import pytest
 from sqlalchemy import select, update
 from sqlalchemy.exc import IntegrityError
@@ -21,42 +18,11 @@ from mockan.infrastructure.db.models import (
     Service,
 )
 from tests.infrastructure.helpers import make_developer, make_rule, make_service
+from tests.support.notify_listener import Listener
 
 pytestmark = pytest.mark.db
 
 Factory = async_sessionmaker[AsyncSession]
-
-
-class Listener:
-    def __init__(self) -> None:
-        self.received: list[str] = []
-
-    def __call__(self, _connection: object, _pid: int, _channel: str, payload: str) -> None:
-        self.received.append(payload)
-
-    async def payloads(self, expected: int) -> list[str]:
-        """Wait (up to 3 s) for `expected` notifications, then pause briefly to catch extras."""
-        for _ in range(60):
-            if len(self.received) >= expected:
-                break
-            await asyncio.sleep(0.05)
-        await asyncio.sleep(0.2)
-        result, self.received = sorted(self.received), []
-        return result
-
-    async def nothing(self) -> list[str]:
-        await asyncio.sleep(0.4)
-        result, self.received = sorted(self.received), []
-        return result
-
-
-@pytest.fixture
-async def listener(pg_container: str, engine: object) -> AsyncIterator[Listener]:
-    connection = await asyncpg.connect(pg_container.replace("+asyncpg", ""))
-    listener = Listener()
-    await connection.add_listener(notify.CHANNEL, listener)
-    yield listener
-    await connection.close()
 
 
 async def _developer_with_rule(

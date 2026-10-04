@@ -17,6 +17,7 @@ dependencies = [
     "authlib>=1.8,<2",
     "itsdangerous>=2.2,<3",
     "structlog>=26,<27",
+    "joserfc>=1.7.5",
 ]
 
 [dependency-groups]
@@ -59,8 +60,9 @@ packages = ["mockan"]
 plugins = ["pydantic.mypy"]
 
 [[tool.mypy.overrides]]
-# These ship no type information (compile.py types the part of re2 it uses with a Protocol).
-module = ["re2", "asyncpg", "asyncpg.*"]
+# These ship no type information (compile.py types the part of re2 it uses with a Protocol;
+# oidc.py keeps the Authlib client behind `Any`).
+module = ["re2", "asyncpg", "asyncpg.*", "authlib", "authlib.*"]
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]

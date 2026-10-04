@@ -3,7 +3,7 @@
 import re
 from collections.abc import Iterable
 
-from mockan.domain.constants import RESERVED_SLUGS, SLUG_REGEX
+from mockan.domain.constants import MAX_ORIGIN_LENGTH, RESERVED_SLUGS, SLUG_REGEX
 
 
 def is_valid_slug(slug: str) -> bool:
@@ -12,6 +12,27 @@ def is_valid_slug(slug: str) -> bool:
 
 def is_reserved_slug(slug: str) -> bool:
     return slug.startswith("_") or slug in RESERVED_SLUGS
+
+
+def slug_problem(slug: str) -> str | None:
+    """Why a DeveloperSlug is invalid, or `None`. Messages match the Panel's `slugProblem`."""
+    if not slug:
+        return "Enter a slug."
+    if slug.startswith("_"):
+        return "Slugs starting with “_” are reserved for Mockan."
+    if slug in RESERVED_SLUGS:
+        return f"“{slug}” is reserved. Pick another slug."
+    if any(char.isupper() for char in slug):
+        return "Use lowercase letters only."
+    if not ("a" <= slug[0] <= "z"):
+        return "Start with a lowercase letter."
+    if len(slug) < 2:
+        return "Use at least 2 characters."
+    if len(slug) > 32:
+        return "Use at most 32 characters."
+    if not is_valid_slug(slug):
+        return "Use only lowercase letters, digits and hyphens."
+    return None
 
 
 def _strip_port(host: str) -> str:
@@ -47,6 +68,28 @@ def host_is_allowed(host: str, patterns: Iterable[str]) -> bool:
 
 
 _ORIGIN = re.compile(r"(?i)(https?)://(\*\.[^/:*]+|[^/:*\s]+|\[[^\]]+\])(?::(\*|\d+))?")
+
+
+def origin_problem(origin: str) -> str | None:
+    """Why an `allowedOrigins` entry is invalid, or `None`.
+
+    Stricter than the Panel's check: it must be a complete `scheme://host[:port|:*]` pattern,
+    which is what `origin_is_allowed` can use.
+    """
+    value = origin.strip()
+    if not value:
+        return "Enter an origin."
+    if not value.lower().startswith(("http://", "https://")):
+        return "Start with http:// or https://."
+    if re.search(r"\s", value):
+        return "Origins can't contain spaces."
+    if value.endswith("/") or re.match(r"(?i)https?://[^/]+/.", value):
+        return "Use scheme, host and port only — no path."
+    if len(value) > MAX_ORIGIN_LENGTH:
+        return f"Use at most {MAX_ORIGIN_LENGTH} characters."
+    if _ORIGIN.fullmatch(value) is None:
+        return "Use the form scheme://host[:port], e.g. http://localhost:*."
+    return None
 
 
 def origin_is_allowed(origin: str, patterns: Iterable[str]) -> bool:

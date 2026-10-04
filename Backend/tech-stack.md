@@ -36,11 +36,14 @@ audience: Backend engineers and AI coding agents
 | Migrations | `alembic` | `>=1.20,<2` | Autogenerate, then review by hand. |
 | Regex | `google-re2` | `>=1.1,<2` | Linear-time regex (D-17). Import name: `re2`. |
 | OIDC | `authlib` | `>=1.8,<2` | Code flow for the Panel session + JWT validation for bearer tokens (D-12). |
+| JWT validation | `joserfc` | `>=1.7.5` | Bearer-token validation in `admin/oidc.py` (the library Authlib itself uses). Declared explicitly because we import it directly. |
 | Sessions | Starlette `SessionMiddleware` (+ `itsdangerous`) | `itsdangerous>=2.2,<3` | Signed session cookie for the Panel. Pinned explicitly because Starlette only imports it lazily. |
 | Logging | `structlog` | `>=26,<27` | JSON logs, masking processor (NFR-07). |
 | Tracing / metrics | `opentelemetry-sdk`, `opentelemetry-instrumentation-fastapi`, `opentelemetry-instrumentation-httpx` | `>=1.45` / `>=0.66b0` | Metrics names in architecture §12.2. |
 | Templated bodies (Phase 2) | `jinja2` (`SandboxedEnvironment`) | `>=3.1,<4` | PR-19. Not installed in Phase 1. |
 | Fake data (Phase 2) | `faker` | `>=40` | PR-19. Not installed in Phase 1. |
+
+> **Watch:** Authlib 1.8's `httpx` integration prefers the new `httpx2` package and warns (`AuthlibDeprecationWarning: The httpx module is deprecated; please use httpx2 instead`) when it falls back to `httpx`. The fallback will be removed in a future Authlib release. The Admin uses it only for the OIDC token and JWKS calls. Adding `httpx2` would silence the warning and is a stack decision (D-15 names `httpx`); not done in B5.
 
 ## 3. Test libraries
 

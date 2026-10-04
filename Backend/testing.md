@@ -48,12 +48,18 @@ def test_template_rule_matches_single_segment() -> None: ...
 | `live_gateway` | function | The Gateway on its own real Uvicorn socket over a swappable in-memory snapshot, plus an `httpx` client and the `RuleSnapshotProvider`. Use it when a test needs real streaming, SSE or WebSockets: `ASGITransport` buffers whole responses. |
 | `gateway_client` | function | `httpx.AsyncClient` against the Gateway app with a provided snapshot (in-process; runs the app lifespan on first use). |
 | `pg_container` | session | Testcontainers PostgreSQL 18 with migrations applied. |
-| `admin_client` | function | `httpx.AsyncClient` against the Admin app; auth is replaced by a test dependency override that logs in as a given Developer (`as_developer(slug, is_admin=False)`). |
+| `admin_client` | function | `httpx.AsyncClient` against the Admin app (`tests/admin/conftest.py`; dev auth mode, test settings, the `session_factory` database). |
+| `as_developer` | function | `await as_developer(slug, is_admin=False, is_enabled=True)` creates a Developer row and overrides `current_developer`, so every request acts as them; `as_developer.switch(developer)` changes who. |
+| `audit_rows` | function | `await audit_rows()` returns every `audit_logs` row so far, oldest first. |
+| `listener` | function | Collects the `mockan_config_changed` payloads (`await listener.payloads(n)` / `listener.nothing()`); use it to assert a write notifies the right Developer id or `catalog`. |
+| `fake_idp` | in `test_auth_oidc.py` | `tests/support/fake_idp.py`: a real OIDC provider on a live socket (discovery, JWKS, authorize, token) that signs ID tokens and bearer tokens with a generated RSA key. |
 
 Rules:
 - MUST NOT mock `httpx` in Gateway tests; use `fake_upstream` so streaming and headers are real.
 - MUST NOT share DB state between tests: each Admin test runs in a transaction that is rolled back, or truncates tables in a fixture.
-- No real OIDC provider in tests; override `current_developer`.
+- No real OIDC provider in tests; override `current_developer`. The auth code itself (code flow, bearer validation) is tested against `fake_idp`, never mocked.
+- Admin validation errors are asserted in the G-1 shape: `response.json()["errors"] == {"<field>": ["message"]}`.
+- The Admin contract is pinned by `tests/admin/openapi.snapshot.json`; regenerate it with `UPDATE_OPENAPI_SNAPSHOT=1 uv run pytest tests/admin/test_openapi.py` and update `panel/src/api/types.ts` in the same change.
 
 ## 4. Minimum per PR
 

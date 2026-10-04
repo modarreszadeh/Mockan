@@ -3,6 +3,7 @@
 from collections.abc import AsyncIterator, Iterator
 from pathlib import Path
 
+import asyncpg
 import pytest
 from alembic import command
 from alembic.config import Config
@@ -15,8 +16,10 @@ from sqlalchemy.ext.asyncio import (
 )
 from testcontainers.community.postgres import PostgresContainer
 
+from mockan.infrastructure.db import notify
 from mockan.infrastructure.db.models import Base
 from mockan.infrastructure.db.session import create_session_factory
+from tests.support.notify_listener import Listener
 from tests.support.snapshot_builder import SnapshotBuilder
 
 SERVER_ROOT = Path(__file__).resolve().parent.parent
@@ -58,3 +61,13 @@ async def engine(pg_container: str) -> AsyncIterator[AsyncEngine]:
 def session_factory(engine: AsyncEngine) -> async_sessionmaker[AsyncSession]:
     """Sessions with Mockan's NOTIFY hook, like the Admin and the loader use."""
     return create_session_factory(engine)
+
+
+@pytest.fixture
+async def listener(pg_container: str, engine: AsyncEngine) -> AsyncIterator[Listener]:
+    """Collects the `mockan_config_changed` payloads sent while the test runs."""
+    connection = await asyncpg.connect(pg_container.replace("+asyncpg", ""))
+    listener = Listener()
+    await connection.add_listener(notify.CHANNEL, listener)
+    yield listener
+    await connection.close()
