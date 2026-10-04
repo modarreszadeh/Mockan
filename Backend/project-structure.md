@@ -52,7 +52,7 @@ server/
 │   │   ├── app.py                  # create_app(): lifespan, middleware order (arch §6.2), routes
 │   │   ├── context.py              # MockanContext stored in scope["state"]["mockan"]
 │   │   ├── middleware/             # cors.py, error_boundary.py, developer_resolution.py, mock_matching.py, request_log_capture.py
-│   │   ├── proxy/                  # forwarder.py (httpx/websockets), transform.py (ProxyTransformer)
+│   │   ├── proxy/                  # forwarder.py (httpx streaming), websocket.py (WS bridge), transform.py (ProxyTransformer)
 │   │   ├── snapshot_service.py     # LISTEN + debounce + periodic reload (D-07)
 │   │   ├── problems.py             # problem+json responses
 │   │   └── health.py               # /_mockan/health/live, /_mockan/health/ready
@@ -67,7 +67,7 @@ server/
 │       └── static/                 # built Panel (git-ignored, filled by the Panel build)
 └── tests/
     ├── conftest.py
-    ├── support/                    # snapshot_builder.py (in-memory RuleSnapshot builder)
+    ├── support/                    # snapshot_builder.py (in-memory RuleSnapshot), fake_upstream.py, live_server.py (real Uvicorn in a thread), rss.py
     ├── domain/
     ├── infrastructure/             # settings, masking, logging (fast); database, notify, loader (db)
     ├── matching/                   # incl. precedence_parity.json, shared with the Panel's vitest

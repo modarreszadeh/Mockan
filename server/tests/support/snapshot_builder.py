@@ -74,8 +74,11 @@ class SnapshotBuilder:
         path_prefix: str,
         *,
         strip_prefix: bool = False,
+        rewrite_origin: bool = False,
         default_environment: EnvironmentName = EnvironmentName.STAGE,
         environments: Mapping[EnvironmentName, str] | None = None,
+        timeout_seconds: int = 100,
+        extra_headers: Mapping[str, str] | None = None,
     ) -> ServiceEntry:
         urls = environments or {
             EnvironmentName.DEV: f"https://{name}.dev.internal",
@@ -86,10 +89,13 @@ class SnapshotBuilder:
             name=name,
             path_prefix=path_prefix,
             strip_prefix=strip_prefix,
-            rewrite_origin=False,
+            rewrite_origin=rewrite_origin,
             default_environment=default_environment,
             environments={
-                env: EnvironmentEntry(uuid.uuid7(), env, url, 100, {}) for env, url in urls.items()
+                env: EnvironmentEntry(
+                    uuid.uuid7(), env, url, timeout_seconds, dict(extra_headers or {})
+                )
+                for env, url in urls.items()
             },
         )
         self._services.append(entry)

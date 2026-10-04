@@ -224,18 +224,18 @@ Health endpoints `/_mockan/health/live` and `/_mockan/health/ready` are FastAPI 
 | Path | Remove `/{developerSlug}`. If `Service.StripPrefix`, also remove the Service `PathPrefix`. Append to the ServiceEnvironment `BaseUrl`. |
 | Query | Forward unchanged (raw query string, no re-encoding). |
 | `Host` | Set to upstream host (do not forward Mockan's host). |
-| Hop-by-hop headers | Drop `Connection`, `Keep-Alive`, `Proxy-*`, `TE`, `Trailer`, `Transfer-Encoding`, `Upgrade` (and any header named in `Connection`) in both directions. |
-| `X-Forwarded-For/Proto/Host`, `X-Forwarded-Prefix` | Set; `X-Forwarded-Prefix = /{developerSlug}`. |
+| Hop-by-hop headers | Drop `Connection`, `Keep-Alive`, `Proxy-*`, `TE`, `Trailer`, `Transfer-Encoding`, `Upgrade` (and any header named in `Connection`) in both directions. Also drop `Expect` on requests and `Date`/`Server` on responses (the ASGI server adds its own). |
+| `X-Forwarded-For/Proto/Host`, `X-Forwarded-Prefix` | `Proto`, `Host` and `Prefix` are set, replacing anything the client sent; `Prefix = /{developerSlug}`. `For` extends the incoming chain with the client address (not repeating it when the chain already ends with it). |
 | `X-Mockan-Developer` | Added to the upstream request (helps backend log correlation). |
 | `ServiceEnvironment.ExtraHeaders` | Added to the upstream request. |
 | `Origin`, `Referer` | Forwarded unchanged by default; Service flag `RewriteOrigin` replaces with the upstream origin if a backend rejects foreign origins. |
 | Body | Streamed in both directions; never read fully into memory. Response bytes are passed through raw (`aiter_raw()`), so `Content-Encoding` is preserved and nothing is decompressed. |
 | Redirects | The httpx client never follows redirects (`follow_redirects=False`); 3xx responses go back to the browser. |
-| `Location` (3xx) | If it points to the upstream origin, rewrite to `{MOCKAN_PUBLIC_BASE_URL}/{developerSlug}{PathPrefix?}...`. |
-| `Set-Cookie` | Remove `Domain` attribute; prefix `Path` with `/{developerSlug}`; keep `Secure`/`HttpOnly`; `SameSite=None` cookies stay as-is (see OQ-02). |
+| `Location` | On any status (a `201 Created` leaks the upstream like a `302`): if it points to the upstream origin (absolute, protocol-relative, or path-absolute `/x`), rewrite to `{MOCKAN_PUBLIC_BASE_URL}/{developerSlug}{PathPrefix?}...`; `PathPrefix` is included only with `StripPrefix`, and the environment's `BaseUrl` path is dropped. Path-relative values and other origins are untouched. |
+| `Set-Cookie` | Remove `Domain` attribute; move `Path` under `/{developerSlug}` (no `Path` → `/{developerSlug}`), using the same mapping as `Location` (with `StripPrefix` the Service prefix is inserted too); keep `Secure`/`HttpOnly`; `SameSite=None` cookies stay as-is (see OQ-02). |
 | Upstream CORS headers | Stripped and replaced by Mockan's CORS headers (D-13). |
 | Response header `X-Mockan-Source` | `proxy` or `mock` on every response, plus `X-Mockan-Rule-Id` when mocked. Exposed via `Access-Control-Expose-Headers`. |
-| Timeouts | `ServiceEnvironment.TimeoutSeconds` (default 100 s) as the httpx timeout; on timeout return `504` problem+json (`upstream_timeout`). |
+| Timeouts | `ServiceEnvironment.TimeoutSeconds` (default 100 s) as the httpx connect/read/write/pool timeout, i.e. the longest silence allowed, not a total duration; on timeout return `504` problem+json (`upstream_timeout`). |
 | Errors | Connection errors (`httpx.ConnectError` etc.) → `502` problem+json with `code = upstream_unreachable`. |
 | Allowlist | Before sending, the destination host is checked against `MOCKAN_ALLOWED_UPSTREAM_HOSTS` again (defence in depth; §14 rule 4). |
 

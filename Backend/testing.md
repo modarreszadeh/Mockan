@@ -44,8 +44,9 @@ def test_template_rule_matches_single_segment() -> None: ...
 | Fixture | Scope | What it gives |
 | --- | --- | --- |
 | `snapshot_builder` | function | Fluent helper (`tests/support/snapshot_builder.py`) to build a `RuleSnapshot` in memory (developers, services, rules) without a DB. |
-| `fake_upstream` | session | A real Uvicorn server on a random port running a small Starlette app: echo endpoint (returns method/path/query/headers/body), `/stream` (chunked), `/sse`, `/ws`, `/redirect`, `/set-cookie`, `/slow`. Its host is added to the allowlist in test settings. |
-| `gateway_client` | function | `httpx.AsyncClient` against the Gateway app with a provided snapshot. |
+| `fake_upstream` | session (state reset per test) | A real Uvicorn server on a random port running a small Starlette app (`tests/support/fake_upstream.py`): `/echo` (method, raw path, raw query, headers, body length and SHA-256), `/stream`, `/sse`, `/download?mb=`, `/truncated`, `/slow`, `/redirect`, `/redirect-root`, `/created`, `/set-cookie`, `/cors`, `/response-headers`, `/gzip`, `/status/{code}`, and WebSockets `/ws`, `/ws/headers`, `/ws/proto`, `/ws/deny`. Its host is added to the allowlist in test settings. |
+| `live_gateway` | function | The Gateway on its own real Uvicorn socket over a swappable in-memory snapshot, plus an `httpx` client and the `RuleSnapshotProvider`. Use it when a test needs real streaming, SSE or WebSockets: `ASGITransport` buffers whole responses. |
+| `gateway_client` | function | `httpx.AsyncClient` against the Gateway app with a provided snapshot (in-process; runs the app lifespan on first use). |
 | `pg_container` | session | Testcontainers PostgreSQL 18 with migrations applied. |
 | `admin_client` | function | `httpx.AsyncClient` against the Admin app; auth is replaced by a test dependency override that logs in as a given Developer (`as_developer(slug, is_admin=False)`). |
 

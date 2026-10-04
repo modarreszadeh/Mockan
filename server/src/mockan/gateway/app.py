@@ -3,63 +3,23 @@
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, Request
-from starlette.responses import Response
+from fastapi import FastAPI
 
-from mockan.domain.enums import RequestSource
-from mockan.domain.errors import ErrorCode
 from mockan.gateway import health
-from mockan.gateway.context import get_context
 from mockan.gateway.middleware.cors import MockanCorsMiddleware
 from mockan.gateway.middleware.developer_resolution import DeveloperResolutionMiddleware
 from mockan.gateway.middleware.error_boundary import ErrorBoundaryMiddleware
 from mockan.gateway.middleware.mock_matching import MockMatchingMiddleware
 from mockan.gateway.middleware.request_log_capture import RequestLogCaptureMiddleware
-from mockan.gateway.problems import problem_response
+from mockan.gateway.proxy.forwarder import ProxyForwarder, create_http_client, proxy_http
+from mockan.gateway.proxy.websocket import proxy_websocket
 from mockan.gateway.snapshot_service import SnapshotService
 from mockan.infrastructure.db.session import create_engine, create_session_factory
 from mockan.infrastructure.logging import configure_logging
 from mockan.infrastructure.settings import MockanSettings
-from mockan.matching.errors import ServiceNotResolvedError
-from mockan.matching.service_resolver import resolve_service
 from mockan.matching.snapshot import RuleSnapshotProvider
 
 _METHODS = ["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"]
-
-
-async def _proxy_placeholder(request: Request) -> Response:
-    """Resolve the Service; the real forwarder replaces the 501 in B4."""
-    context = get_context(request.scope)
-    settings: MockanSettings = request.app.state.settings
-    if context is None:  # unreachable: DeveloperResolutionMiddleware always sets it
-        return problem_response(
-            ErrorCode.INTERNAL_ERROR,
-            500,
-            "No request context.",
-            public_base_url=settings.public_base_url,
-            path=request.url.path,
-        )
-    context.source = RequestSource.ERROR
-    try:
-        resolve_service(context.snapshot, context.developer, context.path_after_slug)
-    except ServiceNotResolvedError as error:
-        return problem_response(
-            ErrorCode.SERVICE_NOT_RESOLVED,
-            502,
-            error.detail,
-            public_base_url=settings.public_base_url,
-            developer=context.developer.slug,
-            path=request.url.path,
-        )
-    # TODO(B4): replace with ProxyForwarder (httpx streaming + WebSocket bridge).
-    return problem_response(
-        ErrorCode.INTERNAL_ERROR,
-        501,
-        "Proxying is not implemented yet.",
-        public_base_url=settings.public_base_url,
-        developer=context.developer.slug,
-        path=request.url.path,
-    )
 
 
 def create_app(
@@ -78,6 +38,10 @@ def create_app(
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         # Background tasks start and stop here, never at import time (conventions §3).
         configure_logging(settings.log_level, settings.log_format)
+        # D-15: one shared upstream client per process, closed with the app.
+        client = create_http_client()
+        app.state.http_client = client
+        app.state.forwarder = ProxyForwarder(client, settings)
         engine = service = None
         if manages_snapshot:
             engine = create_engine(settings)
@@ -91,6 +55,8 @@ def create_app(
                 await service.stop()
             if engine is not None:
                 await engine.dispose()
+            app.state.forwarder = None
+            await client.aclose()
 
     app = FastAPI(
         title="Mockan Gateway",
@@ -102,9 +68,14 @@ def create_app(
     app.state.settings = settings
     app.state.snapshot_provider = provider
     app.state.snapshot_service = None
+    app.state.http_client = None  # set by the lifespan
+    app.state.forwarder = None
 
     app.include_router(health.router)
-    app.add_route("/{path:path}", _proxy_placeholder, methods=_METHODS)
+    # Whatever no MockRule answers is proxied (arch §6.2 step 6); WebSockets bypass the HTTP
+    # middleware and are resolved inside `proxy_websocket`.
+    app.add_route("/{path:path}", proxy_http, methods=_METHODS)
+    app.router.add_websocket_route("/{path:path}", proxy_websocket)
 
     # `add_middleware` makes the last one added the outermost. Order, outermost first (arch §6.2):
     # request log, CORS, error boundary, Developer resolution, mock matching, then the proxy route.

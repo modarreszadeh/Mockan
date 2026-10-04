@@ -3,13 +3,13 @@
 from starlette.types import ASGIApp, Receive, Scope, Send
 
 from mockan.domain.errors import ErrorCode
-from mockan.domain.validation import is_reserved_slug
 from mockan.gateway.context import (
     MockanContext,
+    developer_not_found_detail,
+    find_developer,
     is_internal,
     set_context,
     snapshot_for,
-    split_slug,
 )
 from mockan.gateway.problems import problem_response
 from mockan.infrastructure.logging import bind_log_context
@@ -31,21 +31,13 @@ class DeveloperResolutionMiddleware:
 
         snapshot = snapshot_for(scope, self._provider)
         path: str = scope["path"]
-        slug, rest = split_slug(path)
-        developer = None
-        if slug and not is_reserved_slug(slug):
-            developer = snapshot.developer_for_slug(slug)
+        developer, slug, rest = find_developer(snapshot, path)
 
-        if developer is None or not developer.is_enabled:
-            detail = (
-                f"No enabled Developer with slug '{slug}'."
-                if slug
-                else "The request path has no Developer slug; use /{developerSlug}/..."
-            )
+        if developer is None:
             response = problem_response(
                 ErrorCode.DEVELOPER_NOT_FOUND,
                 404,
-                detail,
+                developer_not_found_detail(slug),
                 public_base_url=self._public_base_url,
                 developer=slug,
                 path=path,

@@ -7,6 +7,7 @@ from uuid import UUID
 from starlette.types import Scope
 
 from mockan.domain.enums import RequestSource
+from mockan.domain.validation import is_reserved_slug
 from mockan.matching.model import DeveloperEntry
 from mockan.matching.snapshot import RuleSnapshot, RuleSnapshotProvider
 
@@ -54,3 +55,24 @@ def split_slug(path: str) -> tuple[str, str]:
     trimmed = path[1:] if path.startswith("/") else path
     slug, _, rest = trimmed.partition("/")
     return slug, "/" + rest
+
+
+def find_developer(snapshot: RuleSnapshot, path: str) -> tuple[DeveloperEntry | None, str, str]:
+    """Resolve the Developer for `path`: `(developer, slug, path_after_slug)`.
+
+    `developer` is `None` for a missing, reserved, unknown or disabled slug (the caller answers
+    `developer_not_found`). Shared by the HTTP pipeline and the WebSocket bridge.
+    """
+    slug, rest = split_slug(path)
+    developer = None
+    if slug and not is_reserved_slug(slug):
+        developer = snapshot.developer_for_slug(slug)
+    if developer is not None and not developer.is_enabled:
+        developer = None
+    return developer, slug, rest
+
+
+def developer_not_found_detail(slug: str) -> str:
+    if slug:
+        return f"No enabled Developer with slug '{slug}'."
+    return "The request path has no Developer slug; use /{developerSlug}/..."

@@ -24,7 +24,7 @@ audience: Backend engineers and AI coding agents working in `server/`
 | Database | PostgreSQL via SQLAlchemy 2 async + asyncpg; migrations with Alembic (D-16) |
 | Proxy | `httpx.AsyncClient` streaming + `websockets` bridge (D-15) |
 | Regex engine | RE2 via `google-re2` (D-17) |
-| Phase | In progress: B0 (skeleton), B1 (domain + matching), B2 (infrastructure) and B3 (Gateway core) done. Build order in [implementation-plan.md](implementation-plan.md) (B0 → B7 = Phase 1). |
+| Phase | In progress: B0 (skeleton), B1 (domain + matching), B2 (infrastructure), B3 (Gateway core) and B4 (proxy) done. Build order in [implementation-plan.md](implementation-plan.md) (B0 → B7 = Phase 1). |
 
 ## Documents
 
@@ -35,7 +35,7 @@ audience: Backend engineers and AI coding agents working in `server/`
 | [project-structure.md](project-structure.md) | Folder layout, module boundaries, import rules, entry points, commands. | Draft |
 | [conventions.md](conventions.md) | Code style, naming, async rules, errors, logging, config. | Draft |
 | [testing.md](testing.md) | Test layers, tools, fixtures, naming, what must be tested. | Draft |
-| [gateway.md](gateway.md) | Gateway pipeline, CORS, mock responses, snapshot service, health, problem codes. | Draft |
+| [gateway.md](gateway.md) | Gateway pipeline, CORS, mock responses, proxy and WebSocket bridge, snapshot service, health, problem codes, performance. | Draft |
 | [database.md](database.md) | Schema conventions, FK delete policy, change notification, migration rules. | Draft |
 
 Covered in the architecture doc for now (split into this folder when they grow):
