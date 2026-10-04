@@ -448,6 +448,11 @@ Validation rules (enforce in Pydantic models / services, test in `server/tests/a
 | `MOCKAN_ADMIN_SSO_SUBJECTS` | admin | bootstrap list of `sso_subject`s that get `is_admin=true` on first login |
 | `MOCKAN_MIGRATE_ON_STARTUP` | admin | `false` |
 | `MOCKAN_SNAPSHOT_RELOAD_SECONDS` | gateway | `60` |
+| `MOCKAN_SNAPSHOT_DEBOUNCE_MS` | gateway | `200` (coalesce `LISTEN` notifications before rebuilding) |
+| `MOCKAN_AUTH_MODE` | admin | `oidc` (default) or `dev`: local login without an identity provider; MUST NOT be used in shared environments |
+| `MOCKAN_PANEL_BASE_PATH` | admin | `/` (where the built Panel is mounted; `# TODO(OQ-03)`) |
+| `MOCKAN_LOG_LEVEL` | both | `INFO` |
+| `MOCKAN_LOG_FORMAT` | both | `json` (default) or `console` |
 
 ### 12.4 Delivery phases
 

@@ -44,7 +44,8 @@ server/
 │   │   │   ├── models.py           # SQLAlchemy declarative models (schema "mockan")
 │   │   │   ├── session.py          # engine + async_sessionmaker factory
 │   │   │   └── notify.py           # before_commit hook → pg_notify('mockan_config_changed', …)
-│   │   ├── snapshot_loader.py      # DB rows → mockan.matching snapshot objects
+│   │   ├── snapshot_loader.py      # DB rows → mockan.matching snapshot objects (load_full, load_developer)
+│   │   ├── audit.py                # record(): masked audit_logs row in the caller's transaction
 │   │   ├── masking.py              # header/JSON secret masking (NFR-07)
 │   │   └── logging.py              # structlog configuration
 │   ├── gateway/
@@ -68,6 +69,7 @@ server/
     ├── conftest.py
     ├── support/                    # snapshot_builder.py (in-memory RuleSnapshot builder)
     ├── domain/
+    ├── infrastructure/             # settings, masking, logging (fast); database, notify, loader (db)
     ├── matching/                   # incl. precedence_parity.json, shared with the Panel's vitest
     ├── gateway/
     └── admin/

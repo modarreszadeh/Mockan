@@ -22,6 +22,11 @@ def _database_url() -> str:
     return url
 
 
+def _include_name(name: str | None, type_: str, _parent_names: object) -> bool:
+    # Autogenerate must only look at schema `mockan`, never at `public` or system schemas.
+    return name == SCHEMA if type_ == "schema" else True
+
+
 def _configure(connection: Connection | None, url: str | None = None) -> None:
     context.configure(
         connection=connection,
@@ -31,10 +36,7 @@ def _configure(connection: Connection | None, url: str | None = None) -> None:
         dialect_opts={"paramstyle": "named"} if connection is None else None,
         version_table_schema=SCHEMA,
         include_schemas=True,
-        include_object=lambda _obj, _name, type_, _reflected, _compare_to: (
-            # Only manage objects in schema `mockan` (autogenerate must not touch `public`).
-            type_ != "schema" or _name == SCHEMA
-        ),
+        include_name=_include_name,
         compare_type=True,
     )
 
