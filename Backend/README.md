@@ -24,11 +24,13 @@ audience: Backend engineers and AI coding agents working in `server/`
 | Database | PostgreSQL via SQLAlchemy 2 async + asyncpg; migrations with Alembic (D-16) |
 | Proxy | `httpx.AsyncClient` streaming + `websockets` bridge (D-15) |
 | Regex engine | RE2 via `google-re2` (D-17) |
+| Phase | Not started. Build order in [implementation-plan.md](implementation-plan.md) (B0 → B7 = Phase 1). |
 
 ## Documents
 
 | File | Topic | Status |
 | --- | --- | --- |
+| [implementation-plan.md](implementation-plan.md) | Milestones B0–B8 to prepare and build `server/`; gaps settled between PRD, architecture and the Panel contract; backend open questions (OQ-Bx). | Draft |
 | [tech-stack.md](tech-stack.md) | Libraries, versions, and why each was chosen; .NET → Python mapping from v1.0. | Draft |
 | [project-structure.md](project-structure.md) | Folder layout, module boundaries, import rules, entry points, commands. | Draft |
 | [conventions.md](conventions.md) | Code style, naming, async rules, errors, logging, config. | Draft |
