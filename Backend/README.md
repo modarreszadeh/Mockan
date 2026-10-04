@@ -24,7 +24,7 @@ audience: Backend engineers and AI coding agents working in `server/`
 | Database | PostgreSQL via SQLAlchemy 2 async + asyncpg; migrations with Alembic (D-16) |
 | Proxy | `httpx.AsyncClient` streaming + `websockets` bridge (D-15) |
 | Regex engine | RE2 via `google-re2` (D-17) |
-| Phase | In progress: B0 (skeleton) done. Build order in [implementation-plan.md](implementation-plan.md) (B0 → B7 = Phase 1). |
+| Phase | In progress: B0 (skeleton) and B1 (domain + matching) done. Build order in [implementation-plan.md](implementation-plan.md) (B0 → B7 = Phase 1). |
 
 ## Documents
 

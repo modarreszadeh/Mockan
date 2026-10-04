@@ -1,0 +1,56 @@
+{
+  "_comment": "Shared by server/tests/matching/test_precedence_parity.py and panel/src/lib/precedence.parity.test.ts. Every rule in a case matches `path`; `order` is the expected precedence order, so order[0] is the Gateway winner. Patterns are ASCII so JS and Python agree on length.",
+  "cases": [
+    {
+      "name": "lower priority number beats a more specific rule",
+      "path": "/a/b",
+      "rules": [
+        { "id": "exact", "priority": 100, "matchType": "Exact", "pattern": "/a/b", "createdAt": "2026-01-01T00:00:00Z" },
+        { "id": "regex-p1", "priority": 1, "matchType": "Regex", "pattern": "^/a", "createdAt": "2026-01-02T00:00:00Z" }
+      ],
+      "order": ["regex-p1", "exact"]
+    },
+    {
+      "name": "match type rank at equal priority: Exact, Template, Prefix, Regex",
+      "path": "/a/b",
+      "rules": [
+        { "id": "regex", "priority": 100, "matchType": "Regex", "pattern": "^/a/b$", "createdAt": "2026-01-01T00:00:00Z" },
+        { "id": "prefix", "priority": 100, "matchType": "Prefix", "pattern": "/a/b", "createdAt": "2026-01-01T00:00:00Z" },
+        { "id": "template", "priority": 100, "matchType": "Template", "pattern": "/a/{x}", "createdAt": "2026-01-01T00:00:00Z" },
+        { "id": "exact", "priority": 100, "matchType": "Exact", "pattern": "/a/b", "createdAt": "2026-01-01T00:00:00Z" }
+      ],
+      "order": ["exact", "template", "prefix", "regex"]
+    },
+    {
+      "name": "longer pattern wins within the same type",
+      "path": "/a/b/c",
+      "rules": [
+        { "id": "short", "priority": 100, "matchType": "Prefix", "pattern": "/a/", "createdAt": "2026-01-01T00:00:00Z" },
+        { "id": "long", "priority": 100, "matchType": "Prefix", "pattern": "/a/b/", "createdAt": "2026-01-05T00:00:00Z" },
+        { "id": "medium", "priority": 100, "matchType": "Prefix", "pattern": "/a/b", "createdAt": "2026-01-03T00:00:00Z" }
+      ],
+      "order": ["long", "medium", "short"]
+    },
+    {
+      "name": "older rule wins on a full tie",
+      "path": "/a/b",
+      "rules": [
+        { "id": "newer", "priority": 100, "matchType": "Exact", "pattern": "/a/b", "createdAt": "2026-02-01T00:00:00Z" },
+        { "id": "older", "priority": 100, "matchType": "Exact", "pattern": "/a/b", "createdAt": "2026-01-01T00:00:00Z" }
+      ],
+      "order": ["older", "newer"]
+    },
+    {
+      "name": "all four keys together",
+      "path": "/a/b/c",
+      "rules": [
+        { "id": "p100-exact", "priority": 100, "matchType": "Exact", "pattern": "/a/b/c", "createdAt": "2026-01-01T00:00:00Z" },
+        { "id": "p10-regex", "priority": 10, "matchType": "Regex", "pattern": "^/a", "createdAt": "2026-03-01T00:00:00Z" },
+        { "id": "p10-prefix-old", "priority": 10, "matchType": "Prefix", "pattern": "/a", "createdAt": "2026-01-01T00:00:00Z" },
+        { "id": "p10-prefix-new", "priority": 10, "matchType": "Prefix", "pattern": "/a", "createdAt": "2026-02-01T00:00:00Z" },
+        { "id": "p10-prefix-long", "priority": 10, "matchType": "Prefix", "pattern": "/a/b", "createdAt": "2026-04-01T00:00:00Z" }
+      ],
+      "order": ["p10-prefix-long", "p10-prefix-old", "p10-prefix-new", "p10-regex", "p100-exact"]
+    }
+  ]
+}

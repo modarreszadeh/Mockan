@@ -8,6 +8,8 @@ from alembic import command
 from alembic.config import Config
 from testcontainers.community.postgres import PostgresContainer
 
+from tests.support.snapshot_builder import SnapshotBuilder
+
 SERVER_ROOT = Path(__file__).resolve().parent.parent
 
 
@@ -25,3 +27,8 @@ def pg_container() -> Iterator[str]:
         url = container.get_connection_url()
         command.upgrade(alembic_config(url), "head")
         yield url
+
+
+@pytest.fixture
+def snapshot_builder() -> SnapshotBuilder:
+    return SnapshotBuilder()

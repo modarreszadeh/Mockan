@@ -7,4 +7,4 @@ uv run ruff check .
 uv run ruff format --check .
 uv run mypy src
 uv run lint-imports
-uv run pytest "$@"
+uv run pytest --cov=mockan.matching --cov-branch --cov-fail-under=100 "$@"

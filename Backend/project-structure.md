@@ -30,9 +30,11 @@ server/
 │   │   ├── errors.py               # ErrorCode (stable problem+json codes, arch §14 rule 8)
 │   │   └── validation.py           # is_valid_slug(), is_reserved_slug(), host_is_allowed()
 │   ├── matching/
-│   │   ├── model.py                # Frozen dataclasses: CompiledRule, CompiledResponse, ServiceEntry, DeveloperEntry
-│   │   ├── compile.py              # pattern compilers: exact, template, prefix, regex (RE2)
+│   │   ├── model.py                # Frozen dataclasses: CompiledRule, CompiledResponse, ServiceEntry, DeveloperEntry, RequestFacts
+│   │   ├── compile.py              # compile_pattern / compile_rule / compile_response: exact, template, prefix, regex (RE2)
 │   │   ├── template.py             # Mockan template parser/matcher ({name}, {*name})
+│   │   ├── paths.py                # trailing-slash normalisation and segment splitting
+│   │   ├── errors.py               # PatternError(field, message), ServiceNotResolvedError
 │   │   ├── snapshot.py             # RuleSnapshot (immutable), RuleSnapshotProvider
 │   │   ├── matcher.py              # match_request() → MatchResult (precedence, arch §7.2)
 │   │   └── service_resolver.py     # resolve_service() → longest PathPrefix + environment choice
@@ -64,7 +66,9 @@ server/
 │       └── static/                 # built Panel (git-ignored, filled by the Panel build)
 └── tests/
     ├── conftest.py
-    ├── matching/
+    ├── support/                    # snapshot_builder.py (in-memory RuleSnapshot builder)
+    ├── domain/
+    ├── matching/                   # incl. precedence_parity.json, shared with the Panel's vitest
     ├── gateway/
     └── admin/
 ```

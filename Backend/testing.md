@@ -22,6 +22,8 @@ audience: Backend engineers and AI coding agents
 | Admin API | `server/tests/admin/` | Endpoints, validation rules (arch §10), authorisation (own workspace only, admin-only catalog), audit rows, `pg_notify` emission. | pytest-asyncio, Testcontainers PostgreSQL, Alembic migrations applied once per session | Yes |
 | Snapshot / LISTEN | `server/tests/gateway/test_snapshot_service.py` | Change notification reaches the Gateway and the new rule applies within 2 s (FR-08); DB down → keeps last snapshot, `ready = degraded`. | Testcontainers PostgreSQL | Yes |
 
+Precedence is checked against the Panel with one shared fixture, `server/tests/matching/precedence_parity.json`, run by `test_precedence_parity.py` and `panel/src/lib/precedence.parity.test.ts`; change both sides together.
+
 Tests that need Docker are marked `@pytest.mark.db`; run fast tests only with `uv run pytest -m "not db"`.
 
 ## 2. Naming and traceability
@@ -41,7 +43,7 @@ def test_template_rule_matches_single_segment() -> None: ...
 
 | Fixture | Scope | What it gives |
 | --- | --- | --- |
-| `snapshot_builder` | function | Fluent helper to build a `RuleSnapshot` in memory (developers, services, rules) without a DB. |
+| `snapshot_builder` | function | Fluent helper (`tests/support/snapshot_builder.py`) to build a `RuleSnapshot` in memory (developers, services, rules) without a DB. |
 | `fake_upstream` | session | A real Uvicorn server on a random port running a small Starlette app: echo endpoint (returns method/path/query/headers/body), `/stream` (chunked), `/sse`, `/ws`, `/redirect`, `/set-cookie`, `/slow`. Its host is added to the allowlist in test settings. |
 | `gateway_client` | function | `httpx.AsyncClient` against the Gateway app with a provided snapshot. |
 | `pg_container` | session | Testcontainers PostgreSQL 18 with migrations applied. |
