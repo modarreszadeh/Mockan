@@ -49,6 +49,7 @@ Each folder in `src/features/<name>/` owns one screen (or a family): `<name>-pag
 
 - Tokens only (design-tokens.md). Type via `type-*` utilities; paths, patterns, URLs, slugs and header names always `font-mono`.
 - One coral primary button per view.
+- Overlay panels are `Modal` or `ConfirmDialog` from `@/components/mockan`, never `ui/sheet`, `ui/dialog` or `ui/alert-dialog` directly (ESLint). They are modals from 768 px and bottom sheets below; features do not choose a side, a width or a breakpoint ([plan-responsive-overlays.md](plan-responsive-overlays.md)).
 - Icons: lucide, 16 px in dense UI, 20 px in headers, `strokeWidth={1.75}`, `aria-hidden` when decorative; icon-only buttons need `aria-label`.
 - `components/ui/` files are shadcn-generated: only token-level edits (radius, ring alpha, heights, hover/press per design-tokens.md §6).
 

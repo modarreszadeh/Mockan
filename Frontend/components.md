@@ -112,9 +112,30 @@ Mono pattern; for `Template` patterns `{param}` / `{*rest}` are highlighted in `
 
 Renders an `ApiError`'s RFC 7807 problem: `title`, `detail`, `code` in mono, optional **Try again** (`onRetry`).
 
+## Modal
+
+The one overlay panel (OVL-R1…R5, [plan-responsive-overlays.md](plan-responsive-overlays.md)): a **centered modal at ≥ 768 px, a bottom sheet below**. The layout is CSS only (`md:`), so resizing never remounts it and a half-filled form keeps its values. Features import it from `@/components/mockan`; ESLint forbids `ui/sheet`, `ui/dialog` and `ui/alert-dialog` outside `ui/` and `confirm-dialog.tsx`.
+
+| Export | Notes |
+| --- | --- |
+| `Modal`, `ModalTrigger`, `ModalClose` | Radix Dialog root, trigger, close. |
+| `ModalContent` | `size?: "sm" \| "md" \| "lg"` (max width 384 / 576 / 672 px from 768 px; default `md`), `showCloseButton?` (default true). Renders the overlay, the grab handle (mobile) and the close button. Position, size and shape are owned by `size`; pass only content classes in `className`. |
+| `ModalHeader`, `ModalBody`, `ModalFooter` | Header and footer stay put; `ModalBody` is the only scroll container. The footer stacks full-width buttons on mobile (primary on top) and right-aligns them on desktop. |
+| `ModalTitle`, `ModalDescription` | Required for the accessible name and description. |
+
+| Property | `< 768 px` (bottom sheet) | `≥ 768 px` (modal) |
+| --- | --- | --- |
+| Position | `inset-x-0 bottom-0`, full width | centered, `w-[calc(100%-2rem)]` up to the size's max |
+| Height | up to 90 dvh | up to 85 dvh |
+| Shape | `rounded-t-xl`, grab handle (decorative, no drag, OQ-F9) | `rounded-xl` |
+| Motion | slides up | zooms in (none with `prefers-reduced-motion`) |
+| Close | X (44 px target), Esc, tap outside, footer Cancel | X, Esc, click outside, footer Cancel |
+
+With a `<form>` around body and footer, give the form `className="flex min-h-0 flex-1 flex-col"` so the body still scrolls and the footer stays pinned (`ServiceModal`). Used by `ServiceModal` (SCR-07, `md`), `LogDetailsModal` (SCR-09, `lg`) and `ImportRulesModal` (SCR-04, `md`). Rendered at `/__design` in all three sizes.
+
 ## ConfirmDialog
 
-`AlertDialog` for destructive confirms. Props: `open`, `onOpenChange`, `title`, `description`, `confirmLabel`, `destructive?`, `pending?`, `onConfirm`.
+`AlertDialog` for destructive confirms, with the Modal's surface (`size="sm"`: centered ≥ 768 px, a bottom sheet below). It keeps `role="alertdialog"` and, unlike `Modal`, a tap outside does not dismiss it. Props: `open`, `onOpenChange`, `title`, `description`, `confirmLabel`, `destructive?`, `pending?`, `onConfirm`.
 
 ## Wordmark
 

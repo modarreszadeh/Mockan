@@ -54,7 +54,7 @@ Utilities are named `type-*` (defined with `@utility` in `globals.css`) so they 
 | --- | --- | --- | --- |
 | `type-display-md` | 36/1.15, 600, −0.02em | Inter | Overview greeting only. |
 | `type-display-sm` | 28/1.2, 600, −0.02em | Inter | One `<h1>` per page (PageHeader). |
-| `type-title-md` | 18/1.4, 600 | Inter | Card, dialog, sheet titles. |
+| `type-title-md` | 18/1.4, 600 | Inter | Card and modal titles. |
 | `type-title-sm` | 16/1.4, 600 | Inter | Form section headings. |
 | `type-body` | 14/1.55, 400 | Inter | Default UI text (set on `body`). |
 | `type-caption` | 13/1.4, 500 | Inter | Labels, badges, table headers. |
@@ -72,7 +72,7 @@ shadcn classes keep their meaning; the scale is defined explicitly instead of ch
 | `rounded-sm` | 4 px | Checkbox |
 | `rounded-md` | 6 px | Dropdown items |
 | `rounded-lg` (`--radius`) | 8 px | Buttons, inputs, selects, tabs, nav items |
-| `rounded-xl` | 12 px | Cards, tables, dialogs, alerts, empty states, CodeBlock, JSON editor |
+| `rounded-xl` | 12 px | Cards, tables, modals (`rounded-t-xl` as a bottom sheet), alerts, empty states, CodeBlock, JSON editor |
 | `rounded-2xl` | 16 px | BaseUrlCard |
 | `rounded-full` (`rounded-4xl` aliases it) | pill | Badges, switch |
 

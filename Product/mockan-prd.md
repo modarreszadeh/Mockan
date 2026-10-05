@@ -249,7 +249,7 @@ The core use case works without these, but they cut the time to create and debug
 
 #### PR-12 Live request log and "Mock this" — FR-09, D-18
 - [ ] The panel shows the developer's recent requests live, with a `Proxied` / `Mocked` / `Error` badge, method, path, status and duration.
-- [ ] Filter by source and path; a details drawer shows masked headers and body samples (≤ 16 KB).
+- [ ] Filter by source and path; a details view shows masked headers and body samples (≤ 16 KB).
 - [ ] "Mock this" creates a rule pre-filled with the request's method/path and the real response's status, headers and body.
 - [ ] Logging never slows down or blocks requests; if the log buffer is full, entries are dropped and counted.
 - [ ] Retention: last 7 days and at most 5,000 entries per developer.

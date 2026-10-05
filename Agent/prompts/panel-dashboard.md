@@ -301,7 +301,7 @@ Each screen below lists its **data**, **content**, **states** and **acceptance c
 
 - **Visible only when `isAdmin`.** Non-admins hitting the route see a 403 page.
 - **Data:** `POST/PUT/DELETE /services[/{id}]`, `/services/{id}/environments[/{envId}]`.
-- **Content:** table of Services; create/edit in a right `Sheet`: name, path prefix, strip prefix, rewrite origin, default environment; nested environments list (environment, base URL, timeout seconds default 100, extra headers via `KeyValueEditor`).
+- **Content:** table of Services; create/edit in a right `Sheet` (superseded: now a modal, a bottom sheet on mobile, see [`Frontend/plan-responsive-overlays.md`](../../Frontend/plan-responsive-overlays.md)): name, path prefix, strip prefix, rewrite origin, default environment; nested environments list (environment, base URL, timeout seconds default 100, extra headers via `KeyValueEditor`).
 - **Accept:**
   - [ ] A base URL whose host is not in the allowlist shows the server's rejection inline on the base URL field, with the text "Only allowlisted dev/stage hosts can be used."
   - [ ] Duplicate name / path prefix errors appear on the field.
@@ -334,7 +334,7 @@ Work in this order. Each milestone ends with: app builds, tests pass, docs updat
 | **M3 Rules + editor** | SCR-04, SCR-05. | PR-05, PR-06, PR-07, PR-08 |
 | **M4 Admin catalog** | SCR-07. | PR-10, PR-15 |
 | — | **Stop. Phase 1 complete.** Ask for review before Phase 2. | |
-| **M5 Phase 2** (only when asked) | Scenario tabs + activate (PR-11, `POST …/activate`); SCR-09 Live log over WebSocket `/hubs/request-log` with source filter, details drawer and **Mock this** (`POST /me/request-logs/{id}/create-rule`) (PR-12); SCR-10 Test route (`POST /me/test-route`) (PR-13); Export/Import with merge/replace choice (PR-14). | P1 |
+| **M5 Phase 2** (only when asked) | Scenario tabs + activate (PR-11, `POST …/activate`); SCR-09 Live log over WebSocket `/hubs/request-log` with source filter, details modal (was "drawer"; see [`Frontend/plan-responsive-overlays.md`](../../Frontend/plan-responsive-overlays.md)) and **Mock this** (`POST /me/request-logs/{id}/create-rule`) (PR-12); SCR-10 Test route (`POST /me/test-route`) (PR-13); Export/Import with merge/replace choice (PR-14). | P1 |
 
 ### 8. Quality bar
 

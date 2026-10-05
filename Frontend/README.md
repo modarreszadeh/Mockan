@@ -73,6 +73,7 @@ Open `http://localhost:5173/__design` (dev only) for the living style guide. App
 | [screens.md](screens.md) | SCR-02 … SCR-10: route, data, states, acceptance criteria. | Draft |
 | [conventions.md](conventions.md) | Naming, feature layout, query keys, errors, copy. | Draft |
 | [testing.md](testing.md) | Test layers, MSW fixtures and scenarios, a11y gate, e2e. | Draft |
+| [plan-responsive-overlays.md](plan-responsive-overlays.md) | Plan (breaking): every Sheet/Dialog becomes a modal ≥ 768 px and a bottom sheet < 768 px. | Implemented |
 
 ## Open questions
 
@@ -88,6 +89,9 @@ IDs are stable and never renumbered. Defaults are implemented with a `TODO(OQ-xx
 | OQ-F4 | Where does the Panel get `MOCKAN_PUBLIC_BASE_URL`? **Resolved (backend G-4) and implemented:** `GET /me` returns a read-only `publicBaseUrl`. | `usePublicBaseUrl()` (`src/api/queries/me.ts`) reads it; `VITE_MOCKAN_PUBLIC_BASE_URL` is only the fallback until `GET /me` has loaded. | `src/lib/config.ts`, `src/api/queries/me.ts` |
 | OQ-F5 | Admin API payload shapes (arch §10 lists routes, not bodies). **Resolved (backend G-2):** the shapes below are the contract, documented in [admin-api.md](../Backend/admin-api.md) and pinned by `server/tests/admin/openapi.snapshot.json`. | Phase 2 payloads (request log, test route, export/import) are in `src/api/types.ts`. Change `types.ts` in the same commit as the OpenAPI snapshot. | `src/api/types.ts`, `src/api/queries/*.ts`, `src/mocks/handlers/*.ts` |
 | OQ-F6 | Monaco throws `[createInstance] … depends on UNKNOWN service ICodeLensCache` (uncaught, harmless: the editor keeps working) in the **production build** every time a second editor is mounted in one session (open a rule, go back, open another). Present since M3; not in `npm run dev`. | Deferred as its own task (the cause is in how Rolldown chunks `monaco-editor`, not in Panel code). The scenario tabs avoid it by not remounting the editor. Look at how Rolldown splits the service registrations of `monaco-editor` (the `jsonMode` chunk) before changing imports. | `src/components/mockan/monaco-surface.tsx` |
+| OQ-F7 | Should the mobile sidebar (left `Sheet` < 768 px) also become a bottom sheet? | No: it is navigation, it stays a left drawer. | `src/components/ui/sidebar.tsx` |
+| OQ-F8 | Should `Select` / `DropdownMenu` open as bottom sheets on mobile? | No: they stay anchored popovers. | `src/components/ui/select.tsx`, `dropdown-menu.tsx` |
+| OQ-F9 | Is drag-to-dismiss on the bottom sheet required? | No: X, Esc, tap outside and Cancel only; the grab handle is decorative. | `src/components/mockan/modal.tsx` |
 
 ### OQ-F5 assumed payloads
 
