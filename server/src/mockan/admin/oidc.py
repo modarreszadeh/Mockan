@@ -16,8 +16,9 @@ from mockan.infrastructure.settings import MockanSettings
 
 log = structlog.get_logger()
 
-# TODO(OQ-04): written against generic OIDC discovery (`MOCKAN_OIDC_ISSUER`). Provider specifics
-# (which claim carries the audience of an access token, RP-initiated logout) are undecided.
+# Generic OIDC discovery (`MOCKAN_OIDC_ISSUER`); the provider is Keycloak (OQ-04, decided). Known
+# Keycloak note: its access tokens carry `aud=account` unless the client has an audience mapper, so
+# `verify_bearer` needs one. The Panel login uses the ID token and is not affected.
 
 # Asymmetric algorithms only: a bearer token must never be verifiable with a shared secret, and
 # `none` is not in the list.

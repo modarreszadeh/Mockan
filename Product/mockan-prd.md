@@ -324,7 +324,7 @@ Questions inherited from the architecture keep their `OQ-xx` IDs. New product qu
 | ID | Question | Owner | Blocking? | Current default |
 | --- | --- | --- | --- | --- |
 | OQ-02 | Do our apps authenticate with bearer tokens or cookies? | Frontend leads + Backend | **Resolved 2026-10-05: bearer tokens.** Login and refresh work through Mockan because `Authorization` passes through unchanged. | The `Set-Cookie` rewrite stays implemented as specified, but is not on the critical path. Cookie-based apps (`SameSite=None; Secure`, `__Host-` cookies) are not supported until one appears. |
-| OQ-04 | Which OIDC provider (Keycloak, Azure AD, other)? | Platform/DevOps | **Blocking** for panel login | Generic OIDC config. |
+| OQ-04 | Which OIDC provider (Keycloak, Azure AD, other)? | Platform/DevOps | **Decided 2026-10-05: the organization's Keycloak** ([`Agent/mockan-authentication.md`](../Agent/mockan-authentication.md)). Still blocking until DevOps registers the client and one real login succeeds. | Generic OIDC config (Authorization Code + PKCE S256), no provider-specific code. Setup: [`Backend/operations.md` §3a](../Backend/operations.md#3a-sign-in-with-keycloak-oq-04). |
 | OQ-05 | Do frontends call one shared API gateway URL or one base URL per microservice? | Frontend leads, per app | Blocking for catalog setup of each app, not for build | Both supported via `PathPrefix` + `StripPrefix`. |
 | OQ-01 | Path-based (`/{slug}/`) or subdomain (`{slug}.mock…`) workspaces? | Engineering + DevOps | Non-blocking | Path-based. |
 | OQ-03 | Panel on the same host (`/_mockan/admin`) or a separate host (`mockan.novin-tools.com`)? | DevOps | Non-blocking | Separate host if DNS/TLS is easy. |
@@ -342,7 +342,7 @@ No hard external deadline is known. Phases follow the architecture's delivery pl
 
 | Phase | Scope (requirements) | Exit criteria | Dependencies |
 | --- | --- | --- | --- |
-| **1 — MVP** | PR-01 … PR-10, PR-15, PR-16, PR-18 (FR-01…FR-06, FR-08, FR-11; FR-07 data model) | One pilot frontend developer logs in to a real app through Mockan, mocks one unreleased endpoint, and pushes code with **no mock-specific changes** (journey §6). | OIDC provider details (OQ-04); internal DNS + TLS for `mock.novin-tools.com`; internal PostgreSQL; ingress IP restriction. (OQ-02 resolved: bearer tokens.) |
+| **1 — MVP** | PR-01 … PR-10, PR-15, PR-16, PR-18 (FR-01…FR-06, FR-08, FR-11; FR-07 data model) | One pilot frontend developer logs in to a real app through Mockan, mocks one unreleased endpoint, and pushes code with **no mock-specific changes** (journey §6). | a Keycloak client registered for Mockan and one real login (OQ-04, provider decided); internal DNS + TLS for `mock.novin-tools.com`; internal PostgreSQL; ingress IP restriction. (OQ-02 resolved: bearer tokens.) |
 | **2 — Productivity** | PR-11, PR-12, PR-13, PR-14, PR-17, PR-19 (FR-07, FR-09, FR-10, FR-12) | Pilot developers routinely use scenarios and "Mock this"; time-to-first-mock target met. | Phase 1 feedback from the pilot. |
 | **3 — Contract-driven** | PR-20 … PR-25 (to be selected) | Agreed after Phase 2 feedback. | Backend services publishing OpenAPI specs. |
 

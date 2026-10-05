@@ -180,6 +180,7 @@ async def callback(request: Request, session: SessionDep, settings: SettingsDep)
 
 @router.post("/logout", status_code=204, summary="Sign out")
 async def logout(request: Request) -> Response:
-    # TODO(OQ-04): no RP-initiated logout at the IdP yet, so SSO may sign the user straight back in.
+    # Ends the Mockan session only. No RP-initiated logout at Keycloak (accepted, OQ-04): SSO may
+    # sign the user straight back in.
     request.session.clear()
     return Response(status_code=204)

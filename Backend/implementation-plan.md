@@ -244,7 +244,7 @@ Each milestone row lists what it builds, the requirements it covers, the tests, 
   - Bearer JWT validation via discovery JWKS (audience = client id).
   - Dev mode per G-9.
   - Dependencies: `current_developer` (401 `unauthenticated`); writes on a disabled Developer → 403 `developer_disabled`; `require_admin` (403 `forbidden`).
-  - `TODO(OQ-04)` on provider specifics.
+  - OQ-04 decided: Keycloak, via generic OIDC discovery.
 - `admin/problems.py`: handlers for `RequestValidationError` → G-1 shape, `DomainError(code, status, field_errors)`, `HTTPException` and catch-all → 500 `internal_error`, which is logged with masking.
 - `admin/schemas/`: a `CamelModel` base (`alias_generator=to_camel`, `populate_by_name=True`, `extra="forbid"` on inputs). DTOs mirror `panel/src/api/types.ts` exactly (`Developer` + `publicBaseUrl`, `Service` with embedded `environments`, `ServiceEnvironment`, `DeveloperServiceSetting`).
 - `admin/services/` (business rules + audit) and thin `admin/routers/`:

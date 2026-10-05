@@ -68,7 +68,7 @@ A **disabled** Developer can still read (`GET /me` returns `isEnabled: false`, w
 | --- | --- | --- | --- | --- |
 | GET | `/auth/login` | — | → `303` | OIDC: to the IdP (authorization code + PKCE S256). Dev mode: signs in and goes to the Panel. |
 | GET | `/auth/callback` | — | → `303` | Exchanges the code, verifies the ID token (signature, issuer, audience, expiry, nonce), starts the session, goes to the Panel. Failure → `401`. |
-| POST | `/auth/logout` | — | → `204` | Clears the session; idempotent. `TODO(OQ-04)`: no RP-initiated logout at the IdP, so SSO may sign the user straight back in. |
+| POST | `/auth/logout` | — | → `204` | Clears the session; idempotent. Does not end the IdP session, so SSO may sign the user straight back in (accepted; see [operations §3a](operations.md#3a-sign-in-with-keycloak-oq-04)). |
 | GET | `/me` | session | → `Developer` | Includes `publicBaseUrl` (G-4). |
 | PUT | `/me` | Writer | `DeveloperUpdate` → `Developer` | See §4.1. |
 | GET | `/services` | session | → `Service[]` | Sorted by name, environments sorted `dev`, `stage`. Everyone can read. |

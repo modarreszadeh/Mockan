@@ -66,7 +66,7 @@ def _check_oidc(settings: MockanSettings) -> None:
         )
         if not value
     ]
-    if missing:  # TODO(OQ-04): provider specifics undecided
+    if missing:
         raise RuntimeError(f"{', '.join(missing)} required when MOCKAN_AUTH_MODE=oidc.")
 
 

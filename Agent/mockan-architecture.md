@@ -447,7 +447,7 @@ Validation rules (enforce in Pydantic models / services, test in `server/tests/a
 | `MOCKAN_ALLOWED_UPSTREAM_HOSTS` | both | `["identity.stage.internal","*.dev.internal"]` (JSON list; `*.` wildcard allowed) |
 | `MOCKAN_PUBLIC_BASE_URL` | both | `https://mock.novin-tools.com` (Location rewrite, base URL shown in panel) |
 | `MOCKAN_DEFAULT_ALLOWED_ORIGINS` | both | `["http://localhost:*","http://127.0.0.1:*"]` |
-| `MOCKAN_OIDC_ISSUER`, `MOCKAN_OIDC_CLIENT_ID`, `MOCKAN_OIDC_CLIENT_SECRET` | admin | generic OIDC (`# TODO(OQ-04)`) |
+| `MOCKAN_OIDC_ISSUER`, `MOCKAN_OIDC_CLIENT_ID`, `MOCKAN_OIDC_CLIENT_SECRET` | admin | Keycloak via generic OIDC (OQ-04) |
 | `MOCKAN_SESSION_SECRET` | admin | random 32+ bytes |
 | `MOCKAN_ADMIN_SSO_SUBJECTS` | admin | bootstrap list of `sso_subject`s that get `is_admin=true` on first login |
 | `MOCKAN_MIGRATE_ON_STARTUP` | admin | `false` |
@@ -479,7 +479,7 @@ Validation rules (enforce in Pydantic models / services, test in `server/tests/a
 | OQ-01 | Path-based (`/{slug}/`) vs subdomain (`{slug}.mock.novin-tools.com`) identification? Subdomains avoid cookie-path rewriting. | Path-based (D-02). |
 | OQ-02 | Do our apps authenticate with bearer tokens in headers or with cookies? | **Resolved 2026-10-05: bearer tokens.** The Set-Cookie rewrite in §6.3 stays as specified; cookie-based apps (`SameSite=None; Secure`, `__Host-`) are not supported. |
 | OQ-03 | Panel on the same host under `/_mockan/admin` or a separate host `mockan.novin-tools.com`? | Separate host is preferred if DNS/TLS is easy; otherwise same host. |
-| OQ-04 | Which OIDC provider (Keycloak, Azure AD, other)? | Generic OIDC configuration (Authlib, discovery via `MOCKAN_OIDC_ISSUER`). |
+| OQ-04 | Which OIDC provider (Keycloak, Azure AD, other)? | **Decided 2026-10-05: the organization's Keycloak (AD behind it).** Generic OIDC (Authlib, discovery via `MOCKAN_OIDC_ISSUER`), no provider-specific code. Open: client registration and one real login. See [`mockan-authentication.md`](mockan-authentication.md). |
 | OQ-05 | Do frontends call one shared API gateway URL or one base URL per microservice? Both are supported by `PathPrefix` + `StripPrefix`; confirm per app to configure the catalog. | Both supported. |
 
 ---

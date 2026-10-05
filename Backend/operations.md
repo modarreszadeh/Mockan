@@ -71,7 +71,7 @@ All are environment variables with the `MOCKAN_` prefix (`infrastructure/setting
 | `MOCKAN_OTEL_ENDPOINT`, `MOCKAN_OTEL_EXPORT_INTERVAL_SECONDS` | both | empty, `30` | OTLP/HTTP collector for metrics (and spans); empty = no export. |
 | `MOCKAN_TRACING_ENABLED` | both | `false` | Opt-in tracing (see §4a). |
 | `MOCKAN_AUTH_MODE` | admin | `oidc` | `dev` = no identity provider, local only. |
-| `MOCKAN_OIDC_ISSUER`, `_CLIENT_ID`, `_CLIENT_SECRET` | admin | empty | Required in `oidc` mode; the Admin **refuses to start** without them. `TODO(OQ-04)`. |
+| `MOCKAN_OIDC_ISSUER`, `_CLIENT_ID`, `_CLIENT_SECRET` | admin | empty | Required in `oidc` mode; the Admin **refuses to start** without them. Keycloak: see [§3a](#3a-sign-in-with-keycloak-oq-04). |
 | `MOCKAN_SESSION_SECRET` | admin | empty | ≥ 32 random characters outside dev mode; same value on every Admin replica. |
 | `MOCKAN_ADMIN_SSO_SUBJECTS` | admin | `[]` | Subjects that are admins (on creation and as a promotion at later logins; never demoted). |
 | `MOCKAN_MIGRATE_ON_STARTUP` | admin | `false` | Non-prod only. |
@@ -81,6 +81,48 @@ All are environment variables with the `MOCKAN_` prefix (`infrastructure/setting
 | `MOCKAN_REQUEST_LOG_QUEUE_SIZE` | gateway | `10000` | Bounded; when full the Gateway drops the entry and counts it (never slows a request). |
 | `MOCKAN_REQUEST_LOG_BATCH_SIZE`, `_FLUSH_MS` | gateway | `200`, `500` | Writer batching. |
 | `MOCKAN_REQUEST_LOG_RETENTION_DAYS`, `_MAX_ROWS_PER_DEVELOPER`, `_CLEANUP_SECONDS` | gateway | `7`, `5000`, `600` | Retention job (one Gateway prunes at a time, advisory lock). |
+
+## 3a. Sign in with Keycloak (OQ-04)
+
+**Locally**, a Keycloak is one command away (realm `internal`, client `mockan`, PKCE S256, an audience mapper):
+
+```bash
+cd deploy/compose
+docker compose -f docker-compose.yml -f docker-compose.sso.yml up --build   # MOCKAN_DB_PORT=5433 if 5432 is taken
+```
+
+| What | Where |
+| --- | --- |
+| Panel (signs in through Keycloak) | `http://localhost:8081` → Keycloak login. Users (username = password): `admin` (a Mockan admin), `ehtesham`, `sara` |
+| Keycloak | `http://localhost:8180` (`MOCKAN_KEYCLOAK_PORT`); console `admin` / `admin` |
+| Redirect URIs registered | `http://localhost:{8081,5173,5174}/api/v1/auth/callback` |
+
+The browser reaches Keycloak at `localhost:8180`, the Admin container at `keycloak:8080`. `KC_HOSTNAME` pins the issuer to the browser address and `KC_HOSTNAME_BACKCHANNEL_DYNAMIC` lets the Admin use the container address for token and JWKS calls. To run the Admin on the host instead, use `MOCKAN_OIDC_ISSUER=http://localhost:8180/realms/internal`. The realm (`deploy/compose/keycloak/realm-internal.json`) and its secrets are for local use only; the users have fixed ids so the admin's `sub` is known (`00000000-0000-4000-8000-000000000001`).
+
+**In shared environments**, the Panel signs developers in through the organization's Keycloak (AD behind it): OIDC authorization code + PKCE S256, no Mockan passwords. Nothing in the code is Keycloak-specific; it uses standard discovery. Decision: [`Agent/mockan-authentication.md`](../Agent/mockan-authentication.md).
+
+Ask DevOps for a **confidential OIDC client** and these four values:
+
+| Value | Goes to | Notes |
+| --- | --- | --- |
+| Issuer URL | `MOCKAN_OIDC_ISSUER` | Normally `https://<keycloak-host>/realms/<realm>`. Mockan appends `/.well-known/openid-configuration`; the Admin must be able to reach it. |
+| Client ID | `MOCKAN_OIDC_CLIENT_ID` | |
+| Client secret | `MOCKAN_OIDC_CLIENT_SECRET` | Keep it in the secret store, never in Git. |
+| Redirect URI | registered in Keycloak | **`https://<mockan-admin-host>/api/v1/auth/callback`** (the Panel's login is `GET /api/v1/auth/login`). |
+
+Client settings: OpenID Connect, client authentication on (confidential), standard flow (authorization code) on, PKCE method `S256`, scopes `openid profile email`. Keep Keycloak's default `basic` client scope on the client: in Keycloak 25+ the `sub` claim of access tokens comes from it, and bearer validation requires `sub`.
+
+Also set `MOCKAN_SESSION_SECRET` (≥ 32 random characters, the same on every Admin replica).
+
+**The redirect URI is built from the request as the Admin sees it.** Behind the ingress, start uvicorn with `FORWARDED_ALLOW_IPS=<ingress CIDRs>` (the image already passes `--proxy-headers`; the uvicorn default trusts only `127.0.0.1`). Otherwise the Admin sees `http://` or the pod's host name and Keycloak answers `Invalid parameter: redirect_uri`.
+
+**First admin.** Don't guess the `sub` (in Keycloak it is the user's UUID, not the email or username). Sign in once, read the Developer's `sso_subject` (`SELECT sso_subject, display_name FROM mockan.developers`), put it in `MOCKAN_ADMIN_SSO_SUBJECTS='["<sub>"]'` and restart the Admin; the next login is promoted to admin.
+
+**Known limits** (accepted for now):
+- **Logout** ends only the Mockan session, not the Keycloak SSO session, so signing in again may not ask for a password. RP-initiated logout is added only if it becomes a product requirement.
+- **Bearer tokens** for Admin API clients need `aud` to contain `MOCKAN_OIDC_CLIENT_ID`. Keycloak access tokens default to `aud=account`; add an audience mapper (included client audience `mockan`, access token only) to the client before using bearer calls. The local realm already has one. This does not affect the Panel login.
+
+**Real-login check (closes OQ-04):** the Admin starts; `GET /api/v1/auth/login` redirects to Keycloak; after AD sign-in the callback lands on the Panel with a session; `GET /api/v1/me` returns the Developer; the admin `sub` is configured.
 
 ## 4. Health and readiness (G-8)
 
@@ -123,7 +165,7 @@ Alembic, schema `mockan` ([database.md §4](database.md#4-migrations)). Non-prod
 | **`upstream_host_not_allowed` when saving** | The base URL's host isn't in `MOCKAN_ALLOWED_UPSTREAM_HOSTS`. Add the dev/stage host to the setting on **both** processes (the Gateway re-checks) and restart. |
 | **Admin won't start** | In `oidc` mode it needs `MOCKAN_OIDC_*` and a 32+ character `MOCKAN_SESSION_SECRET`; the error names what is missing. |
 | **Everyone is signed out after a deploy** | `MOCKAN_SESSION_SECRET` changed (or differs between replicas). |
-| **Bearer calls get 401 `couldn't be verified`** | The Admin can't reach the provider's discovery/JWKS endpoint, or the token's audience isn't `MOCKAN_OIDC_CLIENT_ID` (`TODO(OQ-04)`). |
+| **Bearer calls get 401 `couldn't be verified`** | The Admin can't reach the provider's discovery/JWKS endpoint, or the token's audience isn't `MOCKAN_OIDC_CLIENT_ID` (Keycloak access tokens carry `aud=account` unless the client has an audience mapper; see [§3a](#3a-sign-in-with-keycloak-oq-04)). |
 
 ## 7. How to add a Service
 

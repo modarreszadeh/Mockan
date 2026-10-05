@@ -27,7 +27,7 @@ class MockanSettings(BaseSettings):
 
     # --- admin ---
     auth_mode: Literal["oidc", "dev"] = "oidc"  # `dev` is for local use only (G-9)
-    oidc_issuer: str = ""  # TODO(OQ-04): generic OIDC; provider specifics undecided
+    oidc_issuer: str = ""  # Keycloak realm URL (OQ-04)
     oidc_client_id: str = ""
     oidc_client_secret: str = ""
     session_secret: str = ""

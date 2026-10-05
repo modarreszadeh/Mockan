@@ -1,0 +1,50 @@
+# Opt-in override: sign in through a local Keycloak instead of dev mode (OQ-04).
+#
+#   docker compose -f docker-compose.yml -f docker-compose.sso.yml up --build
+#
+# Keycloak:    http://localhost:8180 (console: admin / admin; realm `internal`, mirroring production)
+# Panel/Admin: http://localhost:8081, signing in through Keycloak. Users (username = password):
+#              admin (a Mockan admin), ehtesham, sara.
+# The client secret and passwords below are for local use only. Never reuse them anywhere shared.
+#
+# The browser reaches Keycloak at localhost:8180 but the Admin container reaches it at keycloak:8080.
+# KC_HOSTNAME fixes the issuer to the browser address; KC_HOSTNAME_BACKCHANNEL_DYNAMIC lets the Admin
+# use the container address for the token and JWKS calls.
+services:
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.8.0
+    command: ["start-dev", "--import-realm"]
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+      KC_HOSTNAME: http://localhost:8180
+      KC_HOSTNAME_BACKCHANNEL_DYNAMIC: "true"
+      KC_HEALTH_ENABLED: "true"
+    ports:
+      - "${MOCKAN_KEYCLOAK_PORT:-8180}:8080"
+    volumes:
+      - ./keycloak:/opt/keycloak/data/import:ro
+    healthcheck:
+      # The image has no curl: speak HTTP to the management port by hand.
+      test:
+        - CMD-SHELL
+        - >-
+          exec 3<>/dev/tcp/127.0.0.1/9000 &&
+          printf 'GET /health/ready HTTP/1.0\r\n\r\n' >&3 &&
+          grep -q '"status": "UP"' <&3
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 20s
+
+  admin:
+    environment:
+      MOCKAN_AUTH_MODE: oidc
+      MOCKAN_OIDC_ISSUER: http://keycloak:8080/realms/internal
+      MOCKAN_OIDC_CLIENT_ID: mockan
+      MOCKAN_OIDC_CLIENT_SECRET: mockan-local-dev-secret
+      # The realm file gives `admin` this fixed subject (Keycloak's `sub` is the user id).
+      MOCKAN_ADMIN_SSO_SUBJECTS: '["00000000-0000-4000-8000-000000000001"]'
+    depends_on:
+      keycloak:
+        condition: service_healthy
