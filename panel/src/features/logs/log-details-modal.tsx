@@ -1,5 +1,5 @@
 /**
- * Details drawer for one logged request (SCR-09, PR-12): headers and body samples exactly as the server masked
+ * Details modal (a bottom sheet on mobile) for one logged request (SCR-09, PR-12): headers and body samples exactly as the server masked
  * them (NFR-07), and **Mock this** — an Exact rule that answers the way this request was answered (FR-09).
  */
 import { WandSparklesIcon } from "lucide-react"
@@ -9,9 +9,19 @@ import { toast } from "sonner"
 import { ApiError } from "@/api/client"
 import { useCreateRuleFromLog } from "@/api/queries/logs"
 import type { RequestLogEntry, Service } from "@/api/types"
-import { CodeBlock, SourceBadge, StatusCode } from "@/components/mockan"
+import {
+  CodeBlock,
+  Modal,
+  ModalBody,
+  ModalContent,
+  ModalDescription,
+  ModalFooter,
+  ModalHeader,
+  ModalTitle,
+  SourceBadge,
+  StatusCode,
+} from "@/components/mockan"
 import { Button } from "@/components/ui/button"
-import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { absoluteTime, formatSample, headersText } from "@/lib/format"
 import { cn } from "@/lib/utils"
 
@@ -29,7 +39,7 @@ function Block({ label, code, empty }: { label: string; code: string | null | un
   return <CodeBlock label={label} code={code} className={cn("max-h-72 overflow-y-auto")} />
 }
 
-export function LogDetailsSheet({
+export function LogDetailsModal({
   entry,
   services,
   onClose,
@@ -60,23 +70,30 @@ export function LogDetailsSheet({
   }
 
   return (
-    <Sheet open={entry !== null} onOpenChange={(open) => !open && onClose()}>
-      <SheetContent side="right" className="flex w-full flex-col gap-0 p-0 sm:max-w-2xl">
+    <Modal open={entry !== null} onOpenChange={(open) => !open && onClose()}>
+      <ModalContent
+        size="lg"
+        // Focus the modal itself: the first focusable element is "Mock this", and a stray Enter must not create a rule.
+        onOpenAutoFocus={(event) => {
+          event.preventDefault()
+          if (event.currentTarget instanceof HTMLElement) event.currentTarget.focus()
+        }}
+      >
         {entry ? (
           <>
-            <SheetHeader className="p-6">
-              <SheetTitle className="font-mono text-[16px] break-all">
+            <ModalHeader>
+              <ModalTitle className="font-mono text-[16px] break-all">
                 {entry.method} {entry.path}
                 {entry.query ? `?${entry.query}` : ""}
-              </SheetTitle>
-              <SheetDescription className="flex flex-wrap items-center gap-x-3 gap-y-1 text-body">
+              </ModalTitle>
+              <ModalDescription className="flex flex-wrap items-center gap-x-3 gap-y-1">
                 <SourceBadge source={entry.source} />
                 <StatusCode code={entry.statusCode} />
                 <span>{entry.durationMs} ms</span>
                 <time dateTime={entry.timestamp}>{absoluteTime(entry.timestamp)}</time>
-              </SheetDescription>
-            </SheetHeader>
-            <div className="flex-1 space-y-6 overflow-y-auto px-6 pb-6">
+              </ModalDescription>
+            </ModalHeader>
+            <ModalBody className="space-y-6">
               <p className="text-[13px] text-muted-foreground">
                 Secrets such as Authorization headers and tokens are masked as <code className="font-mono">***</code>.
                 Bodies are samples.
@@ -111,8 +128,8 @@ export function LogDetailsSheet({
                   empty="No body captured."
                 />
               </Section>
-            </div>
-            <SheetFooter className="flex-row items-center justify-between gap-2 border-t px-6 py-4">
+            </ModalBody>
+            <ModalFooter className="md:items-center md:justify-between">
               {entry.source === "Mocked" ? (
                 // A rule already answers this request: a second one would only compete with it by precedence.
                 entry.ruleId ? (
@@ -136,10 +153,10 @@ export function LogDetailsSheet({
                   </Button>
                 </>
               )}
-            </SheetFooter>
+            </ModalFooter>
           </>
         ) : null}
-      </SheetContent>
-    </Sheet>
+      </ModalContent>
+    </Modal>
   )
 }

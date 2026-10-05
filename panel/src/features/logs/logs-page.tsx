@@ -21,7 +21,7 @@ import { useIsMobile } from "@/hooks/use-mobile"
 import { developerBaseUrl, logTime } from "@/lib/format"
 import { cn } from "@/lib/utils"
 
-import { LogDetailsSheet } from "./log-details-sheet"
+import { LogDetailsModal } from "./log-details-modal"
 
 const ALL = "all"
 const SOURCES: readonly RequestSource[] = ["Proxied", "Mocked", "Error"]
@@ -81,7 +81,7 @@ function LogTable({ entries, onOpen }: { entries: RequestLogEntry[]; onOpen: (en
         <TableBody>
           {entries.map((entry) => (
             <TableRow key={entry.id} className="cursor-pointer" onClick={() => onOpen(entry)}>
-              <TableCell className="font-mono text-[13px] tabular-nums text-muted-foreground">
+              <TableCell className="font-mono text-[13px] text-muted-foreground tabular-nums">
                 <time dateTime={entry.timestamp}>{logTime(entry.timestamp)}</time>
               </TableCell>
               <TableCell>
@@ -180,11 +180,7 @@ export function LogsPage() {
           <LiveIndicator status={feed.status} paused={feed.paused} />
           <Button variant="outline" onClick={() => feed.setPaused(!feed.paused)}>
             {feed.paused ? <PlayIcon aria-hidden /> : <PauseIcon aria-hidden />}
-            {feed.paused
-              ? feed.pendingCount > 0
-                ? `Resume (${feed.pendingCount} new)`
-                : "Resume"
-              : "Pause"}
+            {feed.paused ? (feed.pendingCount > 0 ? `Resume (${feed.pendingCount} new)` : "Resume") : "Pause"}
           </Button>
         </>
       }
@@ -266,7 +262,11 @@ export function LogsPage() {
         )}
         {history.hasNextPage ? (
           <div className="flex justify-center">
-            <Button variant="outline" onClick={() => void history.fetchNextPage()} disabled={history.isFetchingNextPage}>
+            <Button
+              variant="outline"
+              onClick={() => void history.fetchNextPage()}
+              disabled={history.isFetchingNextPage}
+            >
               {history.isFetchingNextPage ? "Loading…" : "Load older requests"}
             </Button>
           </div>
@@ -283,7 +283,7 @@ export function LogsPage() {
         <ProblemAlert error={history.error} onRetry={() => void history.refetch()} />
       ) : null}
       {body}
-      <LogDetailsSheet entry={opened} services={services.data} onClose={() => setOpened(null)} />
+      <LogDetailsModal entry={opened} services={services.data} onClose={() => setOpened(null)} />
     </div>
   )
 }
