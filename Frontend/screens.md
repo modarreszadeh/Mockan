@@ -26,8 +26,8 @@ flowchart LR
     OV --> SV["SCR-06 Services"]
     SV -. isAdmin .-> CAT["SCR-07 Service catalog (admin)"]
     OV --> ST["SCR-08 Settings"]
-    OV -. Phase 2 .-> LOG["SCR-09 Live log"]
-    OV -. Phase 2 .-> TR["SCR-10 Test route"]
+    OV --> LOG["SCR-09 Live log"]
+    OV --> TR["SCR-10 Test route"]
 ```
 
 | Screen | Route | Status |
@@ -39,11 +39,11 @@ flowchart LR
 | SCR-06 Services | `/services` | Built (M2) |
 | SCR-07 Service catalog (admin) | `/admin/services` | Built (M4) |
 | SCR-08 Settings | `/settings` | Built (M2) |
-| SCR-09 Live log | `/logs` | Phase 2 — not in navigation |
-| SCR-10 Test route | `/test-route` | Phase 2 — not in navigation |
+| SCR-09 Live log | `/logs` | Built (M5) |
+| SCR-10 Test route | `/test-route` | Built (M5) |
 | Style guide (dev only) | `/__design` | Built (M0) |
 
-**Sidebar:** Overview · Rules · Services · Settings; Admin group (only when `isAdmin`): Service catalog. Phase 2 screens are added only when they work.
+**Sidebar:** Overview · Rules · Live log · Test route · Services · Settings; Admin group (only when `isAdmin`): Service catalog.
 
 **Auth guard (`src/app/auth-gate.tsx`, tests in `auth-gate.test.tsx`):**
 - [x] Any `401` → full-page navigation to `/api/v1/auth/login` (in dev, a dev-only route simulates SSO and returns).
@@ -75,9 +75,10 @@ flowchart LR
 
 ## SCR-04 Rules — PR-05, PR-08, PR-18, US-03, US-06
 
-- **Data:** `GET /me/rules`, `POST /me/rules/{ruleId}/toggle`, `POST /me/rules/toggle-all`, `DELETE /me/rules/{ruleId}`, `POST /me/rules` (duplicate).
+- **Data:** `GET /me/rules`, `POST /me/rules/{ruleId}/toggle`, `POST /me/rules/toggle-all`, `DELETE /me/rules/{ruleId}`, `POST /me/rules` (duplicate), `GET /me/rules/export`, `POST /me/rules/import?mode=` (PR-14).
 - **Content:** `PageHeader` "Mock rules" + primary "New rule"; toolbar: search (name or pattern), filters (state, method, match type, Service); "Disable all / Enable all".
 - **Columns:** Switch · Name · Method · Match type · Pattern (mono, truncated with tooltip) · Service (or "Any") · Active scenario (`StatusCode` + name) · Priority · Updated · row menu (Edit, Duplicate, Delete). Stacked cards below 768 px.
+- **Export / Import (PR-14, FR-12):** header buttons "Export" (downloads `mockan-rules-<slug>-<date>.json`, with a toast that headers and bodies are exported as stored, so secrets may be in it) and "Import" (also in the empty state). The Import dialog takes a `.json` file, checks it in the browser (JSON, `version: 1`, a non-empty `rules` list, at most 200), shows "N rules, M scenarios", and asks **Add to my rules** (merge, the default; importing a file twice duplicates) or **Replace my rules** (names how many current rules it deletes; destructive button). The server validates the whole file first and writes all or nothing: every problem comes back as `rules.<i>.<field>` / `rules.<i>.responses.<j>.<field>` and is listed as `Rule 2 “Name” → scenario 1 → body: …` (first 10, then "and N more"); nothing was imported.
 - **Sort:** gateway precedence (arch §7.2), labelled "Sorted by match precedence".
 - **Behaviour:** filters live in the URL (`?q=&state=&method=&type=&service=`); "Disable all" confirms when more than one rule is enabled; Duplicate creates a disabled copy "<name> (copy)"; the header's "New rule" is hidden in the empty state so the view keeps one primary button.
 - **Accept** (tests: `src/features/rules/rules.test.tsx`):
@@ -85,14 +86,16 @@ flowchart LR
   - [x] Row click opens the editor; the switch and row menu don't trigger navigation.
   - [x] Empty state uses the PRD copy.
   - [x] Toggles are optimistic with rollback + toast on error; success toast "Saved — live in about 2 seconds" (PR-07).
+  - [x] Export downloads a rules file without ids; import merge/replace works; a bad file lists every problem and changes nothing (`src/features/rules/transfer.test.tsx`).
 
 ## SCR-05 Rule editor — PR-05, PR-06, US-03, US-04, US-12
 
-- **Data:** `GET/PUT/DELETE /me/rules/{ruleId}`, `POST /me/rules`, `POST/PUT /me/rules/{ruleId}/responses[/{responseId}]`, `GET /services`.
+- **Data:** `GET/PUT/DELETE /me/rules/{ruleId}`, `POST /me/rules`, `POST/PUT/DELETE /me/rules/{ruleId}/responses[/{responseId}]`, `POST /me/rules/{ruleId}/responses/{responseId}/activate`, `GET /services`.
 - **Layout:** form (7 cols) + sticky live summary (5 cols) at ≥ 1280 px; single column below. Sticky footer with Cancel and **Save**.
 - **Match:** name; method (`ANY GET POST PUT PATCH DELETE HEAD OPTIONS`); match type segmented control with help + example (arch §7.1); pattern (mono) with helper "Matches the path **after** your slug, e.g. `/limsa/api/v1/dashboard`."; Service scope (default "Any service"); priority (default 100, "lower wins").
 - **Conditions** (collapsible, collapsed when empty): query and header conditions (`equals` / `exists`).
-- **Response:** status (combobox with presets 200, 201, 204, 400, 401, 403, 404, 409, 422, 500, 502, 503; 100–599); content type (default `application/json`); headers; body (`JsonEditor` for JSON, mono textarea otherwise); delay slider 0–30 000 ms + number input + presets 0 / 300 ms / 1 s / 3 s. Phase 1 edits the active response only (`TODO(OQ-P1)`).
+- **Response:** status (combobox with presets 200, 201, 204, 400, 401, 403, 404, 409, 422, 500, 502, 503; 100–599); content type (default `application/json`); headers; body (`JsonEditor` for JSON, mono textarea otherwise); delay slider 0–30 000 ms + number input + presets 0 / 300 ms / 1 s / 3 s. Also **body mode** `Static` | `Template` (PR-19): a Template body is not JSON until rendered, so it gets the plain textarea and no JSON check (the server checks its syntax on save).
+- **Scenarios (PR-11, OQ-P1):** an existing rule shows one tab per MockResponse (name, status, an **Active** badge on the one the Gateway serves; see [CONTEXT.md](../CONTEXT.md)). The selected tab is the one the form edits and **Save** writes (`PUT …/responses/{id}`). **Make active** (`POST …/activate`) is a separate, immediate action. **Duplicate scenario** (`POST …/responses`) creates a copy of the selected saved scenario named `<name>-copy` and shows it (a scenario is a variant of the same response, so copy-and-tweak is the intended way to make an error or empty variant). **Delete scenario** confirms, and is disabled for the last one (`409 last_response`); deleting the active one makes another active. Switching tab, or duplicating, with unsaved scenario edits asks "Discard unsaved scenario edits?". The summary says "This scenario isn't active" when the selected one is not the active one, and "This rule is disabled: it is skipped…" when `isEnabled` is false (a disabled rule still has an active scenario; it is just never served). A new rule has no tabs (its first scenario becomes live). Body mode is always sent: leaving it out of a `PUT` would reset a Template to Static.
 - **Live summary:** "`GET` requests to `/limsa/api/v1/orders/{id}` return **200** after **300 ms**" + response headers preview incl. `X-Mockan-Source: mock`.
 - **Behaviour:** creating a rule returns to `/rules`; saving an existing rule stays on the editor. Server field paths map onto form fields (`responses.0.statusCode` → `response.statusCode`); unmapped errors show a `ProblemAlert` above the form. Unsaved changes also trigger the browser's leave-page prompt.
 - **Accept** (tests: `src/features/rules/rule-editor.test.tsx`):
@@ -100,6 +103,7 @@ flowchart LR
   - [x] Leaving with unsaved changes asks for confirmation.
   - [x] Server validation errors land on the right field, not only in a toast.
   - [x] Delete lives in a "Danger zone" at the bottom with `ConfirmDialog`.
+  - [x] Scenario tabs, Make active, Duplicate/Delete scenario, the disabled-rule note and the unsaved-edit guard; a saved Template body stays a Template (`src/features/rules/scenarios.test.tsx`).
 
 ## SCR-06 Services — PR-04, US-07
 
@@ -143,6 +147,27 @@ Supplementary only (C-01: the Markdown above is the source of truth). Captured f
 | SCR-07 Service catalog | [1440](screenshots/scr-07-service-catalog-1440.png) | [390](screenshots/scr-07-service-catalog-390.png) |
 | SCR-08 Settings | [1440](screenshots/scr-08-settings-1440.png) | [390](screenshots/scr-08-settings-390.png) |
 
-## Phase 2 (M5, only when asked)
+## SCR-09 Live log — PR-12, FR-09, US-20
 
-SCR-09 Live log (WebSocket `/hubs/request-log`, source filter, details drawer, **Mock this** → `POST /me/request-logs/{id}/create-rule`, PR-12); SCR-10 Test route (`POST /me/test-route`, PR-13); scenario tabs + activate (PR-11); export/import with merge/replace (PR-14).
+- **Data:** `GET /me/request-logs?cursor=&source=&path=&limit=` (history, newest first, keyset paging), WebSocket `/hubs/request-log` (one `RequestLogEntry` JSON per message, only entries logged after connecting), `POST /me/request-logs/{id}/create-rule` (Mock this), `GET /services` (names in the drawer).
+- **Content:** serif title "Live log"; a status pill (**Connecting…** / **Live** / **Reconnecting…** / **Paused**) and a Pause / Resume button; filters in the URL (`?source=Proxied|Mocked|Error&path=`; the path filter is debounced 300 ms and is "contains", case-insensitive); table Time · Method · Path (with `?query`) · Source · Status · Duration, stacked cards below 768 px; "Load older requests" (cursor) when more history exists.
+- **Live behaviour:** one list from two sources merged by log id (ids are unique and increasing). A live entry that the filters exclude is not shown. **Pause** holds new entries back so rows don't move while you read; the button then reads "Resume (N new)". The socket is at the Admin **root** (`/hubs/request-log`, `ws:`/`wss:` from the page's protocol), not under `VITE_PANEL_BASE_PATH` (OQ-03), and reconnects with backoff (1 s, 2 s, 5 s, then 10 s). At most 500 live entries are kept in memory.
+- **Details drawer** (row click or the path button): `METHOD path?query`, source, status, duration, time; Service name and a link to the matched rule; request and response headers and bodies as received. They are already masked by the server (NFR-07: `***`); the Panel never unmasks, logs or stores them. JSON bodies are pretty-printed.
+- **Mock this (FR-09):** for **Proxied** and **Error** entries the drawer's one primary button creates an Exact rule for the logged method and path that returns the logged response, then opens it in the editor (an Error entry freezes a failure, which is how a QA reproduces it). For a **Mocked** entry the button is "Open the rule" instead: a rule already answers that request, and a second one would only compete with it by precedence. Refusals (a body cut at 16 KB, a path that can't be an Exact pattern) show the server's field message in a toast and the drawer stays open.
+- **States:** skeleton rows; empty "No requests yet" with the base URL to send one to, or "No requests match" with Clear filters; error `ProblemAlert` + retry (history); the feed keeps working if only a refetch fails.
+- **Accept** (tests: `src/features/logs/logs.test.tsx`, e2e `e2e/phase2.spec.ts`):
+  - [x] History is newest first; a live entry appears at the top without a reload (a faked `WebSocket`, `src/test/fake-socket.ts`).
+  - [x] Source and path filters go through the API and the URL; live entries respect them.
+  - [x] Pause holds entries until Resume; a dropped connection reconnects.
+  - [x] The drawer shows masked values as received; Mock this creates the rule and navigates (Proxied and Error entries only; Mocked entries link to their rule); refusals are explained.
+
+## SCR-10 Test route — PR-13, FR-10, US-21
+
+- **Data:** `POST /me/test-route` `{method?, path, headers?, query?}` → `{outcome: mock|proxy|error, reason, rule?, service?, upstreamUrl?, errorCode?}`. The server runs the Gateway's own decision code and sends nothing upstream.
+- **Content:** form (method without `ANY`, path in mono, query parameters, headers; a `?a=b` typed into the path is moved into the query parameters; a repeated name is a repeated parameter) and a result card: **Mocked** (rule link, method, pattern, match type and priority, active scenario with status and delay), **Proxied** (Service, environment, upstream URL), **Error** (the Gateway's `errorCode` in mono with a hint for `service_not_resolved`, `upstream_unreachable`, `developer_not_found`).
+- **Validation:** the path must start with `/` (checked before calling); a `path` field error from the server lands under the field; any other failure shows a `ProblemAlert`.
+- **Accept** (tests: `src/features/test-route/test-route.test.tsx`):
+  - [x] A mock outcome names the rule and its active scenario; a proxy outcome shows the upstream URL (honouring the selected environment and prefix stripping); an error outcome shows its code.
+  - [x] A path without a leading `/` never reaches the API.
+
+Phase 2 screenshots are not captured yet (the set above predates M5). Capture them from `npm run dev` at 1440 px and 390 px when needed.

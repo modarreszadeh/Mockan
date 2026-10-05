@@ -49,7 +49,7 @@ Serif `<h1>` (`type-display-sm`), a one-line description in `body`, right-aligne
 
 | Prop | Type | Notes |
 | --- | --- | --- |
-| `slug` | `string` | DeveloperSlug. Base URL from `VITE_MOCKAN_PUBLIC_BASE_URL` (`TODO(OQ-F4)`). |
+| `slug` | `string` | DeveloperSlug. The base URL is `publicBaseUrl` from `GET /me` (via `usePublicBaseUrl()`), falling back to `VITE_MOCKAN_PUBLIC_BASE_URL` until it has loaded (OQ-F4). Needs a `QueryClientProvider`. |
 | `hint?` | `string` | Line under the snippet. |
 
 States: default · copied (2 s).
@@ -93,7 +93,7 @@ Rows of key / operator / value for headers, query conditions and header conditio
 
 ## Badges — MethodBadge, MatchTypeBadge, SourceBadge, StatusCode, EnvBadge, CoralBadge
 
-See [design-tokens.md §5](design-tokens.md#5-status-language). All carry text; dots are `aria-hidden`.
+See [design-tokens.md §5](design-tokens.md#5-status-language). All carry text; dots are `aria-hidden`. `MethodBadge` takes any verb string (a logged request can use one the editor doesn't offer).
 
 ```tsx
 <MethodBadge method="GET" /> <MatchTypeBadge matchType="Template" /> <SourceBadge source="Mocked" />

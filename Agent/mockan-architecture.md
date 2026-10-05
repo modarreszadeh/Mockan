@@ -58,6 +58,8 @@ The backend team effectively tells the frontend: *"Assume I've delivered this AP
 
 ## 2. Glossary
 
+> The project glossary is [`CONTEXT.md`](../CONTEXT.md) at the repository root: when a term is defined there, that definition wins. This table is the system-level reference and is being folded into it as terms are settled.
+
 | Term | Definition |
 | --- | --- |
 | **Developer** | A person (frontend engineer) who owns an isolated Mockan workspace. One Developer = one person (D-01). Identified in URLs by `DeveloperSlug`. |

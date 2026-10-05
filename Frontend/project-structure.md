@@ -30,18 +30,19 @@ panel/
     ├── api/
     │   ├── client.ts            # fetch wrapper, ApiError, field-error mapping (OQ-F1)
     │   ├── types.ts             # arch §8 types, camelCase (OQ-F5)
-    │   └── queries/             # key factories + hooks per resource (me, rules, services)
+    │   └── queries/             # key factories + hooks per resource (me, rules, services, logs, test-route)
     ├── components/
     │   ├── ui/                  # shadcn-generated; only token-level edits
     │   └── mockan/              # domain components (components.md)
     ├── features/
     │   ├── onboarding/  overview/  rules/  services/  settings/  admin/
+    │   ├── logs/  test-route/   # Phase 2 (M5): SCR-09, SCR-10
     │   └── design/              # /__design style guide (dev only)
     ├── hooks/                   # generic hooks (media queries)
     ├── lib/                     # checks (zod-free), validation (zod schemas), precedence, format, http, config
-    ├── mocks/                   # MSW: fixtures, db (scenarios), handlers/, browser.ts, server.ts
+    ├── mocks/                   # MSW: fixtures, db (scenarios), handlers/, matching.ts (test-route), live-log.ts (simulated hub, browser only), browser.ts, server.ts
     ├── styles/globals.css       # tokens + @theme inline + type utilities
-    └── test/                    # setup, render helpers, axe matcher types
+    └── test/                    # setup, render helpers, fake-socket.ts (WebSocket stand-in), axe matcher types
 ```
 
 ## Import rules (enforced by `eslint.config.js`)
