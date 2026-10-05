@@ -36,11 +36,14 @@ audience: Backend engineers and AI coding agents
 | Migrations | `alembic` | `>=1.20,<2` | Autogenerate, then review by hand. |
 | Regex | `google-re2` | `>=1.1,<2` | Linear-time regex (D-17). Import name: `re2`. |
 | OIDC | `authlib` | `>=1.8,<2` | Code flow for the Panel session + JWT validation for bearer tokens (D-12). |
-| Sessions | Starlette `SessionMiddleware` (+ `itsdangerous`) | via FastAPI | Signed session cookie for the Panel. |
+| JWT validation | `joserfc` | `>=1.7.5` | Bearer-token validation in `admin/oidc.py` (the library Authlib itself uses). Declared explicitly because we import it directly. |
+| Sessions | Starlette `SessionMiddleware` (+ `itsdangerous`) | `itsdangerous>=2.2,<3` | Signed session cookie for the Panel. Pinned explicitly because Starlette only imports it lazily. |
 | Logging | `structlog` | `>=26,<27` | JSON logs, masking processor (NFR-07). |
-| Tracing / metrics | `opentelemetry-sdk`, `opentelemetry-instrumentation-fastapi`, `opentelemetry-instrumentation-httpx` | `>=1.45` / `>=0.66b0` | Metrics names in architecture §12.2. |
-| Templated bodies (Phase 2) | `jinja2` (`SandboxedEnvironment`) | `>=3.1,<4` | PR-19. Not installed in Phase 1. |
-| Fake data (Phase 2) | `faker` | `>=40` | PR-19. Not installed in Phase 1. |
+| Tracing / metrics | `opentelemetry-sdk`, `opentelemetry-exporter-otlp-proto-http`, `opentelemetry-instrumentation-fastapi`, `opentelemetry-instrumentation-httpx` | `>=1.45` / `>=0.66b0` | Metric names in architecture §12.2 (`mockan.infrastructure.telemetry`). Each app owns its providers (nothing global), so tests read them with in-memory readers. Tracing is opt-in. |
+| Templated bodies | `jinja2` (`SandboxedEnvironment`, `StrictUndefined`) | `>=3.1,<4` | PR-19 (B8c). Used by `mockan.matching.templating` only. |
+| Fake data | `faker` | `>=40,<50` | PR-19 (B8c). Imported lazily on the first `fake.*` call; only a whitelist of generators is reachable from templates. |
+
+> **Watch:** Authlib 1.8's `httpx` integration prefers the new `httpx2` package and warns (`AuthlibDeprecationWarning: The httpx module is deprecated; please use httpx2 instead`) when it falls back to `httpx`. The fallback will be removed in a future Authlib release. The Admin uses it only for the OIDC token and JWKS calls. Adding `httpx2` would silence the warning and is a stack decision (D-15 names `httpx`); not done in B5.
 
 ## 3. Test libraries
 
@@ -48,7 +51,8 @@ audience: Backend engineers and AI coding agents
 | --- | --- | --- |
 | `pytest` | `>=9.1` | Test runner. |
 | `pytest-asyncio` | `>=1.4` | Async tests (`asyncio_mode = "auto"`). |
-| `testcontainers[postgres]` | `>=4.15` | Real PostgreSQL for Admin and snapshot tests. |
+| `testcontainers[postgres]` | `>=4.15` | Real PostgreSQL for Admin and snapshot tests. Import from `testcontainers.community.postgres` (the old path is deprecated). |
+| `pytest-cov` | `>=7` | Branch coverage gate on `mockan.matching` (B1 exit). |
 | `httpx` (`ASGITransport`) | — | In-process calls to the FastAPI apps. |
 | `uvicorn` (in-thread server) | — | Real fake upstream for streaming/SSE/WebSocket tests (no mocking of the network layer). |
 

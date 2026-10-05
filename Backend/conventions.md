@@ -54,6 +54,9 @@ MUST NOT use the word `tenant` anywhere (D-01).
 - Every `/me/*` handler depends on `current_developer` and filters every query by `developer_id`. Never accept a `developerId` from the client for `/me/*` routes.
 - Catalog writes depend on `require_admin`.
 - Each write that changes config also writes an `audit_logs` row in the same transaction.
+- Inputs use `extra="forbid"`, so a client can't set a field it shouldn't (`isAdmin`, `developerId`). Writes require `Content-Type: application/json`, and the session cookie is `HttpOnly; SameSite=Lax` (`Secure` outside dev mode); a cross-site form can send neither, so there is no CSRF token (G-12). The Admin sets no CORS headers.
+- A resource that doesn't exist or belongs to someone else is `404 not_found`, never `403`.
+- Details: [admin-api.md](admin-api.md).
 
 ## 6. Errors
 
@@ -72,7 +75,7 @@ MUST NOT use the word `tenant` anywhere (D-01).
 ```
 
 - Codes come from `mockan.domain.errors.ErrorCode`; never invent a code inline.
-- Admin validation errors use status `422` with `code = "validation_failed"` and an `errors` list (`field`, `message`).
+- Admin validation errors use status `422` with `code = "validation_failed"` and an `errors` **map** `{"<camelCase.dotted.path>": ["message", …]}` (G-1: the shape the Panel maps onto form fields; it replaces the earlier `{field, message}` list). Services raise `DomainError(code, status, title, detail, errors)`; `admin/problems.py` renders it.
 - Don't catch broad `Exception` except at the outermost layer that turns it into a problem response and logs it.
 
 ## 7. Logging and secrets

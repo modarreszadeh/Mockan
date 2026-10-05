@@ -58,6 +58,8 @@ The backend team effectively tells the frontend: *"Assume I've delivered this AP
 
 ## 2. Glossary
 
+> The project glossary is [`CONTEXT.md`](../CONTEXT.md) at the repository root: when a term is defined there, that definition wins. This table is the system-level reference and is being folded into it as terms are settled.
+
 | Term | Definition |
 | --- | --- |
 | **Developer** | A person (frontend engineer) who owns an isolated Mockan workspace. One Developer = one person (D-01). Identified in URLs by `DeveloperSlug`. |
@@ -128,6 +130,7 @@ The backend team effectively tells the frontend: *"Assume I've delivered this AP
 | D-16 | **PostgreSQL** is accessed through **SQLAlchemy 2.x async ORM + asyncpg**. Schema migrations use **Alembic**. `LISTEN` uses a dedicated asyncpg connection (`add_listener`). | Relational model, JSONB for conditions/headers, built-in `LISTEN/NOTIFY`; SQLAlchemy + Alembic is the mature Python equivalent of EF Core + migrations. |
 | D-17 | Regex rules are compiled with **RE2** (`google-re2`), a linear-time engine. Patterns RE2 can't compile (backreferences, lookaround) and patterns longer than 512 characters are rejected when saved. | NFR-08. Python's built-in `re` backtracks and has no timeout. RE2 guarantees linear-time matching, so no per-match timeout is needed (replaces the 50 ms timeout of D-09). |
 | D-18 | Request log entries are put on a bounded **`asyncio.Queue`** (`put_nowait`; drop and count when full) and written by a background batch writer. The live view is pushed to the panel over a **FastAPI WebSocket** at `/hubs/request-log`. | Logging never blocks the request path. Native WebSockets avoid a SignalR dependency. |
+| D-19 *(accepted 2026-10-05, B8a)* | Live request-log push across processes: after each batch insert the Gateway's writer runs `SELECT pg_notify('mockan_request_logged', '<developerId>:<maxId>')`; the Admin's `/hubs/request-log` hub keeps one `LISTEN` connection and pushes rows `> lastId` to that Developer's sockets. | The Gateway writes logs but the Admin owns the WebSocket; this reuses the mechanism of D-07 and keeps both processes stateless. |
 
 ---
 
@@ -224,18 +227,18 @@ Health endpoints `/_mockan/health/live` and `/_mockan/health/ready` are FastAPI 
 | Path | Remove `/{developerSlug}`. If `Service.StripPrefix`, also remove the Service `PathPrefix`. Append to the ServiceEnvironment `BaseUrl`. |
 | Query | Forward unchanged (raw query string, no re-encoding). |
 | `Host` | Set to upstream host (do not forward Mockan's host). |
-| Hop-by-hop headers | Drop `Connection`, `Keep-Alive`, `Proxy-*`, `TE`, `Trailer`, `Transfer-Encoding`, `Upgrade` (and any header named in `Connection`) in both directions. |
-| `X-Forwarded-For/Proto/Host`, `X-Forwarded-Prefix` | Set; `X-Forwarded-Prefix = /{developerSlug}`. |
+| Hop-by-hop headers | Drop `Connection`, `Keep-Alive`, `Proxy-*`, `TE`, `Trailer`, `Transfer-Encoding`, `Upgrade` (and any header named in `Connection`) in both directions. Also drop `Expect` on requests and `Date`/`Server` on responses (the ASGI server adds its own). |
+| `X-Forwarded-For/Proto/Host`, `X-Forwarded-Prefix` | `Proto`, `Host` and `Prefix` are set, replacing anything the client sent; `Prefix = /{developerSlug}`. `For` extends the incoming chain with the client address (not repeating it when the chain already ends with it). |
 | `X-Mockan-Developer` | Added to the upstream request (helps backend log correlation). |
 | `ServiceEnvironment.ExtraHeaders` | Added to the upstream request. |
 | `Origin`, `Referer` | Forwarded unchanged by default; Service flag `RewriteOrigin` replaces with the upstream origin if a backend rejects foreign origins. |
 | Body | Streamed in both directions; never read fully into memory. Response bytes are passed through raw (`aiter_raw()`), so `Content-Encoding` is preserved and nothing is decompressed. |
 | Redirects | The httpx client never follows redirects (`follow_redirects=False`); 3xx responses go back to the browser. |
-| `Location` (3xx) | If it points to the upstream origin, rewrite to `{MOCKAN_PUBLIC_BASE_URL}/{developerSlug}{PathPrefix?}...`. |
-| `Set-Cookie` | Remove `Domain` attribute; prefix `Path` with `/{developerSlug}`; keep `Secure`/`HttpOnly`; `SameSite=None` cookies stay as-is (see OQ-02). |
+| `Location` | On any status (a `201 Created` leaks the upstream like a `302`): if it points to the upstream origin (absolute, protocol-relative, or path-absolute `/x`), rewrite to `{MOCKAN_PUBLIC_BASE_URL}/{developerSlug}{PathPrefix?}...`; `PathPrefix` is included only with `StripPrefix`, and the environment's `BaseUrl` path is dropped. Path-relative values and other origins are untouched. |
+| `Set-Cookie` | Remove `Domain` attribute; move `Path` under `/{developerSlug}` (no `Path` → `/{developerSlug}`), using the same mapping as `Location` (with `StripPrefix` the Service prefix is inserted too); keep `Secure`/`HttpOnly`; `SameSite=None` cookies stay as-is. Apps use bearer tokens (OQ-02), so cookies are not on the critical path. |
 | Upstream CORS headers | Stripped and replaced by Mockan's CORS headers (D-13). |
 | Response header `X-Mockan-Source` | `proxy` or `mock` on every response, plus `X-Mockan-Rule-Id` when mocked. Exposed via `Access-Control-Expose-Headers`. |
-| Timeouts | `ServiceEnvironment.TimeoutSeconds` (default 100 s) as the httpx timeout; on timeout return `504` problem+json (`upstream_timeout`). |
+| Timeouts | `ServiceEnvironment.TimeoutSeconds` (default 100 s) as the httpx connect/read/write/pool timeout, i.e. the longest silence allowed, not a total duration; on timeout return `504` problem+json (`upstream_timeout`). |
 | Errors | Connection errors (`httpx.ConnectError` etc.) → `502` problem+json with `code = upstream_unreachable`. |
 | Allowlist | Before sending, the destination host is checked against `MOCKAN_ALLOWED_UPSTREAM_HOSTS` again (defence in depth; §14 rule 4). |
 
@@ -391,7 +394,7 @@ Base path `/api/v1`, JSON, FastAPI routers with Pydantic request/response models
 | GET | `/me/rules/export` · POST `/me/rules/import` | JSON export/import (FR-12). |
 | WebSocket | `/hubs/request-log` | Live stream of the caller's request log entries (D-18). |
 
-JSON field names in the API are camelCase (Pydantic `alias_generator=to_camel`, `populate_by_name=True`); Python attributes and DB columns are snake_case.
+JSON field names in the API are camelCase (Pydantic `alias_generator=to_camel`, `populate_by_name=True`); Python attributes and DB columns are snake_case. Payload shapes, limits, error codes and auth details are in [`../Backend/admin-api.md`](../Backend/admin-api.md).
 
 Validation rules (enforce in Pydantic models / services, test in `server/tests/admin`):
 - `pattern` must start with `/` for `Exact`/`Template`/`Prefix`; regexes must compile with RE2 and be ≤ 512 characters (D-17); templates must parse (`{*name}` only as last segment).
@@ -430,9 +433,10 @@ Validation rules (enforce in Pydantic models / services, test in `server/tests/a
 ### 12.3 Deployment
 - Two container images built from `server/`: `mockan-gateway`, `mockan-admin` (Admin image includes the built Panel). Base image `python:3.14-slim`, dependencies installed with `uv sync --frozen --no-dev`.
 - Entry points:
-  - Gateway: `uvicorn mockan.gateway.app:create_app --factory --host 0.0.0.0 --port 8080 --proxy-headers --forwarded-allow-ips=<ingress CIDRs>`
+  - Gateway: `uvicorn mockan.gateway.app:create_app --factory --host 0.0.0.0 --port 8080 --proxy-headers --forwarded-allow-ips=<ingress CIDRs>` (the image sets `FORWARDED_ALLOW_IPS` instead of the flag; Uvicorn reads it)
   - Admin: `uvicorn mockan.admin.app:create_app --factory --host 0.0.0.0 --port 8081 --proxy-headers`
 - Ingress routing on `mock.novin-tools.com`: `/_mockan/admin/*` and `/api/v1/*`, `/hubs/*` → Admin; everything else → Gateway. (Alternatively host the panel at `mockan.novin-tools.com`; see OQ-03.)
+- Local stack: `deploy/compose/docker-compose.yml` (postgres, admin + Panel, 2 Gateway replicas, optional demo upstream); see [`../Backend/operations.md`](../Backend/operations.md).
 - Gateway: ≥ 2 replicas, readiness requires a loaded snapshot. Admin: 1–2 replicas.
 - PostgreSQL: existing internal cluster; Alembic migrations (`alembic upgrade head`) applied by the Admin on startup in non-prod (`MOCKAN_MIGRATE_ON_STARTUP=true`), by a migration job in shared environments.
 - Configuration via environment variables (prefix `MOCKAN_`, loaded with `pydantic-settings`, optional `.env` for local dev); secrets from the platform secret store. Core settings:
@@ -443,11 +447,20 @@ Validation rules (enforce in Pydantic models / services, test in `server/tests/a
 | `MOCKAN_ALLOWED_UPSTREAM_HOSTS` | both | `["identity.stage.internal","*.dev.internal"]` (JSON list; `*.` wildcard allowed) |
 | `MOCKAN_PUBLIC_BASE_URL` | both | `https://mock.novin-tools.com` (Location rewrite, base URL shown in panel) |
 | `MOCKAN_DEFAULT_ALLOWED_ORIGINS` | both | `["http://localhost:*","http://127.0.0.1:*"]` |
-| `MOCKAN_OIDC_ISSUER`, `MOCKAN_OIDC_CLIENT_ID`, `MOCKAN_OIDC_CLIENT_SECRET` | admin | generic OIDC (`# TODO(OQ-04)`) |
+| `MOCKAN_OIDC_ISSUER`, `MOCKAN_OIDC_CLIENT_ID`, `MOCKAN_OIDC_CLIENT_SECRET` | admin | Keycloak via generic OIDC (OQ-04) |
 | `MOCKAN_SESSION_SECRET` | admin | random 32+ bytes |
 | `MOCKAN_ADMIN_SSO_SUBJECTS` | admin | bootstrap list of `sso_subject`s that get `is_admin=true` on first login |
 | `MOCKAN_MIGRATE_ON_STARTUP` | admin | `false` |
 | `MOCKAN_SNAPSHOT_RELOAD_SECONDS` | gateway | `60` |
+| `MOCKAN_SNAPSHOT_DEBOUNCE_MS` | gateway | `200` (coalesce `LISTEN` notifications before rebuilding) |
+| `MOCKAN_REQUEST_LOG_QUEUE_SIZE` | gateway | `10000` (bounded queue; a full queue drops the entry and counts it) |
+| `MOCKAN_REQUEST_LOG_BATCH_SIZE`, `MOCKAN_REQUEST_LOG_FLUSH_MS` | gateway | `200`, `500` (the writer inserts a batch when it has this many entries or this long has passed) |
+| `MOCKAN_REQUEST_LOG_RETENTION_DAYS`, `MOCKAN_REQUEST_LOG_MAX_ROWS_PER_DEVELOPER`, `MOCKAN_REQUEST_LOG_CLEANUP_SECONDS` | gateway | `7`, `5000`, `600` (retention job) |
+| `MOCKAN_OTEL_ENDPOINT`, `MOCKAN_OTEL_EXPORT_INTERVAL_SECONDS`, `MOCKAN_TRACING_ENABLED` | both | empty, `30`, `false` (OTLP/HTTP collector for metrics and spans; tracing is opt-in because it changes the `traceparent` sent upstream to a child span) |
+| `MOCKAN_AUTH_MODE` | admin | `oidc` (default) or `dev`: local login without an identity provider; MUST NOT be used in shared environments |
+| `MOCKAN_PANEL_BASE_PATH` | admin | `/` (where the built Panel is mounted; `# TODO(OQ-03)`) |
+| `MOCKAN_LOG_LEVEL` | both | `INFO` |
+| `MOCKAN_LOG_FORMAT` | both | `json` (default) or `console` |
 
 ### 12.4 Delivery phases
 
@@ -464,9 +477,9 @@ Validation rules (enforce in Pydantic models / services, test in `server/tests/a
 | ID | Question | Current default |
 | --- | --- | --- |
 | OQ-01 | Path-based (`/{slug}/`) vs subdomain (`{slug}.mock.novin-tools.com`) identification? Subdomains avoid cookie-path rewriting. | Path-based (D-02). |
-| OQ-02 | Do our apps authenticate with bearer tokens in headers or with cookies? Cookies from `localhost` to another domain need `SameSite=None; Secure` and may need extra handling. | Assume bearer tokens; implement Set-Cookie rewrite as specified in §6.3. |
+| OQ-02 | Do our apps authenticate with bearer tokens in headers or with cookies? | **Resolved 2026-10-05: bearer tokens.** The Set-Cookie rewrite in §6.3 stays as specified; cookie-based apps (`SameSite=None; Secure`, `__Host-`) are not supported. |
 | OQ-03 | Panel on the same host under `/_mockan/admin` or a separate host `mockan.novin-tools.com`? | Separate host is preferred if DNS/TLS is easy; otherwise same host. |
-| OQ-04 | Which OIDC provider (Keycloak, Azure AD, other)? | Generic OIDC configuration (Authlib, discovery via `MOCKAN_OIDC_ISSUER`). |
+| OQ-04 | Which OIDC provider (Keycloak, Azure AD, other)? | **Decided 2026-10-05: the organization's Keycloak (AD behind it).** Generic OIDC (Authlib, discovery via `MOCKAN_OIDC_ISSUER`), no provider-specific code. Open: client registration and one real login. See [`mockan-authentication.md`](mockan-authentication.md). |
 | OQ-05 | Do frontends call one shared API gateway URL or one base URL per microservice? Both are supported by `PathPrefix` + `StripPrefix`; confirm per app to configure the catalog. | Both supported. |
 
 ---
@@ -492,3 +505,5 @@ Validation rules (enforce in Pydantic models / services, test in `server/tests/a
 | --- | --- | --- |
 | v1.0 | 2026-10-03 | Approved baseline (ASP.NET Core / .NET 10). |
 | v1.1 | 2026-10-03 | Backend stack changed to Python 3.14 + FastAPI. D-03, D-04, D-06, D-09, D-10 superseded by D-14 … D-18. Rewrote §6.2 pipeline, §6.3 transformer, §7 template/regex semantics, §9 structure, §12.3 deployment/config for Python. Phase 2 templating moved from Scriban/Bogus to Jinja2 sandbox/Faker. SignalR replaced by WebSocket. Added `audit_logs` table (PR-15), `/auth/*` routes, hop-by-hop/allowlist transform rows, §14 rule 10. NFR-08 wording updated (no per-match timeout with RE2). |
+| v1.2 | 2026-10-04 | Phase 1 complete (B0–B7). Backend implementation plan gaps settled: G-1 validation `errors` map; G-2 Admin payload shapes ([`../Backend/admin-api.md`](../Backend/admin-api.md)); G-3 `409 last_response`; G-4 `publicBaseUrl` on `GET /me`; G-5 new error codes; G-6 `X-Mockan-Source: error` on problems, `mock` on preflight; G-7 `mock_rules.service_id` informational; G-8 readiness `starting`/`ready`/`degraded`; G-9 `MOCKAN_AUTH_MODE=dev`; G-11 Panel served by the Admin; G-12 CSRF via JSON-only writes + `SameSite=Lax`; G-13 `bodyMode` Static only. New settings in §12.3: `MOCKAN_AUTH_MODE`, `MOCKAN_PANEL_BASE_PATH`, `MOCKAN_SNAPSHOT_DEBOUNCE_MS`, `MOCKAN_LOG_LEVEL`, `MOCKAN_LOG_FORMAT`. Proposed **D-19** (G-10, request-log push across processes; needs approval before B8). OQ-B1 … OQ-B6 recorded in the backend plan. |
+| v1.3 | 2026-10-05 | Phase 2 backend built (B8). D-19 accepted. New settings in §12.3: `MOCKAN_REQUEST_LOG_*` (queue, batch, flush, retention), `MOCKAN_OTEL_*`, `MOCKAN_TRACING_ENABLED`. `request_logs` table (migration 0002). New Admin routes in [`../Backend/admin-api.md`](../Backend/admin-api.md): `/me/request-logs`, `/me/request-logs/{id}/create-rule`, `/hubs/request-log`, `/me/test-route`, `/me/rules/export`, `/me/rules/import`. `bodyMode: Template` is accepted (Jinja2 sandbox + Faker; `mock_render_failed`). Tracing is opt-in so the client's `traceparent` still reaches upstreams unchanged by default. |

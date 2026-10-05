@@ -1,0 +1,73 @@
+{
+  "realm": "internal",
+  "enabled": true,
+  "sslRequired": "none",
+  "loginWithEmailAllowed": true,
+  "registrationAllowed": false,
+  "users": [
+    {
+      "id": "00000000-0000-4000-8000-000000000001",
+      "username": "admin",
+      "email": "admin@example.test",
+      "emailVerified": true,
+      "firstName": "Ada",
+      "lastName": "Admin",
+      "enabled": true,
+      "credentials": [{ "type": "password", "value": "admin", "temporary": false }]
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000002",
+      "username": "ehtesham",
+      "email": "ehtesham@example.test",
+      "emailVerified": true,
+      "firstName": "Ehtesham",
+      "lastName": "Developer",
+      "enabled": true,
+      "credentials": [{ "type": "password", "value": "ehtesham", "temporary": false }]
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000003",
+      "username": "sara",
+      "email": "sara@example.test",
+      "emailVerified": true,
+      "firstName": "Sara",
+      "lastName": "Developer",
+      "enabled": true,
+      "credentials": [{ "type": "password", "value": "sara", "temporary": false }]
+    }
+  ],
+  "clients": [
+    {
+      "clientId": "mockan",
+      "name": "Mockan (local development)",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "mockan-local-dev-secret",
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": false,
+      "redirectUris": [
+        "http://localhost:8081/api/v1/auth/callback",
+        "http://localhost:5173/api/v1/auth/callback",
+        "http://localhost:5174/api/v1/auth/callback"
+      ],
+      "webOrigins": ["+"],
+      "attributes": { "pkce.code.challenge.method": "S256" },
+      "defaultClientScopes": ["basic", "acr", "web-origins", "profile", "email", "roles"],
+      "protocolMappers": [
+        {
+          "name": "mockan-audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "config": {
+            "included.client.audience": "mockan",
+            "access.token.claim": "true",
+            "id.token.claim": "false"
+          }
+        }
+      ]
+    }
+  ]
+}

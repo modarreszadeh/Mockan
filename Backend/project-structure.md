@@ -30,9 +30,12 @@ server/
 │   │   ├── errors.py               # ErrorCode (stable problem+json codes, arch §14 rule 8)
 │   │   └── validation.py           # is_valid_slug(), is_reserved_slug(), host_is_allowed()
 │   ├── matching/
-│   │   ├── model.py                # Frozen dataclasses: CompiledRule, CompiledResponse, ServiceEntry, DeveloperEntry
-│   │   ├── compile.py              # pattern compilers: exact, template, prefix, regex (RE2)
+│   │   ├── model.py                # Frozen dataclasses: CompiledRule, CompiledResponse, ServiceEntry, DeveloperEntry, RequestFacts
+│   │   ├── compile.py              # compile_pattern / compile_rule / compile_response: exact, template, prefix, regex (RE2)
 │   │   ├── template.py             # Mockan template parser/matcher ({name}, {*name})
+│   │   ├── paths.py                # trailing-slash normalisation and segment splitting
+│   │   ├── upstream.py             # build_upstream_path / build_upstream_url, shared by the Gateway and test-route
+│   │   ├── errors.py               # PatternError(field, message), ServiceNotResolvedError
 │   │   ├── snapshot.py             # RuleSnapshot (immutable), RuleSnapshotProvider
 │   │   ├── matcher.py              # match_request() → MatchResult (precedence, arch §7.2)
 │   │   └── service_resolver.py     # resolve_service() → longest PathPrefix + environment choice
@@ -41,32 +44,42 @@ server/
 │   │   ├── db/
 │   │   │   ├── models.py           # SQLAlchemy declarative models (schema "mockan")
 │   │   │   ├── session.py          # engine + async_sessionmaker factory
-│   │   │   └── notify.py           # before_commit hook → pg_notify('mockan_config_changed', …)
-│   │   ├── snapshot_loader.py      # DB rows → mockan.matching snapshot objects
+│   │   │   ├── notify.py           # before_commit hook → pg_notify('mockan_config_changed', …)
+│   │   │   ├── errors.py           # violated_constraint(): which unique/FK an IntegrityError hit
+│   │   │   └── migrate.py          # upgrade_to_head() for MOCKAN_MIGRATE_ON_STARTUP
+│   │   ├── snapshot_loader.py      # DB rows → mockan.matching snapshot objects (load_full, load_developer)
+│   │   ├── audit.py                # record(): masked audit_logs row in the caller's transaction
 │   │   ├── masking.py              # header/JSON secret masking (NFR-07)
 │   │   └── logging.py              # structlog configuration
 │   ├── gateway/
 │   │   ├── app.py                  # create_app(): lifespan, middleware order (arch §6.2), routes
 │   │   ├── context.py              # MockanContext stored in scope["state"]["mockan"]
-│   │   ├── middleware/             # cors.py, developer_resolution.py, mock_matching.py, request_log_capture.py
-│   │   ├── proxy/                  # forwarder.py (httpx/websockets), transform.py (ProxyTransformer)
+│   │   ├── middleware/             # cors.py, error_boundary.py, developer_resolution.py, mock_matching.py, request_log_capture.py
+│   │   ├── proxy/                  # forwarder.py (httpx streaming), websocket.py (WS bridge), transform.py (ProxyTransformer)
 │   │   ├── snapshot_service.py     # LISTEN + debounce + periodic reload (D-07)
 │   │   ├── problems.py             # problem+json responses
 │   │   └── health.py               # /_mockan/health/live, /_mockan/health/ready
 │   └── admin/
 │       ├── app.py                  # create_app(): routers under /api/v1, auth, static Panel
-│       ├── auth.py                 # OIDC (Authlib), current_developer, require_admin
+│       ├── auth.py                 # /auth/* routes, current_developer, writable_developer, require_admin
+│       ├── oidc.py                 # OidcClient: Authlib code flow + bearer JWT validation (joserfc)
 │       ├── deps.py                 # DB session dependency, settings dependency
 │       ├── schemas/                # Pydantic request/response models (camelCase JSON)
 │       ├── routers/                # me.py, services.py, service_settings.py, rules.py, responses.py
 │       ├── services/               # use-case functions (validation + persistence + audit)
-│       ├── problems.py             # exception → problem+json handlers
+│       ├── problems.py             # DomainError + exception → problem+json handlers
+│       ├── openapi.py              # drops FastAPI's generic 422 from the OpenAPI document
+│       ├── spa.py                  # serves the built Panel + index.html fallback
 │       └── static/                 # built Panel (git-ignored, filled by the Panel build)
 └── tests/
     ├── conftest.py
-    ├── matching/
+    ├── support/                    # snapshot_builder.py (in-memory RuleSnapshot), fake_upstream.py, fake_idp.py (OIDC provider), live_server.py (real Uvicorn in a thread), notify_listener.py, rss.py
+    ├── domain/
+    ├── infrastructure/             # settings, masking, logging (fast); database, notify, loader (db)
+    ├── matching/                   # incl. precedence_parity.json, shared with the Panel's vitest
     ├── gateway/
-    └── admin/
+    ├── acceptance/                 # Phase 1 acceptance: real Admin + Gateway + upstream over HTTP, one test per PR id (PR-01…PR-16) + the PRD §6 journey
+    └── admin/                      # conftest.py: admin_client, as_developer, audit_rows; openapi.snapshot.json
 ```
 
 > The code folder is `server/`, not `backend/`, so it can't collide with the `Backend/` docs folder on case-insensitive file systems.

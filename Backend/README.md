@@ -24,15 +24,22 @@ audience: Backend engineers and AI coding agents working in `server/`
 | Database | PostgreSQL via SQLAlchemy 2 async + asyncpg; migrations with Alembic (D-16) |
 | Proxy | `httpx.AsyncClient` streaming + `websockets` bridge (D-15) |
 | Regex engine | RE2 via `google-re2` (D-17) |
+| Phase | **Phase 1 complete** (B0 → B7) and **Phase 2 built** (B8a request log, B8b test route, B8c templated bodies, B8d export/import, B8e operability). Phase 3 is not planned yet. Build order in [implementation-plan.md](implementation-plan.md). |
 
 ## Documents
 
 | File | Topic | Status |
 | --- | --- | --- |
+| [implementation-plan.md](implementation-plan.md) | Milestones B0–B8 to prepare and build `server/`; gaps settled between PRD, architecture and the Panel contract; backend open questions (OQ-Bx). | Draft |
 | [tech-stack.md](tech-stack.md) | Libraries, versions, and why each was chosen; .NET → Python mapping from v1.0. | Draft |
 | [project-structure.md](project-structure.md) | Folder layout, module boundaries, import rules, entry points, commands. | Draft |
 | [conventions.md](conventions.md) | Code style, naming, async rules, errors, logging, config. | Draft |
 | [testing.md](testing.md) | Test layers, tools, fixtures, naming, what must be tested. | Draft |
+| [admin-api.md](admin-api.md) | Admin API: auth (OIDC, dev mode), routes, payloads and limits, error codes, decisions, serving the Panel. | Draft |
+| [gateway.md](gateway.md) | Gateway pipeline, CORS, mock responses, proxy and WebSocket bridge, snapshot service, health, problem codes, performance. | Draft |
+| [domain-model.md](domain-model.md) | Entities, how one request is decided, matching semantics, invariants. | Draft |
+| [operations.md](operations.md) | Compose and images, every setting, health, migrations, runbook, adding a Service. | Draft |
+| [database.md](database.md) | Schema conventions, FK delete policy, change notification, migration rules. | Draft |
 
 Covered in the architecture doc for now (split into this folder when they grow):
 
@@ -49,9 +56,11 @@ Covered in the architecture doc for now (split into this folder when they grow):
 ```bash
 cd server
 uv sync                                        # create .venv, install deps from uv.lock
-docker compose -f ../deploy/compose/docker-compose.yml up -d postgres
+docker compose -f ../deploy/compose/docker-compose.yml up -d postgres   # MOCKAN_DB_PORT=5433 if 5432 is taken
+# or the whole stack (Admin + Panel on :8081, 2 Gateways on :8090/:8091): see operations.md §1
 uv run alembic upgrade head                    # apply migrations
 uv run uvicorn mockan.admin.app:create_app --factory --port 8081 --reload
 uv run uvicorn mockan.gateway.app:create_app --factory --port 8080 --reload
-uv run pytest                                  # all tests
+uv run pytest                                  # all tests (db tests need Docker; -m "not db" skips them)
+./scripts/check.sh                             # lint + format + mypy + import contracts + tests (the `check` command)
 ```
