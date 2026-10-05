@@ -10,7 +10,9 @@ name: mockan
 
 x-mockan-common: &mockan-common
   MOCKAN_DATABASE_URL: postgresql+asyncpg://mockan:mockan@postgres:5432/mockan
-  MOCKAN_ALLOWED_UPSTREAM_HOSTS: '["fake-upstream"]'
+  # JSON list; `*.x` matches subdomains only. Add your dev/stage hosts, never production (NFR-06):
+  #   MOCKAN_ALLOWED_UPSTREAM_HOSTS='["fake-upstream","api.novin-stage.com"]' docker compose up -d
+  MOCKAN_ALLOWED_UPSTREAM_HOSTS: '${MOCKAN_ALLOWED_UPSTREAM_HOSTS:-["fake-upstream", "*.novin-stage.com", "*.novin-system.com"]}'
   MOCKAN_PUBLIC_BASE_URL: http://localhost:8090
   MOCKAN_LOG_FORMAT: console
 
