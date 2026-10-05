@@ -75,6 +75,7 @@ class ForwardInfo:
     scheme: str  # "http" | "https" as seen by the client (after Uvicorn's proxy-headers handling)
     host: str | None  # the Host header the client used (Mockan's own host)
     client_ip: str | None
+    path_prefix: str = ""  # a reverse proxy's mount path, e.g. "/mock" (from PUBLIC_BASE_URL)
 
 
 def _origin(url: str) -> tuple[str, str, int | None]:
@@ -128,7 +129,7 @@ def build_request_headers(
     out.append(("x-forwarded-proto", info.scheme))
     if info.host:
         out.append(("x-forwarded-host", info.host))
-    out.append(("x-forwarded-prefix", f"/{info.developer_slug}"))
+    out.append(("x-forwarded-prefix", f"{info.path_prefix}/{info.developer_slug}"))
     out.append(("x-mockan-developer", info.developer_slug))
 
     if extra_headers:  # the Service's configured headers win over whatever the client sent
@@ -142,8 +143,9 @@ def build_request_headers(
 class RouteMapping:
     """How an upstream URL path maps back into the client's (Mockan) URL space.
 
-    The inverse of the request rewrite: `/{slug}` + (the Service prefix when `strip_prefix`) +
-    the upstream path below the environment's `BaseUrl` path.
+    The inverse of the request rewrite: the path of `public_base_url` (a reverse proxy's mount
+    point, e.g. `/mock`) + `/{slug}` + (the Service prefix when `strip_prefix`) + the upstream path
+    below the environment's `BaseUrl` path.
     """
 
     developer_slug: str
@@ -151,6 +153,10 @@ class RouteMapping:
     upstream_base_url: str
     service_prefix: str
     strip_prefix: bool
+
+    @property
+    def public_path_prefix(self) -> str:
+        return urlsplit(self.public_base_url).path.rstrip("/")
 
     def to_gateway_path(self, upstream_path: str, *, root_without_slash: bool = False) -> str:
         base_path = urlsplit(self.upstream_base_url).path.rstrip("/")
@@ -160,7 +166,7 @@ class RouteMapping:
         if root_without_slash and remainder == "/":
             remainder = ""
         prefix = routing_prefix(self.service_prefix) if self.strip_prefix else ""
-        return f"/{self.developer_slug}{prefix}{remainder}"
+        return f"{self.public_path_prefix}/{self.developer_slug}{prefix}{remainder}"
 
     def rewrite_location(self, location: str) -> str:
         """A `Location` that points at the upstream becomes one that points at Mockan."""
@@ -169,7 +175,7 @@ class RouteMapping:
             scheme = parts.scheme or urlsplit(self.upstream_base_url).scheme
             if _origin(f"{scheme}://{parts.netloc}") != _origin(self.upstream_base_url):
                 return location
-            prefix = self.public_base_url.rstrip("/")
+            prefix = origin_of(self.public_base_url)  # the mount path comes from to_gateway_path
         elif location.startswith("/"):  # path-absolute: relative to the upstream's root
             prefix = ""
         else:  # path-relative: the browser resolves it inside Mockan's URL space already

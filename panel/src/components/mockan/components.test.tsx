@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react"
+import { fireEvent, render, screen, waitFor } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { InboxIcon } from "lucide-react"
 import { useState } from "react"
@@ -35,7 +35,10 @@ describe("BaseUrlCard", () => {
   it("PR-18 copies the .env line with one click and confirms", async () => {
     const { container, user } = renderWithProviders(<BaseUrlCard slug="ehtesham" />)
     expect(screen.getByTestId("env-line")).toHaveTextContent("VITE_API_BASE_URL=https://mock.novin-tools.com/ehtesham")
-    await user.click(screen.getByRole("button", { name: "Copy .env line" }))
+    const copyButton = screen.getByRole("button", { name: "Copy .env line" })
+    expect(copyButton).toBeDisabled() // not copyable until GET /me has supplied the configured base URL
+    await waitFor(() => expect(copyButton).toBeEnabled())
+    await user.click(copyButton)
     expect(await screen.findByRole("button", { name: "Copied .env line" })).toHaveTextContent("Copied")
     expect(await axe(container)).toHaveNoViolations()
   })

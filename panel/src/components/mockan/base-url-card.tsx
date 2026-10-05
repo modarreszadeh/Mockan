@@ -1,6 +1,6 @@
 import { CheckIcon, CopyIcon } from "lucide-react"
 
-import { usePublicBaseUrl } from "@/api/queries/me"
+import { useMe, usePublicBaseUrl } from "@/api/queries/me"
 import { Button } from "@/components/ui/button"
 import { envLine } from "@/lib/format"
 import { cn } from "@/lib/utils"
@@ -24,6 +24,7 @@ export function BaseUrlCard({
   className,
 }: BaseUrlCardProps) {
   const line = envLine(usePublicBaseUrl(), slug)
+  const configured = Boolean(useMe().data) // the base URL is only trustworthy once GET /me has loaded
   const { copied, copy } = useCopy()
 
   return (
@@ -50,6 +51,7 @@ export function BaseUrlCard({
         <Button
           variant="onDark"
           className="shrink-0 sm:self-end"
+          disabled={!configured}
           onClick={() => void copy(line)}
           aria-label={copied ? "Copied .env line" : "Copy .env line"}
         >

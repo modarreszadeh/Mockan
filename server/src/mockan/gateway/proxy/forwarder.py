@@ -8,6 +8,7 @@ ASGI `receive` and the response body back as raw bytes, so nothing is ever buffe
 
 from collections.abc import AsyncIterator, Sequence
 from dataclasses import dataclass
+from urllib.parse import urlsplit
 
 import anyio
 import httpx
@@ -156,6 +157,7 @@ class ProxyForwarder:
                 scheme=_forwarded_scheme(scope),
                 host=_header(scope, b"host"),
                 client_ip=scope["client"][0] if scope.get("client") else None,
+                path_prefix=urlsplit(self._settings.public_base_url).path.rstrip("/"),
             ),
             upstream_host=url.netloc.decode("ascii"),
             extra_headers=environment.extra_headers,

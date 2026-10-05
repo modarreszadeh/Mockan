@@ -26,8 +26,8 @@ MOCKAN_DB_PORT=55433 docker compose up -d  # when 5432 is taken
 
 | What | Where |
 | --- | --- |
-| Panel + Admin API | `http://localhost:8081` (`MOCKAN_ADMIN_PORT` to change) |
-| Gateway replicas | `http://localhost:8090`, `http://localhost:8091` (same database, own snapshot each: NFR-03) |
+| Panel + Admin API | `http://localhost:8765` (nginx; `MOCKAN_PORT` to change; Admin API under `/api`) |
+| Gateway replicas | `http://localhost:8765/mock` (nginx round-robins both replicas; same database, own snapshot each: NFR-03) |
 | PostgreSQL | `localhost:${MOCKAN_DB_PORT:-5432}`, user/password/db `mockan` |
 
 The stack runs `MOCKAN_AUTH_MODE=dev` (no identity provider; G-9). The bare sign-in is `dev:dev`, which the compose file lists in `MOCKAN_ADMIN_SSO_SUBJECTS`, so it is an admin. **Never use dev mode in a shared environment.** The Admin applies the migrations on startup (`MOCKAN_MIGRATE_ON_STARTUP=true`); the Gateways wait for the Admin to be healthy.
@@ -35,12 +35,12 @@ The stack runs `MOCKAN_AUTH_MODE=dev` (no identity provider; G-9). The bare sign
 The PRD §6 journey by hand (the `demo` profile registers nothing; do it through the Panel or the API):
 
 ```bash
-A=http://localhost:8081; H='content-type: application/json'
+A=http://localhost:8765; H='content-type: application/json'
 curl -c jar -s "$A/api/v1/auth/login" -o /dev/null                       # sign in as dev:dev
 curl -b jar -X PUT -H "$H" -d '{"slug":"ehtesham"}' $A/api/v1/me          # claim the slug
 curl -b jar -X POST -H "$H" -d '{"name":"limsa","pathPrefix":"/limsa"}' $A/api/v1/services   # note its id
 curl -b jar -X POST -H "$H" -d '{"environment":"stage","baseUrl":"http://fake-upstream:9000"}' $A/api/v1/services/<id>/environments
-curl -i http://localhost:8090/ehtesham/limsa/api/v1/dashboard             # X-Mockan-Source: proxy
+curl -i http://localhost:8765/mock/ehtesham/limsa/api/v1/dashboard             # X-Mockan-Source: proxy
 ```
 
 Panel development against a real Admin: run the Admin on 8081, then `VITE_USE_MSW=false npm run dev` in `panel/`. The Vite dev server proxies `/api` and `/hubs` to `http://localhost:8081` (`MOCKAN_ADMIN_URL` overrides the target), so the session cookie stays same-origin.
@@ -65,7 +65,7 @@ All are environment variables with the `MOCKAN_` prefix (`infrastructure/setting
 | --- | --- | --- | --- |
 | `MOCKAN_DATABASE_URL` | both | `postgresql+asyncpg://mockan:mockan@localhost:5432/mockan` | |
 | `MOCKAN_ALLOWED_UPSTREAM_HOSTS` | both | `[]` | JSON list; `*.x` matches subdomains only. Empty = nothing can be saved or proxied. **Never list production hosts** (NFR-06). |
-| `MOCKAN_PUBLIC_BASE_URL` | both | `https://mock.novin-tools.com` | `Location` rewrite; returned as `publicBaseUrl` by `GET /me`. |
+| `MOCKAN_PUBLIC_BASE_URL` | both | `https://mock.novin-tools.com` | `Location` rewrite; returned as `publicBaseUrl` by `GET /me`. With Compose, set it in `deploy/compose/.env`. |
 | `MOCKAN_DEFAULT_ALLOWED_ORIGINS` | both | `["http://localhost:*","http://127.0.0.1:*"]` | New Developers' `allowedOrigins`; Gateway fallback for unknown slugs. |
 | `MOCKAN_LOG_LEVEL`, `MOCKAN_LOG_FORMAT` | both | `INFO`, `json` | `console` for local reading. |
 | `MOCKAN_OTEL_ENDPOINT`, `MOCKAN_OTEL_EXPORT_INTERVAL_SECONDS` | both | empty, `30` | OTLP/HTTP collector for metrics (and spans); empty = no export. |

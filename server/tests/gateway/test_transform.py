@@ -344,6 +344,28 @@ class TestLocationRewrite:
         assert route.rewrite_location("https://h.test/a") == "https://mock.test/ehtesham/a"
 
 
+class TestMountedUnderAPathPrefix:
+    """A reverse proxy mounts Mockan at `PUBLIC_BASE_URL`'s path (e.g. `/mock`)."""
+
+    ROUTE = RouteMapping("ehtesham", "https://mock.test/mock/", "https://h.test", "/s", False)
+
+    def test_an_absolute_location_gets_the_mount_path_once(self) -> None:
+        assert self.ROUTE.rewrite_location("https://h.test/a?x=1") == (
+            "https://mock.test/mock/ehtesham/a?x=1"
+        )
+
+    def test_a_path_absolute_location_keeps_the_mount_path(self) -> None:
+        assert self.ROUTE.rewrite_location("/a") == "/mock/ehtesham/a"
+
+    def test_the_cookie_path_is_under_the_mount_path(self) -> None:
+        assert self.ROUTE.rewrite_set_cookie("a=1; Path=/x").endswith("Path=/mock/ehtesham/x")
+
+    def test_x_forwarded_prefix_includes_the_mount_path(self) -> None:
+        info = ForwardInfo("ehtesham", "http", None, None, path_prefix="/mock")
+        out = dict(build_request_headers([], info=info, upstream_host="h.test"))
+        assert out["x-forwarded-prefix"] == "/mock/ehtesham"
+
+
 # ---- Set-Cookie (PR-03) -------------------------------------------------------------------------
 
 

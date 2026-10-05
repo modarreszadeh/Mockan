@@ -57,7 +57,7 @@ Covered in the architecture doc for now (split into this folder when they grow):
 cd server
 uv sync                                        # create .venv, install deps from uv.lock
 docker compose -f ../deploy/compose/docker-compose.yml up -d postgres   # MOCKAN_DB_PORT=5433 if 5432 is taken
-# or the whole stack (Admin + Panel on :8081, 2 Gateways on :8090/:8091): see operations.md §1
+# or the whole stack (nginx on :8765 in front of the Admin + Panel and 2 Gateways at `/mock`): see operations.md §1
 uv run alembic upgrade head                    # apply migrations
 uv run uvicorn mockan.admin.app:create_app --factory --port 8081 --reload
 uv run uvicorn mockan.gateway.app:create_app --factory --port 8080 --reload

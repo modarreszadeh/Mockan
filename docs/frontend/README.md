@@ -49,7 +49,7 @@ cd panel && VITE_USE_MSW=false MOCKAN_ADMIN_URL=http://localhost:8081 npm run de
 npm run build:server        # copies dist/ to server/src/mockan/admin/static/ (git-ignored); restart the Admin once
 ```
 
-Dev sign-in (`MOCKAN_AUTH_MODE=dev`) logs in as `dev:dev`; the compose file makes that user an admin. A request that goes **through the Gateway** is what fills the Live log: send one with `curl http://localhost:8090/<slug>/<service-prefix>/...`.
+Dev sign-in (`MOCKAN_AUTH_MODE=dev`) logs in as `dev:dev`; the compose file makes that user an admin. A request that goes **through the Gateway** is what fills the Live log: send one with `curl http://localhost:8765/mock/<slug>/<service-prefix>/...`.
 
 Open `http://localhost:5173/__design` (dev only) for the living style guide. Append `?mswScenario=new` to any URL to start as a brand-new Developer (see [testing.md](testing.md#msw-scenarios)).
 
