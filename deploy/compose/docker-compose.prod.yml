@@ -1,0 +1,62 @@
+# Production overrides. Use through deploy.sh, or by hand:
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+#
+# Differences from the local stack (docker-compose.yml):
+#   - Admin and Gateway run the images CI publishes to GHCR (no local build).
+#   - OIDC sign-in (never dev mode), a real database password and session secret, all from .env.
+#   - Migrations are an explicit deploy step (deploy.sh), not MOCKAN_MIGRATE_ON_STARTUP.
+#   - PostgreSQL is not published on the host; only nginx is, on MOCKAN_BIND:MOCKAN_PORT.
+#   - Restart policies and rotated JSON logs on every service; no demo upstream.
+# Needs Docker Compose >= 2.24 (`!reset` / `!override`).
+
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "20m"
+    max-file: "5"
+
+x-database-url: &database-url postgresql+asyncpg://mockan:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@postgres:5432/mockan
+
+services:
+  postgres:
+    ports: !reset []  # reachable only on the Docker network
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+    restart: unless-stopped
+    logging: *default-logging
+
+  admin:
+    image: ${MOCKAN_IMAGE_REPO:-ghcr.io/modarreszadeh/mockan}/admin:${IMAGE_TAG:-latest}
+    build: !reset null
+    environment:
+      MOCKAN_DATABASE_URL: *database-url
+      MOCKAN_PUBLIC_BASE_URL: ${MOCKAN_PUBLIC_BASE_URL:?set MOCKAN_PUBLIC_BASE_URL in .env}
+      MOCKAN_ALLOWED_UPSTREAM_HOSTS: ${MOCKAN_ALLOWED_UPSTREAM_HOSTS:?set MOCKAN_ALLOWED_UPSTREAM_HOSTS in .env}
+      MOCKAN_LOG_FORMAT: json
+      MOCKAN_AUTH_MODE: oidc
+      MOCKAN_OIDC_ISSUER: ${MOCKAN_OIDC_ISSUER:?set MOCKAN_OIDC_ISSUER in .env}
+      MOCKAN_OIDC_CLIENT_ID: ${MOCKAN_OIDC_CLIENT_ID:?set MOCKAN_OIDC_CLIENT_ID in .env}
+      MOCKAN_OIDC_CLIENT_SECRET: ${MOCKAN_OIDC_CLIENT_SECRET:?set MOCKAN_OIDC_CLIENT_SECRET in .env}
+      MOCKAN_SESSION_SECRET: ${MOCKAN_SESSION_SECRET:?set MOCKAN_SESSION_SECRET in .env}
+      MOCKAN_ADMIN_SSO_SUBJECTS: ${MOCKAN_ADMIN_SSO_SUBJECTS:?set MOCKAN_ADMIN_SSO_SUBJECTS in .env}
+      MOCKAN_MIGRATE_ON_STARTUP: "false"
+    restart: unless-stopped
+    logging: *default-logging
+
+  gateway:
+    image: ${MOCKAN_IMAGE_REPO:-ghcr.io/modarreszadeh/mockan}/gateway:${IMAGE_TAG:-latest}
+    build: !reset null
+    environment:
+      MOCKAN_DATABASE_URL: *database-url
+      MOCKAN_PUBLIC_BASE_URL: ${MOCKAN_PUBLIC_BASE_URL:?set MOCKAN_PUBLIC_BASE_URL in .env}
+      MOCKAN_ALLOWED_UPSTREAM_HOSTS: ${MOCKAN_ALLOWED_UPSTREAM_HOSTS:?set MOCKAN_ALLOWED_UPSTREAM_HOSTS in .env}
+      MOCKAN_LOG_FORMAT: json
+    restart: unless-stopped
+    logging: *default-logging
+
+  nginx:
+    # The only published port. Bind to 127.0.0.1 when a TLS proxy on this host fronts it.
+    ports: !override
+      - "${MOCKAN_BIND:-127.0.0.1}:${MOCKAN_PORT:-8765}:80"
+    restart: unless-stopped
+    logging: *default-logging

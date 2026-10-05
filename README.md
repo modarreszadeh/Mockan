@@ -108,6 +108,27 @@ VITE_API_BASE_URL=http://localhost:8765/mock/ehtesham
 > [!WARNING]
 > The compose stack runs with `MOCKAN_AUTH_MODE=dev`: anyone who can reach the Admin can sign in as anyone. It is for local use only. Never run dev mode on a shared network; configure OIDC instead (see [operations](docs/backend/operations.md)). Mockan is a development tool and is not meant to serve production traffic or to be exposed to the internet.
 
+## Deploy to a server
+
+CI (`.github/workflows/ci.yml`) tests every change and, from `main`, publishes the Admin and Gateway images to GitHub Container Registry as `ghcr.io/modarreszadeh/mockan/admin` and `/gateway`, tagged `latest`, `main` and the commit SHA. The images are `linux/amd64`. A server only needs Docker (Compose 2.24 or newer) and a checkout of this repository:
+
+```bash
+git clone https://github.com/modarreszadeh/Mockan.git && cd Mockan/deploy/compose
+./deploy.sh --dry-run      # validate .env and show the plan; changes nothing
+./deploy.sh                # deploy the latest images
+```
+
+On the first run `deploy.sh` creates `.env` from [`.env.production.example`](deploy/compose/.env.production.example), generates the database password and session secret (never printed), and stops with the list of values only you can supply: the Keycloak issuer, client id and secret, and the admin `sub` values. Fill them in `.env` and run it again. `MOCKAN_PUBLIC_BASE_URL` (default `https://mockan.novin-tools.com/mock`) is the one place the public base URL is set. The Panel and the Gateway both read it.
+
+| Command | What it does |
+| --- | --- |
+| `./deploy.sh <sha>` | Deploy a specific image tag. |
+| `./deploy.sh --rollback` | Go back to the previous tag. Images only: migrations are not reverted. |
+| `./deploy.sh --check-db` | Show the database revision. |
+| `./deploy.sh --no-pull` | Use the images already on the machine. |
+
+Production runs OIDC sign-in (never dev mode) and publishes one port, nginx on `MOCKAN_BIND:MOCKAN_PORT` (default `127.0.0.1:8765`). Put your TLS reverse proxy in front of it and forward `https://<domain>/` to that port. Register `https://<domain>/api/v1/auth/callback` as the redirect URI in Keycloak. See [operations](docs/backend/operations.md) for the details.
+
 ## How it works
 
 Mockan is two processes that share a PostgreSQL database:
@@ -125,7 +146,8 @@ Rule changes are written to PostgreSQL and announced with `LISTEN/NOTIFY`; each 
 ```
 server/        Python backend: Gateway + Admin (one uv project, one `mockan` package)
 panel/         React single-page app, built into the Admin image
-deploy/        Docker images and the local Compose stack
+deploy/        Docker images, the local Compose stack and the production deploy.sh
+.github/       CI workflow (tests, image build and publish to GHCR)
 docs/          All documentation (see docs/README.md)
   product/       Product requirements, personas, user journey
   backend/       Backend design, conventions and operations

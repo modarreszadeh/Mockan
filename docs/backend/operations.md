@@ -57,6 +57,20 @@ docker build -f deploy/docker/admin.Dockerfile   -t mockan-admin .
 
 Both are `python:3.14-slim`, multi-stage, `uv sync --frozen --no-dev`, run as a non-root user (uid 10001) and have a `HEALTHCHECK`. The Admin image builds `panel/` in a Node stage and copies it to `mockan/admin/static/`. Entry points are the ones in arch §12.3. The Gateway reads `FORWARDED_ALLOW_IPS` itself (Uvicorn): set it to the ingress CIDRs; the default is `127.0.0.1`.
 
+## 2a. Deploying from GHCR (`deploy/compose/deploy.sh`)
+
+CI publishes `ghcr.io/modarreszadeh/mockan/admin` and `/gateway` (`linux/amd64`; tags `latest`, `main`, the commit SHA). `deploy/compose/docker-compose.prod.yml` layers production settings over the local compose file: the GHCR images instead of a build, `MOCKAN_AUTH_MODE=oidc`, a required database password and session secret, `MOCKAN_MIGRATE_ON_STARTUP=false`, no published PostgreSQL port, restart policies and rotated JSON logs. Only nginx is published, on `MOCKAN_BIND:MOCKAN_PORT` (default `127.0.0.1:8765`); terminate TLS in front of it.
+
+```bash
+cd deploy/compose
+./deploy.sh --dry-run     # validate .env, render the config, print the plan; changes nothing
+./deploy.sh [<tag>]       # pull, start PostgreSQL, migrate, restart, probe through nginx
+./deploy.sh --rollback    # redeploy the tag recorded in .last-deployed-tag (images only)
+./deploy.sh --check-db    # alembic current / heads
+```
+
+`deploy.sh` owns `.env`: it creates it from `.env.production.example`, generates empty `POSTGRES_PASSWORD` and `MOCKAN_SESSION_SECRET` values without printing them, validates the rest, and lists what is still missing (`MOCKAN_OIDC_ISSUER`, `_CLIENT_ID`, `_CLIENT_SECRET`, `MOCKAN_ADMIN_SSO_SUBJECTS`, `MOCKAN_ALLOWED_UPSTREAM_HOSTS`, `MOCKAN_PUBLIC_BASE_URL`). A deploy runs the steps in this order: pull, start PostgreSQL, stop nginx, Gateways and Admin, `alembic upgrade head`, start everything and wait for the health checks, probe `/api/v1/openapi.json` and `/mock/_mockan/health/live` through nginx. A failed pull stops before anything is touched; a failed migration restarts the previous containers. The first deploy creates the database with the generated password, so changing `POSTGRES_PASSWORD` later does not change an existing database. Compose files and `nginx.conf` come from the checkout: `git pull` before deploying when they changed.
+
 ## 3. Settings
 
 All are environment variables with the `MOCKAN_` prefix (`infrastructure/settings.py`, the only place that reads the environment; `server/.env.example` lists them). The table is arch §12.3.
@@ -150,7 +164,7 @@ Metrics are always collected in-process (OpenTelemetry SDK, no cost on the reque
 
 ## 5. Migrations
 
-Alembic, schema `mockan` ([database.md §4](database.md#4-migrations)). Non-prod: `MOCKAN_MIGRATE_ON_STARTUP=true` on the Admin. Shared environments: run `alembic upgrade head` as a job (the Admin image contains `alembic.ini` and `migrations/`) **before** rolling out new Gateways: old and new Gateways must both work with the new schema, so make migrations additive and remove columns in a later release.
+Alembic, schema `mockan` ([database.md §4](database.md#4-migrations)). Non-prod: `MOCKAN_MIGRATE_ON_STARTUP=true` on the Admin. Shared environments (`deploy.sh` does this, [§2a](#2a-deploying-from-ghcr-deploycomposedeploysh)): run `alembic upgrade head` as a job (the Admin image contains `alembic.ini` and `migrations/`) **before** rolling out new Gateways: old and new Gateways must both work with the new schema, so make migrations additive and remove columns in a later release.
 
 ## 6. Runbook
 
