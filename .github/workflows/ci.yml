@@ -1,0 +1,199 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+# Superseded runs on the same branch/PR are pointless, so cancel them. Pushes to main are left
+# alone so an in-flight image publish is never aborted.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  # -- Change detection: skip the halves of the pipeline the change can't affect -----------------
+  changes:
+    name: Detect changes
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      panel: ${{ steps.filter.outputs.panel }}
+      server: ${{ steps.filter.outputs.server }}
+      images: ${{ steps.images.outputs.matrix }}
+      any-image: ${{ steps.images.outputs.any }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            panel:
+              - 'panel/**'
+              # The Panel build type-checks against a fixture shared with the server tests.
+              - 'server/tests/matching/precedence_parity.json'
+              - '.github/workflows/ci.yml'
+            server:
+              - 'server/**'
+              - '.github/workflows/ci.yml'
+            docker:
+              - 'deploy/docker/**'
+              - '.dockerignore'
+
+      # The Admin image bundles the Panel; the Gateway image is the server only.
+      - name: Compute image matrix
+        id: images
+        env:
+          PANEL: ${{ steps.filter.outputs.panel }}
+          SERVER: ${{ steps.filter.outputs.server }}
+          DOCKER: ${{ steps.filter.outputs.docker }}
+        run: |
+          matrix='[]'
+          if [ "$PANEL" = "true" ] || [ "$SERVER" = "true" ] || [ "$DOCKER" = "true" ]; then
+            matrix=$(echo "$matrix" | jq -c '. + [{"name":"admin","file":"deploy/docker/admin.Dockerfile"}]')
+          fi
+          if [ "$SERVER" = "true" ] || [ "$DOCKER" = "true" ]; then
+            matrix=$(echo "$matrix" | jq -c '. + [{"name":"gateway","file":"deploy/docker/gateway.Dockerfile"}]')
+          fi
+          echo "matrix=$matrix" >> "$GITHUB_OUTPUT"
+          echo "any=$([ "$(echo "$matrix" | jq 'length')" -gt 0 ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+
+  # -- Panel -----------------------------------------------------------------------------------
+  panel:
+    name: Panel
+    needs: changes
+    if: needs.changes.outputs.panel == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: panel
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: panel/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type-check
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Test
+        run: npm test
+
+      - name: Build
+        run: npm run build
+
+  # -- Server (Gateway + Admin) ------------------------------------------------------------------
+  # The database tests start PostgreSQL through Testcontainers, which needs the runner's Docker.
+  server:
+    name: Server
+    needs: changes
+    if: needs.changes.outputs.server == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    defaults:
+      run:
+        working-directory: server
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version-file: server/.python-version
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: server/uv.lock
+
+      - name: Install dependencies
+        run: uv sync --frozen
+
+      - name: Lint
+        run: uv run ruff check .
+
+      - name: Format
+        run: uv run ruff format --check .
+
+      - name: Type-check
+        run: uv run mypy
+
+      - name: Architecture contracts
+        run: uv run lint-imports
+
+      - name: Test
+        run: uv run pytest -q
+
+  # -- Docker images: build on every relevant change, publish to GHCR only from main ----------------
+  docker:
+    name: Docker (${{ matrix.image.name }})
+    needs: [changes, panel, server]
+    # Skipped upstream jobs are fine (nothing in their area changed); a failed one is not.
+    if: needs.changes.outputs.any-image == 'true' && !failure() && !cancelled()
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    permissions:
+      contents: read
+      packages: write
+
+    strategy:
+      fail-fast: false
+      matrix:
+        image: ${{ fromJSON(needs.changes.outputs.images) }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}/${{ matrix.image.name }}
+          tags: |
+            type=sha,prefix=
+            type=ref,event=branch
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ${{ matrix.image.file }}
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=${{ matrix.image.name }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.image.name }}
