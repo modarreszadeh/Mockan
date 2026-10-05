@@ -79,30 +79,30 @@ docker compose --profile demo up --build
 
 | What | Where |
 | --- | --- |
-| Panel and Admin API | <http://localhost:8081> |
-| Gateway replicas | <http://localhost:8090>, <http://localhost:8091> |
+| Panel and Admin API | <http://localhost:8765> (Admin API under `/api`) |
+| Gateway (both replicas, via nginx) | <http://localhost:8765/mock> |
 | PostgreSQL | `localhost:5432` (user, password and database `mockan`) |
 
-Set `MOCKAN_DB_PORT=5433` if port 5432 is taken. The `demo` profile adds a tiny fake backend (`fake-upstream:9000`) to proxy to.
+Set `MOCKAN_DB_PORT=5433` if port 5432 is taken, or `MOCKAN_PORT` to change the 8765 entry point. The public base URL is `MOCKAN_PUBLIC_BASE_URL` in `deploy/compose/.env` (copy `.env.example`); the Panel and the Gateway both read it. The `demo` profile adds a tiny fake backend (`fake-upstream:9000`) to proxy to.
 
 Then try the whole journey from the command line:
 
 ```bash
-A=http://localhost:8081; H='content-type: application/json'
+A=http://localhost:8765; H='content-type: application/json'
 curl -c jar -s "$A/api/v1/auth/login" -o /dev/null                          # sign in (dev mode)
 curl -b jar -X PUT  -H "$H" -d '{"slug":"ehtesham"}' $A/api/v1/me             # claim your address
 curl -b jar -X POST -H "$H" -d '{"name":"limsa","pathPrefix":"/limsa"}' $A/api/v1/services   # note the id
 curl -b jar -X POST -H "$H" -d '{"environment":"stage","baseUrl":"http://fake-upstream:9000"}' \
      $A/api/v1/services/<id>/environments
 
-curl -i http://localhost:8090/ehtesham/limsa/api/v1/dashboard                # X-Mockan-Source: proxy
+curl -i http://localhost:8765/mock/ehtesham/limsa/api/v1/dashboard                # X-Mockan-Source: proxy
 ```
 
 Now open the Panel, create a rule for `GET /limsa/api/v1/dashboard`, and repeat the last request: within about 2 seconds it returns your mock with `X-Mockan-Source: mock`. Point your app at it:
 
 ```bash
 # .env
-VITE_API_BASE_URL=http://localhost:8090/ehtesham
+VITE_API_BASE_URL=http://localhost:8765/mock/ehtesham
 ```
 
 > [!WARNING]
