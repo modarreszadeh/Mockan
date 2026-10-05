@@ -4,7 +4,7 @@
  */
 import { createBrowserRouter, type RouteObject } from "react-router"
 
-import { PANEL_BASE_PATH } from "@/lib/config"
+import { PANEL_BASE_PATH, USE_MSW } from "@/lib/config"
 
 import { AppShell, type RouteHandle } from "./app-shell"
 import { AdminGate, AuthGate } from "./auth-gate"
@@ -12,17 +12,24 @@ import { FullPageLoading, NotFoundPage, RouteErrorPage } from "./system-pages"
 
 const crumb = (label: string): RouteHandle => ({ crumb: label })
 
-/** Dev-only routes: the style guide, and the simulated SSO login used by the MSW backend. */
+/**
+ * Dev-only routes: the style guide, and (MSW only) the simulated SSO login. With `VITE_USE_MSW=false`
+ * `/api/v1/auth/login` is not a Panel route: the Vite dev proxy sends it to the real Admin API.
+ */
 const devRoutes: RouteObject[] = import.meta.env.DEV
   ? [
       {
         path: "__design",
         lazy: () => import("@/features/design/design-page").then((m) => ({ Component: m.DesignPage })),
       },
-      {
-        path: "api/v1/auth/login",
-        lazy: () => import("./dev-login-page").then((m) => ({ Component: m.DevLoginPage })),
-      },
+      ...(USE_MSW
+        ? [
+            {
+              path: "api/v1/auth/login",
+              lazy: () => import("./dev-login-page").then((m) => ({ Component: m.DevLoginPage })),
+            },
+          ]
+        : []),
     ]
   : []
 

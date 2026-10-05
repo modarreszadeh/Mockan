@@ -1,5 +1,18 @@
-# Local development stack. B7 adds admin, gateway and fake-upstream services.
+# Local stack: PostgreSQL, the Admin (with the Panel), two Gateway replicas and an optional demo upstream.
+#
+#   docker compose up --build                 # postgres + admin + 2 gateways
+#   docker compose --profile demo up --build  # ...plus the demo upstream
+#
+# Panel + Admin: http://localhost:8081 (dev sign-in, no identity provider).
+# Gateway:       http://localhost:8090 and http://localhost:8091 (two replicas, same database).
+# MOCKAN_AUTH_MODE=dev lets anyone who can reach the Admin sign in as anyone: local use only (G-9).
 name: mockan
+
+x-mockan-common: &mockan-common
+  MOCKAN_DATABASE_URL: postgresql+asyncpg://mockan:mockan@postgres:5432/mockan
+  MOCKAN_ALLOWED_UPSTREAM_HOSTS: '["fake-upstream"]'
+  MOCKAN_PUBLIC_BASE_URL: http://localhost:8090
+  MOCKAN_LOG_FORMAT: console
 
 services:
   postgres:
@@ -18,6 +31,50 @@ services:
       interval: 5s
       timeout: 3s
       retries: 10
+
+  admin:
+    build:
+      context: ../..
+      dockerfile: deploy/docker/admin.Dockerfile
+    environment:
+      <<: *mockan-common
+      MOCKAN_AUTH_MODE: dev
+      MOCKAN_ADMIN_SSO_SUBJECTS: '["dev:dev"]'
+      MOCKAN_SESSION_SECRET: local-development-secret-do-not-use-elsewhere
+      MOCKAN_MIGRATE_ON_STARTUP: "true"
+    ports:
+      - "${MOCKAN_ADMIN_PORT:-8081}:8081"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  gateway:
+    build:
+      context: ../..
+      dockerfile: deploy/docker/gateway.Dockerfile
+    environment:
+      <<: *mockan-common
+      MOCKAN_SNAPSHOT_RELOAD_SECONDS: "60"
+      FORWARDED_ALLOW_IPS: "*"
+    deploy:
+      replicas: 2  # NFR-03: stateless, each replica has its own snapshot and LISTEN connection
+    ports:
+      - "8090-8091:8080"
+    depends_on:
+      admin:
+        condition: service_healthy  # the Admin applies the migrations before it serves
+
+  fake-upstream:
+    profiles: ["demo"]
+    image: mockan-gateway  # any image with Starlette and Uvicorn; reuses the Gateway's
+    build:
+      context: ../..
+      dockerfile: deploy/docker/gateway.Dockerfile
+    healthcheck:
+      disable: true  # the Gateway image's check targets port 8080
+    command: ["uvicorn", "app:app", "--app-dir", "/demo", "--host", "0.0.0.0", "--port", "9000"]
+    volumes:
+      - ./fake-upstream:/demo:ro
 
 volumes:
   postgres-data:

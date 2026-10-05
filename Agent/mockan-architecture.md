@@ -128,6 +128,7 @@ The backend team effectively tells the frontend: *"Assume I've delivered this AP
 | D-16 | **PostgreSQL** is accessed through **SQLAlchemy 2.x async ORM + asyncpg**. Schema migrations use **Alembic**. `LISTEN` uses a dedicated asyncpg connection (`add_listener`). | Relational model, JSONB for conditions/headers, built-in `LISTEN/NOTIFY`; SQLAlchemy + Alembic is the mature Python equivalent of EF Core + migrations. |
 | D-17 | Regex rules are compiled with **RE2** (`google-re2`), a linear-time engine. Patterns RE2 can't compile (backreferences, lookaround) and patterns longer than 512 characters are rejected when saved. | NFR-08. Python's built-in `re` backtracks and has no timeout. RE2 guarantees linear-time matching, so no per-match timeout is needed (replaces the 50 ms timeout of D-09). |
 | D-18 | Request log entries are put on a bounded **`asyncio.Queue`** (`put_nowait`; drop and count when full) and written by a background batch writer. The live view is pushed to the panel over a **FastAPI WebSocket** at `/hubs/request-log`. | Logging never blocks the request path. Native WebSockets avoid a SignalR dependency. |
+| D-19 *(proposed, needs approval before B8)* | Live request-log push across processes: after each batch insert the Gateway's writer runs `SELECT pg_notify('mockan_request_logged', '<developerId>:<maxId>')`; the Admin's `/hubs/request-log` hub keeps one `LISTEN` connection and pushes rows `> lastId` to that Developer's sockets. | The Gateway writes logs but the Admin owns the WebSocket; this reuses the mechanism of D-07 and keeps both processes stateless. |
 
 ---
 
@@ -430,9 +431,10 @@ Validation rules (enforce in Pydantic models / services, test in `server/tests/a
 ### 12.3 Deployment
 - Two container images built from `server/`: `mockan-gateway`, `mockan-admin` (Admin image includes the built Panel). Base image `python:3.14-slim`, dependencies installed with `uv sync --frozen --no-dev`.
 - Entry points:
-  - Gateway: `uvicorn mockan.gateway.app:create_app --factory --host 0.0.0.0 --port 8080 --proxy-headers --forwarded-allow-ips=<ingress CIDRs>`
+  - Gateway: `uvicorn mockan.gateway.app:create_app --factory --host 0.0.0.0 --port 8080 --proxy-headers --forwarded-allow-ips=<ingress CIDRs>` (the image sets `FORWARDED_ALLOW_IPS` instead of the flag; Uvicorn reads it)
   - Admin: `uvicorn mockan.admin.app:create_app --factory --host 0.0.0.0 --port 8081 --proxy-headers`
 - Ingress routing on `mock.novin-tools.com`: `/_mockan/admin/*` and `/api/v1/*`, `/hubs/*` → Admin; everything else → Gateway. (Alternatively host the panel at `mockan.novin-tools.com`; see OQ-03.)
+- Local stack: `deploy/compose/docker-compose.yml` (postgres, admin + Panel, 2 Gateway replicas, optional demo upstream); see [`../Backend/operations.md`](../Backend/operations.md).
 - Gateway: ≥ 2 replicas, readiness requires a loaded snapshot. Admin: 1–2 replicas.
 - PostgreSQL: existing internal cluster; Alembic migrations (`alembic upgrade head`) applied by the Admin on startup in non-prod (`MOCKAN_MIGRATE_ON_STARTUP=true`), by a migration job in shared environments.
 - Configuration via environment variables (prefix `MOCKAN_`, loaded with `pydantic-settings`, optional `.env` for local dev); secrets from the platform secret store. Core settings:
@@ -497,3 +499,4 @@ Validation rules (enforce in Pydantic models / services, test in `server/tests/a
 | --- | --- | --- |
 | v1.0 | 2026-10-03 | Approved baseline (ASP.NET Core / .NET 10). |
 | v1.1 | 2026-10-03 | Backend stack changed to Python 3.14 + FastAPI. D-03, D-04, D-06, D-09, D-10 superseded by D-14 … D-18. Rewrote §6.2 pipeline, §6.3 transformer, §7 template/regex semantics, §9 structure, §12.3 deployment/config for Python. Phase 2 templating moved from Scriban/Bogus to Jinja2 sandbox/Faker. SignalR replaced by WebSocket. Added `audit_logs` table (PR-15), `/auth/*` routes, hop-by-hop/allowlist transform rows, §14 rule 10. NFR-08 wording updated (no per-match timeout with RE2). |
+| v1.2 | 2026-10-04 | Phase 1 complete (B0–B7). Backend implementation plan gaps settled: G-1 validation `errors` map; G-2 Admin payload shapes ([`../Backend/admin-api.md`](../Backend/admin-api.md)); G-3 `409 last_response`; G-4 `publicBaseUrl` on `GET /me`; G-5 new error codes; G-6 `X-Mockan-Source: error` on problems, `mock` on preflight; G-7 `mock_rules.service_id` informational; G-8 readiness `starting`/`ready`/`degraded`; G-9 `MOCKAN_AUTH_MODE=dev`; G-11 Panel served by the Admin; G-12 CSRF via JSON-only writes + `SameSite=Lax`; G-13 `bodyMode` Static only. New settings in §12.3: `MOCKAN_AUTH_MODE`, `MOCKAN_PANEL_BASE_PATH`, `MOCKAN_SNAPSHOT_DEBOUNCE_MS`, `MOCKAN_LOG_LEVEL`, `MOCKAN_LOG_FORMAT`. Proposed **D-19** (G-10, request-log push across processes; needs approval before B8). OQ-B1 … OQ-B6 recorded in the backend plan. |

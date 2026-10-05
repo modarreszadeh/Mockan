@@ -1,0 +1,21 @@
+# Build context is the repository root (the Admin image also builds panel/).
+**/.git
+**/.venv
+**/node_modules
+**/__pycache__
+**/*.pyc
+**/.mypy_cache
+**/.ruff_cache
+**/.pytest_cache
+**/.import_linter_cache
+**/.coverage
+**/dist
+**/test-results
+**/playwright-report
+server/bench
+server/.env
+server/src/mockan/admin/static
+Agent
+Backend
+Frontend
+Product

@@ -67,11 +67,11 @@ IDs are stable and never renumbered. Defaults are implemented with a `TODO(OQ-xx
 | --- | --- | --- | --- |
 | OQ-03 | Panel at `/_mockan/admin` or a separate host? | Vite `base` + router basename from `VITE_PANEL_BASE_PATH`, default `/`. | `vite.config.ts`, `src/app/router.tsx`, `src/lib/config.ts` |
 | OQ-P1 | Which phase ships scenario-switching UI? | Phase 2 (M5). Phase 1 edits the active MockResponse only; the response sub-form is keyed by response id. | `src/features/rules/response-form.tsx`, `src/api/queries/rules.ts` |
-| OQ-F1 | What shape do Admin API validation errors take? | Both problem+json `errors: {field: [msg]}` and FastAPI `422 detail: [{loc, msg}]` (snake_case `loc` → camelCase field). | `src/api/client.ts`, `src/api/types.ts` |
+| OQ-F1 | What shape do Admin API validation errors take? **Resolved (backend G-1):** `422` problem+json with `errors: {"<camelCase.dotted.path>": [msg]}` ([admin-api.md §5](../Backend/admin-api.md#5-errors)). | The Panel still parses both shapes; the FastAPI `detail[]` branch is now only a fallback. | `src/api/client.ts`, `src/api/types.ts` |
 | OQ-F2 | Dark theme? | Light only in v1; every colour is a token so a `.dark` block can be added. | `src/styles/globals.css`, `src/components/ui/sonner.tsx` |
 | OQ-F3 | Is white-on-coral (3.28:1) acceptable for primary buttons? | Keep brand coral; switch the fill to `primary-active` (5.06:1) if rejected. | `src/styles/globals.css`, `src/components/ui/button.tsx` |
-| OQ-F4 | Where does the Panel get `MOCKAN_PUBLIC_BASE_URL`? `GET /me` doesn't return it. | Build-time `VITE_MOCKAN_PUBLIC_BASE_URL`. Proposal: add `publicBaseUrl` to `GET /me`. | `src/lib/config.ts` |
-| OQ-F5 | Admin API payload shapes (arch §10 lists routes, not bodies). | See the table below. Proposal: confirm or replace when the Admin API's OpenAPI exists. | `src/api/types.ts`, `src/api/queries/*.ts`, `src/mocks/handlers/*.ts` |
+| OQ-F4 | Where does the Panel get `MOCKAN_PUBLIC_BASE_URL`? **Resolved (backend G-4):** `GET /me` returns a read-only `publicBaseUrl`. | The Panel keeps `VITE_MOCKAN_PUBLIC_BASE_URL` as its fallback; reading `publicBaseUrl` from `GET /me` is a follow-up (`src/api/types.ts`, `src/lib/config.ts`). | `src/lib/config.ts` |
+| OQ-F5 | Admin API payload shapes (arch §10 lists routes, not bodies). **Resolved (backend G-2):** the shapes below are the contract, documented in [admin-api.md](../Backend/admin-api.md) and pinned by `server/tests/admin/openapi.snapshot.json`. | Differences found while building are the last row of the table (`last_response`). | `src/api/types.ts`, `src/api/queries/*.ts`, `src/mocks/handlers/*.ts` |
 
 ### OQ-F5 assumed payloads
 

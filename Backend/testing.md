@@ -74,6 +74,8 @@ Rules:
 
 ## 5. Phase 1 acceptance tests
 
+`server/tests/acceptance/` implements this table (plus PR-08 and PR-10) and the PRD §6 journey against a real Admin, a real Gateway and a real upstream on sockets, over one PostgreSQL; tests are named `test_pr_NN_…` and `test_traceability.py` fails if a Phase 1 id has none. What a single stack can't show (overhead benchmark, degraded mode, ingress restrictions, log masking, Phase 2 codes) is listed in the module docstring with where it is covered.
+
 These map PRD Phase 1 checkboxes to tests and should exist before Phase 1 exit:
 
 | PRD item | Test |

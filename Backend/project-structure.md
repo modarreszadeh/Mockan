@@ -77,6 +77,7 @@ server/
     ├── infrastructure/             # settings, masking, logging (fast); database, notify, loader (db)
     ├── matching/                   # incl. precedence_parity.json, shared with the Panel's vitest
     ├── gateway/
+    ├── acceptance/                 # Phase 1 acceptance: real Admin + Gateway + upstream over HTTP, one test per PR id (PR-01…PR-16) + the PRD §6 journey
     └── admin/                      # conftest.py: admin_client, as_developer, audit_rows; openapi.snapshot.json
 ```
 
