@@ -25,6 +25,7 @@ export const NEW_RULE_DEFAULTS: RuleFormValues = {
     contentType: "application/json",
     headers: [],
     body: "",
+    bodyMode: "Static",
     delayMs: 0,
   },
 }
@@ -55,6 +56,7 @@ export function toFormValues(rule: MockRule): RuleFormValues {
           contentType: response.contentType,
           headers: recordToRows(response.headers),
           body: response.body,
+          bodyMode: response.bodyMode,
           delayMs: response.delayMs,
         }
       : NEW_RULE_DEFAULTS.response,
@@ -82,12 +84,13 @@ export function toSaveInput(values: RuleFormValues, ruleId?: string): SaveRuleIn
       contentType: values.response.contentType.trim(),
       headers: rowsToRecord(values.response.headers),
       body: values.response.body,
+      bodyMode: values.response.bodyMode,
       delayMs: values.response.delayMs,
     },
   }
 }
 
-const RESPONSE_FIELDS = new Set(["name", "statusCode", "contentType", "headers", "body", "delayMs"])
+const RESPONSE_FIELDS = new Set(["name", "statusCode", "contentType", "headers", "body", "bodyMode", "delayMs"])
 const RULE_FIELDS = new Set([
   "name",
   "method",

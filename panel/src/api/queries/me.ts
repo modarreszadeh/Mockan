@@ -2,6 +2,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
 import { api, API_BASE } from "../client"
+import { PUBLIC_BASE_URL } from "@/lib/config"
+
 import type { Developer, DeveloperUpdate } from "../types"
 import { meKeys } from "./keys"
 
@@ -9,6 +11,12 @@ export const fetchMe = (signal?: AbortSignal) => api.get<Developer>("/me", signa
 
 export function useMe() {
   return useQuery({ queryKey: meKeys.all, queryFn: ({ signal }) => fetchMe(signal), staleTime: 60_000 })
+}
+
+/** The Gateway's public URL from `GET /me` (OQ-F4); the build-time value until the Developer has loaded. */
+export function usePublicBaseUrl(): string {
+  const { data } = useMe()
+  return data?.publicBaseUrl || PUBLIC_BASE_URL
 }
 
 export function useUpdateMe() {

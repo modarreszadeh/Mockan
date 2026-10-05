@@ -1,6 +1,6 @@
 /** Build-time configuration read from `import.meta.env` (documented in Frontend/README.md). */
 
-// TODO(OQ-F4): `GET /me` doesn't return MOCKAN_PUBLIC_BASE_URL yet; propose adding `publicBaseUrl` to it.
+/** Fallback only: the Panel shows `publicBaseUrl` from `GET /me` (OQ-F4) and uses this until it has loaded. */
 export const PUBLIC_BASE_URL = (import.meta.env.VITE_MOCKAN_PUBLIC_BASE_URL || "https://mock.novin-tools.com").replace(
   /\/+$/,
   "",

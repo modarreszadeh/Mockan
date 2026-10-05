@@ -1,10 +1,9 @@
 /** Formatting helpers shared by screens. */
-import { PUBLIC_BASE_URL } from "./config"
-
-export const developerBaseUrl = (slug: string) => `${PUBLIC_BASE_URL}/${slug}`
+export const developerBaseUrl = (publicBaseUrl: string, slug: string) => `${publicBaseUrl.replace(/\/+$/, "")}/${slug}`
 
 /** The `.env` line shown in BaseUrlCard (arch §11). */
-export const envLine = (slug: string) => `VITE_API_BASE_URL=${developerBaseUrl(slug)}`
+export const envLine = (publicBaseUrl: string, slug: string) =>
+  `VITE_API_BASE_URL=${developerBaseUrl(publicBaseUrl, slug)}`
 
 const relativeFormatter = new Intl.RelativeTimeFormat("en", { numeric: "auto" })
 const UNITS: [Intl.RelativeTimeFormatUnit, number][] = [

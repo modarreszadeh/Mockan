@@ -10,7 +10,7 @@ import { Link, Navigate } from "react-router"
 import { z } from "zod"
 
 import { ApiError } from "@/api/client"
-import { useMe, useUpdateMe } from "@/api/queries/me"
+import { useMe, usePublicBaseUrl, useUpdateMe } from "@/api/queries/me"
 import { BaseUrlCard, ConfirmDialog, ProblemAlert, Wordmark } from "@/components/mockan"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -70,6 +70,7 @@ function ClaimStep({
   onClaimFailed: () => void
 }) {
   const updateMe = useUpdateMe()
+  const publicBaseUrl = usePublicBaseUrl()
   const [confirming, setConfirming] = useState(false)
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -125,7 +126,7 @@ function ClaimStep({
       <div className="space-y-1.5 rounded-xl border bg-canvas p-4">
         <p className="type-caption text-muted-foreground">Your base URL will be</p>
         <p className="overflow-x-auto font-mono text-[14px] whitespace-nowrap text-ink" data-testid="base-url-preview">
-          {developerBaseUrl("")}
+          {developerBaseUrl(publicBaseUrl, "")}
           <span className={error || !slug ? "text-muted-soft" : "text-primary-active"}>{slug || "your-slug"}</span>
         </p>
       </div>
@@ -144,7 +145,7 @@ function ClaimStep({
         description={
           <>
             Your slug <strong className="font-medium text-ink">cannot be changed later</strong>. Your base URL will be{" "}
-            <code className="font-mono text-ink">{developerBaseUrl(slug)}</code>.
+            <code className="font-mono text-ink">{developerBaseUrl(publicBaseUrl, slug)}</code>.
           </>
         }
         confirmLabel="Claim slug"

@@ -6,7 +6,7 @@ import { describe, expect, it } from "vitest"
 
 import { ApiError } from "@/api/client"
 import type { KeyValueRow } from "@/lib/validation"
-import { axe } from "@/test/render"
+import { axe, renderWithProviders } from "@/test/render"
 
 import {
   BaseUrlCard,
@@ -23,8 +23,7 @@ import {
 
 describe("BaseUrlCard", () => {
   it("PR-18 copies the .env line with one click and confirms", async () => {
-    const user = userEvent.setup()
-    const { container } = render(<BaseUrlCard slug="ehtesham" />)
+    const { container, user } = renderWithProviders(<BaseUrlCard slug="ehtesham" />)
     expect(screen.getByTestId("env-line")).toHaveTextContent("VITE_API_BASE_URL=https://mock.novin-tools.com/ehtesham")
     await user.click(screen.getByRole("button", { name: "Copy .env line" }))
     expect(await screen.findByRole("button", { name: "Copied .env line" })).toHaveTextContent("Copied")

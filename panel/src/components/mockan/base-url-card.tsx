@@ -1,5 +1,6 @@
 import { CheckIcon, CopyIcon } from "lucide-react"
 
+import { usePublicBaseUrl } from "@/api/queries/me"
 import { Button } from "@/components/ui/button"
 import { envLine } from "@/lib/format"
 import { cn } from "@/lib/utils"
@@ -22,7 +23,7 @@ export function BaseUrlCard({
   hint = "Put this in your app's .env. Everything you don't mock is proxied to the real backend.",
   className,
 }: BaseUrlCardProps) {
-  const line = envLine(slug)
+  const line = envLine(usePublicBaseUrl(), slug)
   const { copied, copy } = useCopy()
 
   return (

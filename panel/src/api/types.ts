@@ -1,10 +1,8 @@
 /**
  * Admin API types, hand-written from Agent/mockan-architecture.md §8 (camelCase on the wire, §10).
  *
- * Replace with types generated from `/api/v1/openapi.json` (openapi-typescript) once the Admin API exists.
- *
- * TODO(OQ-F5): arch §10 lists routes but not payloads. The DTO shapes below (embedded `responses`,
- * `{ isEnabled }` toggle bodies, full-array service settings) are the Panel's assumed contract.
+ * The contract is documented in Backend/admin-api.md and pinned by `server/tests/admin/openapi.snapshot.json`
+ * (OQ-F5 resolved); change these types in the same commit as that snapshot.
  */
 
 export type MatchType = "Exact" | "Template" | "Prefix" | "Regex"
@@ -50,6 +48,8 @@ export interface Developer {
   allowedOrigins: string[]
   isEnabled: boolean
   isAdmin: boolean
+  /** Read-only: the Gateway's public URL (`MOCKAN_PUBLIC_BASE_URL`, OQ-F4). */
+  publicBaseUrl: string
   createdAt: string
   updatedAt: string
 }
@@ -116,6 +116,9 @@ export type MockResponseInput = Pick<
   MockResponse,
   "name" | "statusCode" | "headers" | "contentType" | "body" | "delayMs"
 > & { bodyMode?: BodyMode }
+
+/** What a Developer can pick in the editor; `ProxyAndPatch` is Phase 3 (the API answers 422). */
+export const BODY_MODES: readonly BodyMode[] = ["Static", "Template"]
 
 export interface MockRule {
   id: string

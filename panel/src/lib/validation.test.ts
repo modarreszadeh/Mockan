@@ -94,7 +94,7 @@ describe("PR-06 response", () => {
   })
 
   it("JSON check only applies to JSON content types; body max 1 MB", () => {
-    const base = { name: "success", statusCode: 200, headers: [], delayMs: 0 }
+    const base = { name: "success", statusCode: 200, headers: [], bodyMode: "Static" as const, delayMs: 0 }
     expect(responseFormSchema.safeParse({ ...base, contentType: "text/plain", body: "{oops" }).success).toBe(true)
     expect(responseFormSchema.safeParse({ ...base, contentType: "application/json", body: "{oops" }).success).toBe(
       false,
@@ -123,6 +123,7 @@ describe("PR-06 response", () => {
         contentType: "application/json",
         headers: [],
         body: "",
+        bodyMode: "Static",
         delayMs: 0,
       },
     })

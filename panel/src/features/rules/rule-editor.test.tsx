@@ -49,7 +49,9 @@ describe("SCR-05 Rule editor", () => {
 
   it("PR-05 template rejects {*rest} in the middle on the pattern field", async () => {
     const { user } = renderRoute("/rules/new")
-    await user.click(await screen.findByRole("radio", { name: "Template" }))
+    await user.click(
+      within(await screen.findByRole("radiogroup", { name: "Match type" })).getByRole("radio", { name: "Template" }),
+    )
     await user.type(screen.getByLabelText("Pattern"), "/files/{{*rest}/meta")
     await user.type(screen.getByLabelText("Name"), "Files")
     await user.click(screen.getByRole("button", { name: "Create rule" }))

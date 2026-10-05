@@ -3,7 +3,7 @@
  * `limsa`, `portal`, and the dashboard rule from the PRD §6 journey.
  */
 import type { Developer, DeveloperServiceSetting, MockResponse, MockRule, Service } from "@/api/types"
-import { DEFAULT_ALLOWED_ORIGINS } from "@/lib/config"
+import { DEFAULT_ALLOWED_ORIGINS, PUBLIC_BASE_URL } from "@/lib/config"
 
 /** Mirrors MOCKAN_ALLOWED_UPSTREAM_HOSTS (arch §12.3). `*.` wildcard allowed. */
 export const ALLOWED_UPSTREAM_HOSTS = ["identity.stage.internal", "*.dev.internal", "*.stage.internal"]
@@ -25,6 +25,7 @@ export function developerFixture(overrides: Partial<Developer> = {}): Developer 
     allowedOrigins: [...DEFAULT_ALLOWED_ORIGINS],
     isEnabled: true,
     isAdmin: true,
+    publicBaseUrl: PUBLIC_BASE_URL,
     createdAt: T0,
     updatedAt: T0,
     ...overrides,

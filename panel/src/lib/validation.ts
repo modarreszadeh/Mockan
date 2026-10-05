@@ -5,7 +5,7 @@
  */
 import { z } from "zod"
 
-import { ENVIRONMENTS, HTTP_METHODS, MATCH_TYPES, type MatchType } from "@/api/types"
+import { BODY_MODES, ENVIRONMENTS, HTTP_METHODS, MATCH_TYPES, type BodyMode, type MatchType } from "@/api/types"
 
 import {
   byteLength,
@@ -66,12 +66,14 @@ export const responseFormSchema = z
     contentType: z.string().trim().min(1, "Enter a content type."),
     headers: conditionRows,
     body: z.string(),
+    bodyMode: z.enum(BODY_MODES as [BodyMode, ...BodyMode[]]),
     delayMs: delaySchema,
   })
   .superRefine((value, ctx) => {
     if (byteLength(value.body) > MAX_BODY_BYTES)
       ctx.addIssue({ code: "custom", message: "Body can be at most 1 MB.", path: ["body"] })
-    else if (isJsonContentType(value.contentType) && value.body.trim().length > 0) {
+    // A Template body isn't JSON until it is rendered; the server checks its syntax on save (PR-19).
+    else if (value.bodyMode === "Static" && isJsonContentType(value.contentType) && value.body.trim().length > 0) {
       const problem = jsonProblem(value.body)
       if (problem) ctx.addIssue({ code: "custom", message: formatJsonProblem(problem), path: ["body"] })
     }

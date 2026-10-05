@@ -3,11 +3,14 @@
  * TODO(OQ-P1): Phase 1 edits only the active response. Phase 2 renders one of these per scenario tab; the
  * component reads/writes `response.*` in the surrounding form and is keyed by response id by its parent.
  */
+import type { ReactNode } from "react"
 import { Controller, useFormContext, useWatch } from "react-hook-form"
 
 import { JsonEditor, KeyValueEditor } from "@/components/mockan"
+import { BODY_MODES, type BodyMode } from "@/api/types"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { byteLength, isJsonContentType, MAX_BODY_BYTES, type RuleFormValues } from "@/lib/validation"
 import { formatBytes } from "@/lib/format"
 
@@ -15,11 +18,26 @@ import { DelayField } from "./delay-field"
 import { describedBy, Field, FormSection } from "./field"
 import { StatusCodeField } from "./status-code-field"
 
+const BODY_MODE_HELP: Record<BodyMode, ReactNode> = {
+  Static: "Sent exactly as written.",
+  Template: (
+    <>
+      A Jinja template rendered per request. Use{" "}
+      <code className="font-mono text-ink">{"{{ request.query.page }}"}</code>,{" "}
+      <code className="font-mono text-ink">{"{{ route.id }}"}</code> and{" "}
+      <code className="font-mono text-ink">{"{{ fake.name() }}"}</code>. An undefined variable is an error, not an empty
+      string.
+    </>
+  ),
+  ProxyAndPatch: "Not available yet.",
+}
+
 export function ResponseForm() {
   const { control, register, formState } = useFormContext<RuleFormValues>()
   const errors = formState.errors.response
   const contentType = useWatch({ control, name: "response.contentType" })
-  const json = isJsonContentType(contentType ?? "")
+  const bodyMode = useWatch({ control, name: "response.bodyMode" })
+  const json = isJsonContentType(contentType ?? "") && bodyMode === "Static"
 
   return (
     <FormSection title="Response" description="What Mockan returns instead of proxying.">
@@ -97,6 +115,38 @@ export function ResponseForm() {
             />
           )}
         />
+      </div>
+
+      <div className="space-y-1.5">
+        <p id="response-bodyMode-label" className="type-caption text-ink">
+          Body mode
+        </p>
+        <Controller
+          control={control}
+          name="response.bodyMode"
+          render={({ field }) => (
+            <ToggleGroup
+              type="single"
+              spacing={0}
+              variant="outline"
+              value={field.value}
+              onValueChange={(next) => next && field.onChange(next)}
+              aria-labelledby="response-bodyMode-label"
+              className="w-fit"
+            >
+              {BODY_MODES.map((mode) => (
+                <ToggleGroupItem
+                  key={mode}
+                  value={mode}
+                  className="text-body data-[state=on]:bg-surface-card data-[state=on]:text-ink"
+                >
+                  {mode}
+                </ToggleGroupItem>
+              ))}
+            </ToggleGroup>
+          )}
+        />
+        <p className="text-[13px] text-muted-foreground">{BODY_MODE_HELP[bodyMode ?? "Static"]}</p>
       </div>
 
       <Controller
