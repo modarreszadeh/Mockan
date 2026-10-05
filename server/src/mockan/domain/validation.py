@@ -48,6 +48,14 @@ def _normalise_host(host: str) -> str:
     return _strip_port(host.strip()).lower().rstrip(".")
 
 
+def routing_prefix(path_prefix: str) -> str:
+    """The prefix to slice or join with: `/` (the catch-all Service) is the empty prefix.
+
+    Otherwise stripping `/` would eat the leading slash of the path and joining it would give `//`.
+    """
+    return "" if path_prefix == "/" else path_prefix
+
+
 def host_is_allowed(host: str, patterns: Iterable[str]) -> bool:
     """Is `host` allowed by `patterns`? Case-insensitive, ports ignored.
 

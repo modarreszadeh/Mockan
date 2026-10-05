@@ -123,7 +123,7 @@ Order of checks: unknown field / structure (`422`) → slug immutability (`409`)
 | Field | Rule |
 | --- | --- |
 | `name` | `^[a-z][a-z0-9-]*$`, ≤ 100. Unique → `409 name_taken`. |
-| `pathPrefix` | One or more non-empty segments of `[A-Za-z0-9._~-]`, each starting with `/`, no trailing `/`, ≤ 200 (`/limsa`, `/api/limsa`). Unique **case-insensitively** → `409 path_prefix_taken`. |
+| `pathPrefix` | One or more non-empty segments of `[A-Za-z0-9._~-]`, each starting with `/`, no trailing `/`, ≤ 200 (`/limsa`, `/api/limsa`), **or just `/`**: a catch-all Service that matches every path, which any longer prefix still beats. Stripping `/` changes nothing. Unique **case-insensitively** → `409 path_prefix_taken`. |
 | `stripPrefix`, `rewriteOrigin` | Real booleans (`"yes"`, `1` are `422`); default `false`. |
 | `defaultEnvironment` | `dev` or `stage`; default `stage`. |
 | `environment` | `dev` or `stage`; one per Service → `409 environment_exists` (also when renaming onto a sibling). |

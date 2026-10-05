@@ -39,6 +39,8 @@ flowchart TD
     S -- yes --> P["proxy to the Developer's environment<br/>X-Mockan-Source: proxy"]
 ```
 
+A Service whose `PathPrefix` is `/` is a catch-all: it matches every path, any longer prefix still beats it, and with `service_not_resolved` only possible when no catch-all exists. Code that slices or joins the prefix uses `routing_prefix()` (`/` → empty), so stripping `/` keeps the leading slash and rewritten `Location`/cookie paths get no `//`.
+
 Rules are matched against the path **after** the slug and **before** the Service is resolved, so `MockRule.service_id` is informational only and never filters matching (G-7, OQ-B1).
 
 ## 3. Matching semantics

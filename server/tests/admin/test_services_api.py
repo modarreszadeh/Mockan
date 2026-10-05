@@ -208,7 +208,6 @@ async def test_service_defaults_match_the_database(
         ({"name": "n" * 101}, "name"),
         ({"pathPrefix": "limsa"}, "pathPrefix"),
         ({"pathPrefix": "/limsa/"}, "pathPrefix"),
-        ({"pathPrefix": "/"}, "pathPrefix"),
         ({"pathPrefix": "//limsa"}, "pathPrefix"),
         ({"pathPrefix": "/li msa"}, "pathPrefix"),
         ({"pathPrefix": "/" + "p" * 200}, "pathPrefix"),
@@ -794,3 +793,18 @@ async def test_parallel_creates_of_one_environment_have_one_winner(
 
     assert sorted(r.status_code for r in responses) == [201] + [409] * 5
     assert {r.json()["code"] for r in responses if r.status_code == 409} == {"environment_exists"}
+
+
+async def test_the_slash_prefix_makes_a_catch_all_service_and_is_unique(
+    admin_client: httpx.AsyncClient, as_developer: AsDeveloper
+) -> None:
+    await as_developer("root", is_admin=True)
+
+    created = await create_service(admin_client, name="api", pathPrefix="/")
+    duplicate = await admin_client.post(
+        "/api/v1/services", json={**SERVICE, "name": "other", "pathPrefix": "/"}
+    )
+
+    assert created["pathPrefix"] == "/"
+    assert duplicate.status_code == 409
+    assert duplicate.json()["code"] == "path_prefix_taken"

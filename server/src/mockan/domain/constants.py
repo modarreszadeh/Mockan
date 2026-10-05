@@ -25,7 +25,8 @@ MAX_ORIGIN_LENGTH = 255
 
 # Service catalog. A PathPrefix is one or more non-empty segments: `/limsa`, `/api/limsa`.
 SERVICE_NAME_REGEX = re.compile(r"^[a-z][a-z0-9-]*$")
-PATH_PREFIX_REGEX = re.compile(r"^(?:/[A-Za-z0-9._~-]+)+$")
+# `/` alone is the catch-all Service; otherwise one or more segments, no trailing slash.
+PATH_PREFIX_REGEX = re.compile(r"^(?:/|(?:/[A-Za-z0-9._~-]+)+)$")
 MAX_SERVICE_NAME_LENGTH = 100
 MAX_PATH_PREFIX_LENGTH = 200
 MAX_BASE_URL_LENGTH = 2048

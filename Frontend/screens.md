@@ -137,6 +137,7 @@ flowchart LR
 - **Accept** (tests: `src/features/admin/service-catalog.test.tsx`):
   - [x] A base URL whose host is not in the allowlist shows the server's rejection inline on the base URL field: "Only allowlisted dev/stage hosts can be used."
   - [x] Duplicate name / path prefix errors appear on the field.
+  - [x] The path prefix `/` is accepted (a catch-all Service; the form's default) and any longer prefix still wins over it.
   - [x] Deletes use `ConfirmDialog` naming the Service.
 
 ## SCR-08 Settings — PR-03, US-54

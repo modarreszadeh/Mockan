@@ -2,6 +2,7 @@
 
 from dataclasses import dataclass
 
+from mockan.domain.validation import routing_prefix
 from mockan.matching.errors import ServiceNotResolvedError
 from mockan.matching.model import DeveloperEntry, EnvironmentEntry, ServiceEntry
 from mockan.matching.snapshot import RuleSnapshot
@@ -15,6 +16,7 @@ class ResolvedService:
 
 
 def _on_boundary(path_lower: str, prefix_lower: str) -> bool:
+    prefix_lower = routing_prefix(prefix_lower)  # "/" (the catch-all) matches every path
     return path_lower == prefix_lower or path_lower.startswith(prefix_lower + "/")
 
 
@@ -49,5 +51,7 @@ def resolve_service(
             "configured."
         )
 
-    upstream_path = path[len(service.path_prefix) :] if service.strip_prefix else path
+    upstream_path = (
+        path[len(routing_prefix(service.path_prefix)) :] if service.strip_prefix else path
+    )
     return ResolvedService(service, environment, upstream_path or "/")

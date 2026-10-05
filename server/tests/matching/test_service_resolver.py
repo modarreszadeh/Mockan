@@ -98,3 +98,26 @@ def test_a_missing_environment_row_is_service_not_resolved(
     with pytest.raises(ServiceNotResolvedError) as error:
         resolve_service(snapshot_builder.build(), dev, "/limsa/x")
     assert error.value.detail == "Service 'limsa' has no 'stage' environment configured."
+
+
+@pytest.mark.req("PR-04")
+def test_the_slash_prefix_is_a_catch_all_that_any_longer_prefix_beats(
+    snapshot_builder: SnapshotBuilder,
+) -> None:
+    dev = snapshot_builder.developer("ehtesham")
+    catch_all = snapshot_builder.service("api", "/")
+    limsa = snapshot_builder.service("limsa", "/limsa")
+    snapshot = snapshot_builder.build()
+    assert resolve_service(snapshot, dev, "/anything/at/all").service is catch_all
+    assert resolve_service(snapshot, dev, "/").service is catch_all
+    assert resolve_service(snapshot, dev, "/limsatest").service is catch_all  # not on a boundary
+    assert resolve_service(snapshot, dev, "/limsa/x").service is limsa
+
+
+@pytest.mark.req("PR-04")
+def test_stripping_the_slash_prefix_changes_nothing(snapshot_builder: SnapshotBuilder) -> None:
+    dev = snapshot_builder.developer("ehtesham")
+    snapshot_builder.service("api", "/", strip_prefix=True)
+    snapshot = snapshot_builder.build()
+    assert resolve_service(snapshot, dev, "/api/Items").upstream_path == "/api/Items"
+    assert resolve_service(snapshot, dev, "/").upstream_path == "/"

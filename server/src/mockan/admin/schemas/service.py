@@ -34,7 +34,9 @@ def _name(value: str) -> str:
 def _path_prefix(value: str) -> str:
     value = value.strip()
     if len(value) > MAX_PATH_PREFIX_LENGTH or PATH_PREFIX_REGEX.fullmatch(value) is None:
-        raise ValueError("Start with “/” and don't end with “/”, e.g. /limsa.")
+        raise ValueError(
+            "Start with “/” and don't end with “/”, e.g. /limsa. Just “/” matches every path."
+        )
     return value
 
 

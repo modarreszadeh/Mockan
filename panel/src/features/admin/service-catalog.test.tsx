@@ -57,6 +57,18 @@ describe("SCR-07 Service catalog (admin)", () => {
     ).toBeInTheDocument()
   })
 
+  it("PR-04 accepts “/” as the path prefix (a catch-all Service)", async () => {
+    const { user } = renderRoute("/admin/services")
+    await user.click(await screen.findByRole("button", { name: "Add Service" }))
+    const sheet = await screen.findByRole("dialog", { name: "Add a Service" })
+    await user.type(within(sheet).getByLabelText("Name"), "gateway")
+    expect(within(sheet).getByLabelText("Path prefix")).toHaveValue("/") // the form's default
+    await user.type(within(sheet).getByLabelText("Base URL"), "https://api.stage.internal")
+    await user.click(within(sheet).getByRole("button", { name: "Create Service" }))
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument())
+    expect(db.services.find((s) => s.name === "gateway")?.pathPrefix).toBe("/")
+  })
+
   it("US-30 creates a Service with a stage environment", async () => {
     const { user } = renderRoute("/admin/services")
     await user.click(await screen.findByRole("button", { name: "Add Service" }))

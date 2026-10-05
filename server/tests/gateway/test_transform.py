@@ -466,3 +466,25 @@ def test_origin_of_drops_the_path_and_any_userinfo() -> None:
     assert origin_of("HTTPS://user:pw@Limsa.Stage.internal:8443/a/b?c") == (
         "https://limsa.stage.internal:8443"
     )
+
+
+@pytest.mark.req("PR-04")
+class TestCatchAllPrefix:
+    """A Service with the path prefix `/` matches every path; stripping it is a no-op."""
+
+    def test_strip_prefix_keeps_the_raw_path_and_its_leading_slash(self) -> None:
+        path = build_upstream_path(
+            raw_path="/ehtesham/api/v1/a%2Fb",
+            upstream_path="/api/v1/a/b",
+            service_prefix="/",
+            strip_prefix=True,
+        )
+        assert path == "/api/v1/a%2Fb"
+
+    def test_location_and_cookie_paths_get_no_double_slash(self) -> None:
+        route = mapping(prefix="/", strip=True, base="https://h.test")
+        assert route.rewrite_location("https://h.test/a/b") == "https://mock.test/ehtesham/a/b"
+        assert (
+            route.rewrite_set_cookie("sid=1; Domain=h.test; Path=/a") == "sid=1; Path=/ehtesham/a"
+        )
+        assert route.rewrite_set_cookie("sid=1") == "sid=1; Path=/ehtesham"

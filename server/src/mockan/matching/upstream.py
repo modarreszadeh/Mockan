@@ -2,6 +2,8 @@
 
 from urllib.parse import quote, unquote
 
+from mockan.domain.validation import routing_prefix
+
 # RFC 3986 `pchar` minus `%`: used only when the client's raw path can't be reused as is.
 _PATH_SAFE = "/:@!$&'()*+,;="
 
@@ -20,6 +22,7 @@ def build_upstream_path(
     such as `%2F` that decoding would destroy, so it is reused whenever it agrees with that result;
     otherwise the decoded result is re-encoded.
     """
+    service_prefix = routing_prefix(service_prefix)
     if raw_path:
         _, _, tail = raw_path[1:].partition("/")  # drop the Developer slug segment
         candidate = "/" + tail

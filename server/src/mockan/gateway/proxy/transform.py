@@ -10,6 +10,8 @@ from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from urllib.parse import urlsplit
 
+from mockan.domain.validation import routing_prefix
+
 type HeaderList = list[tuple[str, str]]
 
 SOURCE_PROXY = "proxy"
@@ -157,7 +159,7 @@ class RouteMapping:
             remainder = remainder[len(base_path) :] or "/"
         if root_without_slash and remainder == "/":
             remainder = ""
-        prefix = self.service_prefix if self.strip_prefix else ""
+        prefix = routing_prefix(self.service_prefix) if self.strip_prefix else ""
         return f"/{self.developer_slug}{prefix}{remainder}"
 
     def rewrite_location(self, location: str) -> str:

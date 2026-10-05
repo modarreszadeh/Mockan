@@ -600,3 +600,21 @@ async def test_the_small_body_echo_round_trips_through_the_proxy(
     gateway = live_gateway(strip_snapshot(snapshot_builder, fake_upstream))
     body = await echo(gateway.client, "PUT", "/echo", content=b"\x00\x01binary\xff")
     assert base64.b64decode(body["body"]) == b"\x00\x01binary\xff"
+
+
+@pytest.mark.req("PR-04")
+async def test_a_service_with_the_slash_prefix_proxies_every_path_unchanged(
+    live_gateway: LiveGatewayFactory, fake_upstream: FakeUpstream, snapshot_builder: SnapshotBuilder
+) -> None:
+    snapshot_builder.developer(SLUG)
+    snapshot_builder.service(
+        "api", "/", strip_prefix=True, environments={EnvironmentName.STAGE: fake_upstream.url}
+    )
+    gateway = live_gateway(snapshot_builder.build())
+
+    response = await gateway.client.get(f"/{SLUG}/echo/a%2Fb/c?x=1")
+
+    assert response.status_code == 200, response.text
+    assert response.headers["x-mockan-source"] == "proxy"
+    assert response.json()["rawPath"] == "/echo/a%2Fb/c"  # the whole path, one leading slash
+    assert response.json()["query"] == "x=1"

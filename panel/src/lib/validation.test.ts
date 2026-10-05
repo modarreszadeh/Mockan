@@ -7,6 +7,7 @@ import {
   patternProblem,
   responseFormSchema,
   ruleFormSchema,
+  serviceFormSchema,
   slugProblem,
   statusCodeSchema,
 } from "./validation"
@@ -139,4 +140,21 @@ describe("PR-03 allowed origins", () => {
   it.each(["localhost:3000", "http://localhost:3000/app", "http://local host"])("rejects %s", (o) =>
     expect(originProblem(o)).not.toBeNull(),
   )
+})
+
+describe("PR-10 Service path prefix", () => {
+  const environments = [
+    { environment: "stage" as const, baseUrl: "https://a.stage.internal", timeoutSeconds: 100, extraHeaders: [] },
+  ]
+  const check = (pathPrefix: string) =>
+    serviceFormSchema.safeParse({
+      name: "limsa",
+      pathPrefix,
+      stripPrefix: false,
+      rewriteOrigin: false,
+      defaultEnvironment: "stage",
+      environments,
+    }).success
+  it.each(["/", "/limsa", "/api/limsa-v2"])("accepts %s", (prefix) => expect(check(prefix)).toBe(true))
+  it.each(["limsa", "/limsa/", "//", "/li msa", ""])("rejects %j", (prefix) => expect(check(prefix)).toBe(false))
 })

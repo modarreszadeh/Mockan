@@ -137,7 +137,11 @@ export const serviceFormSchema = z
     pathPrefix: z
       .string()
       .trim()
-      .regex(/^\/[A-Za-z0-9._~\-/]*[A-Za-z0-9._~-]$/, "Start with “/” and don't end with “/”, e.g. /limsa."),
+      // "/" alone is the catch-all Service; otherwise start with "/" and don't end with one.
+      .regex(
+        /^(?:\/|\/[A-Za-z0-9._~\-/]*[A-Za-z0-9._~-])$/,
+        "Start with “/” and don't end with “/”, e.g. /limsa. Just “/” matches every path.",
+      ),
     stripPrefix: z.boolean(),
     rewriteOrigin: z.boolean(),
     defaultEnvironment: z.enum(ENVIRONMENTS as ["dev", "stage"]),
