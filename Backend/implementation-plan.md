@@ -208,7 +208,7 @@ Each milestone row lists what it builds, the requirements it covers, the tests, 
   - `X-Forwarded-*` and `X-Forwarded-Prefix`, `X-Mockan-Developer`, `ExtraHeaders`, `RewriteOrigin`.
   - `traceparent` passes through.
   - `Location` rewrite when it points at the upstream origin.
-  - `Set-Cookie`: drop `Domain`; `Path=/x` → `/{slug}/x`; no Path → `/{slug}`. `TODO(OQ-02)` is noted.
+  - `Set-Cookie`: drop `Domain`; `Path=/x` → `/{slug}/x`; no Path → `/{slug}`. OQ-02 resolved: apps use bearer tokens.
 - `gateway/proxy/forwarder.py`:
   - One `httpx.AsyncClient(follow_redirects=False, http2=False, limits=…, timeout=None)` per process. Per-request timeout comes from `ServiceEnvironment.timeout_seconds`.
   - The request body is streamed from ASGI `receive`; the response is streamed with `send(stream=True)` → `aiter_raw()` → `StreamingResponse`. The upstream response is closed in `finally`.

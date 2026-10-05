@@ -235,7 +235,7 @@ Health endpoints `/_mockan/health/live` and `/_mockan/health/ready` are FastAPI 
 | Body | Streamed in both directions; never read fully into memory. Response bytes are passed through raw (`aiter_raw()`), so `Content-Encoding` is preserved and nothing is decompressed. |
 | Redirects | The httpx client never follows redirects (`follow_redirects=False`); 3xx responses go back to the browser. |
 | `Location` | On any status (a `201 Created` leaks the upstream like a `302`): if it points to the upstream origin (absolute, protocol-relative, or path-absolute `/x`), rewrite to `{MOCKAN_PUBLIC_BASE_URL}/{developerSlug}{PathPrefix?}...`; `PathPrefix` is included only with `StripPrefix`, and the environment's `BaseUrl` path is dropped. Path-relative values and other origins are untouched. |
-| `Set-Cookie` | Remove `Domain` attribute; move `Path` under `/{developerSlug}` (no `Path` → `/{developerSlug}`), using the same mapping as `Location` (with `StripPrefix` the Service prefix is inserted too); keep `Secure`/`HttpOnly`; `SameSite=None` cookies stay as-is (see OQ-02). |
+| `Set-Cookie` | Remove `Domain` attribute; move `Path` under `/{developerSlug}` (no `Path` → `/{developerSlug}`), using the same mapping as `Location` (with `StripPrefix` the Service prefix is inserted too); keep `Secure`/`HttpOnly`; `SameSite=None` cookies stay as-is. Apps use bearer tokens (OQ-02), so cookies are not on the critical path. |
 | Upstream CORS headers | Stripped and replaced by Mockan's CORS headers (D-13). |
 | Response header `X-Mockan-Source` | `proxy` or `mock` on every response, plus `X-Mockan-Rule-Id` when mocked. Exposed via `Access-Control-Expose-Headers`. |
 | Timeouts | `ServiceEnvironment.TimeoutSeconds` (default 100 s) as the httpx connect/read/write/pool timeout, i.e. the longest silence allowed, not a total duration; on timeout return `504` problem+json (`upstream_timeout`). |
@@ -477,7 +477,7 @@ Validation rules (enforce in Pydantic models / services, test in `server/tests/a
 | ID | Question | Current default |
 | --- | --- | --- |
 | OQ-01 | Path-based (`/{slug}/`) vs subdomain (`{slug}.mock.novin-tools.com`) identification? Subdomains avoid cookie-path rewriting. | Path-based (D-02). |
-| OQ-02 | Do our apps authenticate with bearer tokens in headers or with cookies? Cookies from `localhost` to another domain need `SameSite=None; Secure` and may need extra handling. | Assume bearer tokens; implement Set-Cookie rewrite as specified in §6.3. |
+| OQ-02 | Do our apps authenticate with bearer tokens in headers or with cookies? | **Resolved 2026-10-05: bearer tokens.** The Set-Cookie rewrite in §6.3 stays as specified; cookie-based apps (`SameSite=None; Secure`, `__Host-`) are not supported. |
 | OQ-03 | Panel on the same host under `/_mockan/admin` or a separate host `mockan.novin-tools.com`? | Separate host is preferred if DNS/TLS is easy; otherwise same host. |
 | OQ-04 | Which OIDC provider (Keycloak, Azure AD, other)? | Generic OIDC configuration (Authlib, discovery via `MOCKAN_OIDC_ISSUER`). |
 | OQ-05 | Do frontends call one shared API gateway URL or one base URL per microservice? Both are supported by `PathPrefix` + `StripPrefix`; confirm per app to configure the catalog. | Both supported. |

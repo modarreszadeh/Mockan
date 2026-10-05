@@ -182,7 +182,8 @@ class RouteMapping:
     def rewrite_set_cookie(self, value: str) -> str:
         """Drop `Domain` (the cookie belongs to Mockan's host) and move `Path` under the slug.
 
-        # TODO(OQ-02): `__Host-` cookies require `Path=/`; they can't survive a path prefix.
+        Apps use bearer tokens (OQ-02, resolved), so cookies are not on the critical path.
+        Known limit: `__Host-` cookies require `Path=/`; they can't survive a path prefix.
         """
         first, *attributes = (part.strip() for part in value.split(";"))
         kept = [first]

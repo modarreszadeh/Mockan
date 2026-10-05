@@ -323,7 +323,7 @@ Questions inherited from the architecture keep their `OQ-xx` IDs. New product qu
 
 | ID | Question | Owner | Blocking? | Current default |
 | --- | --- | --- | --- | --- |
-| OQ-02 | Do our apps authenticate with bearer tokens or cookies? Cookies from `localhost` to another domain need `SameSite=None; Secure` and may break. | Frontend leads + Backend | **Blocking for Phase 1 exit** (it decides whether login works through Mockan) | Assume bearer tokens; implement Set-Cookie rewrite anyway. |
+| OQ-02 | Do our apps authenticate with bearer tokens or cookies? | Frontend leads + Backend | **Resolved 2026-10-05: bearer tokens.** Login and refresh work through Mockan because `Authorization` passes through unchanged. | The `Set-Cookie` rewrite stays implemented as specified, but is not on the critical path. Cookie-based apps (`SameSite=None; Secure`, `__Host-` cookies) are not supported until one appears. |
 | OQ-04 | Which OIDC provider (Keycloak, Azure AD, other)? | Platform/DevOps | **Blocking** for panel login | Generic OIDC config. |
 | OQ-05 | Do frontends call one shared API gateway URL or one base URL per microservice? | Frontend leads, per app | Blocking for catalog setup of each app, not for build | Both supported via `PathPrefix` + `StripPrefix`. |
 | OQ-01 | Path-based (`/{slug}/`) or subdomain (`{slug}.mock…`) workspaces? | Engineering + DevOps | Non-blocking | Path-based. |
@@ -342,7 +342,7 @@ No hard external deadline is known. Phases follow the architecture's delivery pl
 
 | Phase | Scope (requirements) | Exit criteria | Dependencies |
 | --- | --- | --- | --- |
-| **1 — MVP** | PR-01 … PR-10, PR-15, PR-16, PR-18 (FR-01…FR-06, FR-08, FR-11; FR-07 data model) | One pilot frontend developer logs in to a real app through Mockan, mocks one unreleased endpoint, and pushes code with **no mock-specific changes** (journey §6). | OIDC provider details (OQ-04); internal DNS + TLS for `mock.novin-tools.com`; internal PostgreSQL; ingress IP restriction; answer to OQ-02. |
+| **1 — MVP** | PR-01 … PR-10, PR-15, PR-16, PR-18 (FR-01…FR-06, FR-08, FR-11; FR-07 data model) | One pilot frontend developer logs in to a real app through Mockan, mocks one unreleased endpoint, and pushes code with **no mock-specific changes** (journey §6). | OIDC provider details (OQ-04); internal DNS + TLS for `mock.novin-tools.com`; internal PostgreSQL; ingress IP restriction. (OQ-02 resolved: bearer tokens.) |
 | **2 — Productivity** | PR-11, PR-12, PR-13, PR-14, PR-17, PR-19 (FR-07, FR-09, FR-10, FR-12) | Pilot developers routinely use scenarios and "Mock this"; time-to-first-mock target met. | Phase 1 feedback from the pilot. |
 | **3 — Contract-driven** | PR-20 … PR-25 (to be selected) | Agreed after Phase 2 feedback. | Backend services publishing OpenAPI specs. |
 
@@ -357,7 +357,7 @@ No hard external deadline is known. Phases follow the architecture's delivery pl
 
 | Risk | Likelihood | Impact | Mitigation |
 | --- | --- | --- | --- |
-| Cookie-based auth breaks through path-prefixed proxying (cross-site cookies from `localhost`). | Medium | High — login fails, core promise broken | Resolve OQ-02 early; test with each pilot app before rollout; subdomain mode (PR-25) as fallback. |
+| Cookie-based auth breaks through path-prefixed proxying (cross-site cookies from `localhost`). | Low (OQ-02: apps use bearer tokens) | High — login fails, core promise broken | Confirm each new app uses bearer tokens before onboarding it; subdomain mode (PR-25) as fallback if a cookie-based app appears. |
 | Backends reject foreign `Origin`/`Host` or emit absolute URLs. | Medium | Medium | `RewriteOrigin` flag; Location rewrite; per-service checks during catalog setup. |
 | Mocks drift from the final real API and the frontend breaks when the mock is disabled. | Medium | Medium | Encourage "Mock this" from real responses; export mocks with the contract; drift alerts in Phase 3. |
 | Developers forget enabled mocks and get confused by stale data. | Medium | Low | `X-Mockan-Source` header; rules list prominent; "disable all". |

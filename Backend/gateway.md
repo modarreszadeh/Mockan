@@ -181,6 +181,6 @@ flowchart LR
 | --- | --- | --- |
 | OQ-B1 | `matching/` (G-7) | `service_id` is informational. |
 | OQ-B2 | `middleware/cors.py`, `health.py`, `problems.py` | `X-Mockan-Source`: `error` for problems, `mock` for preflight and health. |
-| OQ-02 | `proxy/transform.py` (`rewrite_set_cookie`) | Bearer tokens assumed; `Set-Cookie` rewritten as in §5.1. |
+| OQ-02 | `proxy/transform.py` (`rewrite_set_cookie`) | Resolved: apps use bearer tokens. `Set-Cookie` is still rewritten as in §5.1; `__Host-` cookies are unsupported. |
 | OQ-B3 | `matching/compile.py` | Regex matches the original-case path. |
 | OQ-B5 | `matching/matcher.py` | `HEAD` does not match a `GET` rule. |
