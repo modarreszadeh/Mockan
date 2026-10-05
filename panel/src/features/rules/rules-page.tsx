@@ -137,7 +137,9 @@ function RowMenu({ rule, onDelete }: { rule: MockRule; onDelete: () => void }) {
   const me = useMe()
   const publicBaseUrl = usePublicBaseUrl()
   const gatewayBase = developerBaseUrl(publicBaseUrl, me.data?.slug ?? "<your-slug>")
-  const curl = ruleToCurl(rule, gatewayBase)
+  // Not copyable until GET /me has supplied the configured base URL (MOCKAN_PUBLIC_BASE_URL), so a
+  // click can never copy the build-time fallback domain.
+  const curl = me.data ? ruleToCurl(rule, gatewayBase) : null
   const copyAsCurl = async () => {
     if (!curl) return
     try {
