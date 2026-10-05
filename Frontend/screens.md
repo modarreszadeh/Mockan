@@ -12,13 +12,13 @@ related:
 
 # Mockan Panel — Screens
 
-> **Summary:** every Panel screen (SCR-02 … SCR-10): route, data (Admin API routes from arch §10 only), content, states and acceptance criteria. Moved from the build brief (prompt §5) and kept current with the code. Every screen implements four states: **loading** (skeletons shaped like the content), **empty**, **error** (`ProblemAlert` + retry) and **success**.
+> **Summary:** every Panel screen (SCR-01 … SCR-10): route, data (Admin API routes from arch §10 only), content, states and acceptance criteria. Moved from the build brief (prompt §5) and kept current with the code. Every screen implements four states: **loading** (skeletons shaped like the content), **empty**, **error** (`ProblemAlert` + retry) and **success**.
 
 ## Navigation and access
 
 ```mermaid
 flowchart LR
-    SSO["SSO login<br/>/api/v1/auth/login"] --> ME{"GET /me<br/>slug set?"}
+    LOGIN["SCR-01 Login<br/>/login"] -- "Sign in with Keycloak" --> SSO["SSO<br/>/api/v1/auth/login"] --> ME{"GET /me<br/>slug set?"}
     ME -- no --> ONB["SCR-02 Onboarding"]
     ME -- yes --> OV["SCR-03 Overview"]
     ONB --> OV
@@ -32,6 +32,7 @@ flowchart LR
 
 | Screen | Route | Status |
 | --- | --- | --- |
+| SCR-01 Login | `/login` | Built |
 | SCR-02 Onboarding | `/onboarding` | Built (M1) |
 | SCR-03 Overview | `/` | Built (M2) |
 | SCR-04 Rules | `/rules` | Built (M3) |
@@ -46,11 +47,24 @@ flowchart LR
 **Sidebar:** Overview · Rules · Live log · Test route · Services · Settings; Admin group (only when `isAdmin`): Service catalog.
 
 **Auth guard (`src/app/auth-gate.tsx`, tests in `auth-gate.test.tsx`):**
-- [x] Any `401` → full-page navigation to `/api/v1/auth/login` (in dev, a dev-only route simulates SSO and returns).
+- [x] Any `401` → full-page navigation to the login page `/login` (SCR-01), never straight to the identity provider. On the login page itself a `401` does nothing (no redirect loop).
 - [x] `GET /me` with `slug: null` → every route except `/onboarding` redirects there.
 - [x] `isEnabled: false` → full-page explanation, not the app.
 - [x] `/admin/*` for a non-admin → 403 page (`AdminGate`).
 - [x] `GET /me` failing (not 401) → full-page `ProblemAlert` with retry.
+
+## SCR-01 Login — PR-15, PR-18, D-12, OQ-04
+
+- **Route:** `/login`, outside the auth guard. Reached by every `401` and by **Sign out**.
+- **Data:** `GET /me` only, to bounce an already signed-in Developer to `/`. The button is a plain link to `GET /api/v1/auth/login`, which redirects to the identity provider (Keycloak; authorization code + PKCE).
+- **Content:** `Wordmark`, then one card: display title "Sign in to Mockan", one sentence of context, one coral primary button **Sign in with Keycloak** with a key icon (`KeyRoundIcon`), and a caption: "Single sign-on. You'll go to Keycloak and come back here; Mockan never sees your password." There is no password field: Mockan has no passwords of its own. The provider's name is one constant (`SSO_PROVIDER` in `login-page.tsx`).
+- **Behaviour:** after the click the button reads "Redirecting to Keycloak…" with a spinner and ignores a second click (`aria-disabled`); if the browser restores the page from its back/forward cache (`pageshow` persisted) the button resets. Sign out lands here instead of re-entering SSO, because Mockan's logout does not end the Keycloak session and an automatic redirect would sign the user straight back in. In the dev-mode Admin (`MOCKAN_AUTH_MODE=dev`) the same button signs in as `dev:dev`; on the MSW dev backend it goes to the simulated SSO route.
+- **Not built:** returning to the page the user came from (the Admin always redirects to `/` after login) and a readable error when the Keycloak callback fails (the Admin answers with problem+json).
+- **Accept** (tests: `src/features/login/login.test.tsx`; the e2e journey starts here):
+  - [x] The page offers "Sign in with Keycloak" as a link to `/api/v1/auth/login` with a key icon, has no password field and no axe violations.
+  - [x] After the click the button shows "Redirecting to Keycloak…" and a second click is ignored; a page restored from the cache gets its button back.
+  - [x] An already signed-in Developer is sent to `/`.
+  - [x] A `401` on `/login` does not redirect again; Sign out ends on `/login`, not on the identity provider.
 
 ## SCR-02 Onboarding — PR-01, PR-18, US-01
 
@@ -139,6 +153,7 @@ Supplementary only (C-01: the Markdown above is the source of truth). Captured f
 
 | Screen | Desktop | Mobile |
 | --- | --- | --- |
+| SCR-01 Login | [1440](screenshots/scr-01-login-1440.png) | [390](screenshots/scr-01-login-390.png) |
 | SCR-02 Onboarding | [1440](screenshots/scr-02-onboarding-1440.png) | [390](screenshots/scr-02-onboarding-390.png) |
 | SCR-03 Overview | [1440](screenshots/scr-03-overview-1440.png) · [empty](screenshots/scr-03-overview-empty-1440.png) | [390](screenshots/scr-03-overview-390.png) · [empty](screenshots/scr-03-overview-empty-390.png) |
 | SCR-04 Rules | [1440](screenshots/scr-04-rules-1440.png) | [390](screenshots/scr-04-rules-390.png) |

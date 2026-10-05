@@ -44,7 +44,7 @@ Append `?mswScenario=<name>` to any dev URL to reset the mock db. Tests call `re
 | Scenario | State |
 | --- | --- |
 | `default` | Signed in as `ehtesham` (admin) with rules; `limsa` on `dev`. |
-| `new` | Signed out, no slug, no rules — the first-login journey (SSO is simulated by the dev-only `/api/v1/auth/login` route). |
+| `new` | Signed out, no slug, no rules — the first-login journey (the login page, then SSO simulated by the dev-only `/api/v1/auth/login` route). |
 | `empty` | Slug claimed, no rules. |
 | `member` | Non-admin Developer. |
 | `disabled` | Disabled Developer. |

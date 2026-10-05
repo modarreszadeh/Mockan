@@ -7,8 +7,11 @@ import { expect, test } from "@playwright/test"
 const DASHBOARD_JSON = '{"totals": {"samples": 1284, "pending": 37}}'
 
 test("PRD §6 journey: first login to first mock", async ({ page }) => {
-  // 1. First login: signed out → simulated SSO → onboarding.
+  // 1. First login: signed out → login page → Keycloak (simulated by MSW) → onboarding.
   await page.goto("/?mswScenario=new")
+  await expect(page).toHaveURL(/\/login$/)
+  await expect(page.getByRole("heading", { name: "Sign in to Mockan" })).toBeVisible()
+  await page.getByRole("link", { name: "Sign in with Keycloak" }).click()
   await expect(page).toHaveURL(/\/onboarding$/)
   await expect(page.getByRole("heading", { name: "Claim your workspace" })).toBeVisible()
 

@@ -1,17 +1,17 @@
 import { screen, waitFor, within } from "@testing-library/react"
 import { describe, expect, it, vi } from "vitest"
 
-import { LOGIN_URL } from "@/api/client"
+import { LOGIN_PAGE_URL } from "@/api/client"
 import { db, resetDb } from "@/mocks/db"
 import { axe, renderRoute } from "@/test/render"
 
 describe("auth guard (prompt §5)", () => {
-  it("redirects to SSO login on 401 with a full page navigation", async () => {
+  it("sends a signed-out visitor to the login page on 401 with a full page navigation", async () => {
     resetDb("new") // signed out
     const assign = vi.fn()
     vi.spyOn(window, "location", "get").mockReturnValue({ ...window.location, assign, origin: "http://localhost:3000" })
     renderRoute("/")
-    await waitFor(() => expect(assign).toHaveBeenCalledWith(LOGIN_URL))
+    await waitFor(() => expect(assign).toHaveBeenCalledWith(LOGIN_PAGE_URL))
   })
 
   it("PR-01 sends a Developer without a slug to onboarding from any route", async () => {

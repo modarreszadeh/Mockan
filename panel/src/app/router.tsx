@@ -41,6 +41,10 @@ export const routes: RouteObject[] = [
     children: [
       ...devRoutes,
       {
+        path: "login",
+        lazy: () => import("@/features/login/login-page").then((m) => ({ Component: m.LoginPage })),
+      },
+      {
         element: <AuthGate />,
         children: [
           {

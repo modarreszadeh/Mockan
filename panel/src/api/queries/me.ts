@@ -1,7 +1,7 @@
 /** `GET/PUT /me` and logout. */
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
-import { api, API_BASE } from "../client"
+import { api, LOGIN_PAGE_URL } from "../client"
 import { PUBLIC_BASE_URL } from "@/lib/config"
 
 import type { Developer, DeveloperUpdate } from "../types"
@@ -30,6 +30,6 @@ export function useUpdateMe() {
 export function useLogout() {
   return useMutation({
     mutationFn: () => api.post<void>("/auth/logout"),
-    onSettled: () => window.location.assign(`${API_BASE}/auth/login`),
+    onSettled: () => window.location.assign(LOGIN_PAGE_URL),
   })
 }

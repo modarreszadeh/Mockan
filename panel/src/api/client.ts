@@ -1,11 +1,17 @@
 /**
  * The one `fetch` wrapper for the Admin API (prompt §6): base `/api/v1`, cookies included, JSON in/out,
- * `401` → full-page redirect to SSO login, non-2xx → `ApiError` carrying the parsed problem+json.
+ * `401` → full-page redirect to the sign-in page (SCR-01), non-2xx → `ApiError` carrying the parsed problem+json.
  */
+import { PANEL_BASE_PATH } from "@/lib/config"
+
 import type { ProblemDetails } from "./types"
 
 export const API_BASE = "/api/v1"
+/** Starts single sign-on (Admin API): redirects to the identity provider. */
 export const LOGIN_URL = `${API_BASE}/auth/login`
+/** The Panel's own sign-in page (SCR-01), under the Panel's base path. */
+export const LOGIN_PAGE_PATH = "/login"
+export const LOGIN_PAGE_URL = `${PANEL_BASE_PATH.replace(/\/$/, "")}${LOGIN_PAGE_PATH}`
 
 /** Field path (camelCase, dot-separated, e.g. `responses.0.statusCode`) → messages. */
 export type FieldErrors = Record<string, string[]>
@@ -85,8 +91,10 @@ async function parseProblem(response: Response): Promise<ProblemDetails> {
   return { status: response.status, title: response.statusText, detail: text }
 }
 
+/** Send the browser to the sign-in page (not straight to the IdP, so "Sign out" stays signed out). */
 export function redirectToLogin() {
-  window.location.assign(LOGIN_URL)
+  if (window.location.pathname === LOGIN_PAGE_URL) return // already there: no redirect loop
+  window.location.assign(LOGIN_PAGE_URL)
 }
 
 export interface RequestOptions {
