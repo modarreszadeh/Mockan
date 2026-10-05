@@ -12,9 +12,18 @@ import {
   BaseUrlCard,
   EmptyState,
   EnvBadge,
+  ConfirmDialog,
   JsonEditor,
   KeyValueEditor,
   MethodBadge,
+  Modal,
+  ModalBody,
+  ModalContent,
+  ModalDescription,
+  ModalFooter,
+  ModalHeader,
+  ModalTitle,
+  ModalTrigger,
   PatternText,
   ProblemAlert,
   SourceBadge,
@@ -110,5 +119,75 @@ describe("EmptyState and ProblemAlert", () => {
     expect(screen.getByText("upstream_unreachable")).toBeInTheDocument()
     expect(screen.getByRole("button", { name: "Try again" })).toBeInTheDocument()
     expect(await axe(container)).toHaveNoViolations()
+  })
+})
+
+describe("Modal", () => {
+  const Harness = () => (
+    <Modal>
+      <ModalTrigger>Open it</ModalTrigger>
+      <ModalContent size="lg">
+        <ModalHeader>
+          <ModalTitle>Edit thing</ModalTitle>
+          <ModalDescription>Change the thing.</ModalDescription>
+        </ModalHeader>
+        <ModalBody>Body</ModalBody>
+        <ModalFooter>
+          <button type="button">Save</button>
+        </ModalFooter>
+      </ModalContent>
+    </Modal>
+  )
+
+  it("OVL-R4 is a labelled dialog, closes with the X button and Esc, and returns focus to the trigger", async () => {
+    const user = userEvent.setup()
+    render(<Harness />)
+    const trigger = screen.getByRole("button", { name: "Open it" })
+    await user.click(trigger)
+    const dialog = await screen.findByRole("dialog", { name: "Edit thing" })
+    expect(dialog).toHaveAccessibleDescription("Change the thing.")
+    expect(await axe(dialog)).toHaveNoViolations()
+    await user.click(screen.getByRole("button", { name: "Close" }))
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument()
+    expect(trigger).toHaveFocus()
+    await user.click(trigger)
+    await screen.findByRole("dialog")
+    await user.keyboard("{Escape}")
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument()
+  })
+
+  it("OVL-R3 owns the layout: a bottom sheet by default, centered from 768 px, sized by `size`", async () => {
+    const user = userEvent.setup()
+    render(<Harness />)
+    await user.click(screen.getByRole("button", { name: "Open it" }))
+    const dialog = await screen.findByRole("dialog")
+    expect(dialog).toHaveClass("inset-x-0", "bottom-0", "rounded-t-xl", "md:top-1/2", "md:left-1/2", "md:max-w-2xl")
+  })
+})
+
+describe("ConfirmDialog", () => {
+  it("is an alertdialog that confirms or cancels and is not dismissed by a tap outside", async () => {
+    const user = userEvent.setup({ pointerEventsCheck: 0 })
+    const changes: boolean[] = []
+    let confirmed = 0
+    render(
+      <ConfirmDialog
+        open
+        onOpenChange={(open) => changes.push(open)}
+        title="Delete it?"
+        description="It is gone."
+        confirmLabel="Delete"
+        destructive
+        onConfirm={() => confirmed++}
+      />,
+    )
+    const dialog = await screen.findByRole("alertdialog", { name: "Delete it?" })
+    expect(dialog).toHaveClass("bottom-0", "md:top-1/2")
+    await user.click(document.querySelector("[data-slot=alert-dialog-overlay]")!)
+    expect(changes).toEqual([])
+    await user.click(screen.getByRole("button", { name: "Delete" }))
+    expect(confirmed).toBe(1)
+    await user.click(screen.getByRole("button", { name: "Cancel" }))
+    expect(changes).toEqual([false])
   })
 })

@@ -7,6 +7,17 @@ export { JsonEditor } from "./json-editor"
 export { KeyValueEditor } from "./key-value-editor"
 export { LogoMark } from "./logo-mark"
 export { MockKillSwitch } from "./mock-kill-switch"
+export {
+  Modal,
+  ModalBody,
+  ModalClose,
+  ModalContent,
+  ModalDescription,
+  ModalFooter,
+  ModalHeader,
+  ModalTitle,
+  ModalTrigger,
+} from "./modal"
 export { CoralBadge, EnvBadge, MatchTypeBadge, MethodBadge, SourceBadge, StatusCode } from "./badges"
 export { PageHeader } from "./page-header"
 export { PatternText } from "./pattern-text"

@@ -17,6 +17,13 @@ import {
   KeyValueEditor,
   MatchTypeBadge,
   MethodBadge,
+  Modal,
+  ModalBody,
+  ModalContent,
+  ModalDescription,
+  ModalFooter,
+  ModalHeader,
+  ModalTitle,
   PageHeader,
   PatternText,
   ProblemAlert,
@@ -81,6 +88,7 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
 
 export function DesignPage() {
   const [confirmOpen, setConfirmOpen] = useState(false)
+  const [modalSize, setModalSize] = useState<"sm" | "md" | "lg" | null>(null)
   const [json, setJson] = useState('{\n  "items": [],\n  "total": 0\n}')
   const [badJson, setBadJson] = useState('{\n  "items": [,\n}')
   const [rows, setRows] = useState<KeyValueRow[]>([
@@ -243,6 +251,34 @@ export function DesignPage() {
           <Skeleton className="h-10 w-full" />
           <Skeleton className="h-10 w-2/3" />
         </div>
+        <div className="flex flex-wrap gap-2">
+          {(["sm", "md", "lg"] as const).map((size) => (
+            <Button key={size} variant="outline" onClick={() => setModalSize(size)}>
+              Open Modal ({size})
+            </Button>
+          ))}
+        </div>
+        <Modal open={modalSize !== null} onOpenChange={(open) => !open && setModalSize(null)}>
+          <ModalContent size={modalSize ?? "md"}>
+            <ModalHeader>
+              <ModalTitle>Modal ({modalSize})</ModalTitle>
+              <ModalDescription>A modal at 768 px and wider, a bottom sheet below.</ModalDescription>
+            </ModalHeader>
+            <ModalBody className="space-y-3">
+              {Array.from({ length: 24 }, (_, index) => (
+                <p key={index} className="text-body">
+                  Body line {index + 1}: only this area scrolls; the header and footer stay put.
+                </p>
+              ))}
+            </ModalBody>
+            <ModalFooter>
+              <Button variant="outline" onClick={() => setModalSize(null)}>
+                Cancel
+              </Button>
+              <Button onClick={() => setModalSize(null)}>Save</Button>
+            </ModalFooter>
+          </ModalContent>
+        </Modal>
         <Button variant="destructive" onClick={() => setConfirmOpen(true)}>
           Open ConfirmDialog
         </Button>
