@@ -1,5 +1,6 @@
 """Metrics, trace ids in logs and optional tracing (PR-17, arch §12.2)."""
 
+import asyncio
 import json
 from collections.abc import AsyncIterator, Callable
 from dataclasses import dataclass
@@ -44,6 +45,15 @@ class Observed:
     def requests_by_source(self) -> dict[str, int]:
         return {p.attributes["source"]: int(p.value) for p in self.points("mockan_requests_total")}
 
+    async def until(self, ready: Callable[[], bool]) -> None:
+        """Metrics are recorded once the response is fully sent, just after the client has it."""
+        try:
+            async with asyncio.timeout(2):
+                while not ready():  # noqa: ASYNC110 -- polls a metric reader: there is no event to await
+                    await asyncio.sleep(0.01)
+        except TimeoutError:
+            pass  # the caller's assertion reports what is missing
+
 
 ObservedFactory = Callable[..., Observed]
 
@@ -87,6 +97,7 @@ async def test_requests_are_counted_by_source(
     await gateway.client.get("/nobody/x")  # developer_not_found
     await gateway.client.get("/_mockan/health/live")  # not a request to count
 
+    await gateway.until(lambda: sum(gateway.requests_by_source().values()) == 5)
     assert gateway.requests_by_source() == {"mock": 2, "proxy": 1, "error": 2}
 
 
@@ -100,6 +111,9 @@ async def test_only_proxied_requests_feed_the_proxy_duration(
     await gateway.client.get("/ehtesham/echo")
     await gateway.client.get("/ehtesham/echo")
 
+    await gateway.until(
+        lambda: sum(h.count for h in gateway.points("mockan_proxy_duration_ms")) == 2
+    )
     (histogram,) = gateway.points("mockan_proxy_duration_ms")
     assert histogram.count == 2
     assert 0 < histogram.sum < 10_000  # milliseconds
@@ -115,6 +129,7 @@ async def test_a_streaming_proxied_response_is_timed_to_the_end_of_the_stream(
 
     await gateway.client.get("/ehtesham/sse", params={"count": 3, "interval": 0.1})
 
+    await gateway.until(lambda: bool(gateway.points("mockan_proxy_duration_ms")))
     (histogram,) = gateway.points("mockan_proxy_duration_ms")
     assert histogram.sum >= 200  # three events 100 ms apart
 
