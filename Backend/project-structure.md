@@ -34,6 +34,7 @@ server/
 │   │   ├── compile.py              # compile_pattern / compile_rule / compile_response: exact, template, prefix, regex (RE2)
 │   │   ├── template.py             # Mockan template parser/matcher ({name}, {*name})
 │   │   ├── paths.py                # trailing-slash normalisation and segment splitting
+│   │   ├── upstream.py             # build_upstream_path / build_upstream_url, shared by the Gateway and test-route
 │   │   ├── errors.py               # PatternError(field, message), ServiceNotResolvedError
 │   │   ├── snapshot.py             # RuleSnapshot (immutable), RuleSnapshotProvider
 │   │   ├── matcher.py              # match_request() → MatchResult (precedence, arch §7.2)

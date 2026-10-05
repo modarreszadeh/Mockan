@@ -7,11 +7,10 @@ from mockan.gateway.proxy.transform import (
     RouteMapping,
     build_request_headers,
     build_response_headers,
-    build_upstream_path,
-    build_upstream_url,
     hop_by_hop_names,
     origin_of,
 )
+from mockan.matching.upstream import build_upstream_path, build_upstream_url
 
 INFO = ForwardInfo(
     developer_slug="ehtesham", scheme="https", host="mock.test", client_ip="203.0.113.7"

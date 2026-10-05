@@ -8,6 +8,7 @@ import time
 from collections.abc import AsyncIterator, Iterator
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
+from urllib.parse import parse_qs, urlsplit
 
 import httpx
 import pytest
@@ -189,3 +190,93 @@ async def test_one_developers_rules_never_reach_another_developers_path(
         as_developer.switch(alice)
         await client.post(f"{ME_RULES}/toggle-all", json={"isEnabled": False})
         await becomes(gateway, "/alice/echo", "proxy")
+
+
+@pytest.mark.req("PR-13")
+async def test_test_route_and_the_gateway_agree_on_every_case(
+    admin: tuple[httpx.AsyncClient, AsDeveloper], pg_container: str, upstream: LiveServer
+) -> None:
+    """FR-10: test-route runs the Gateway's own decision code, so the two can't drift."""
+    client, as_developer = admin
+    await as_developer("ehtesham", is_admin=True)
+    await client.put("/api/v1/me", json={"slug": "ehtesham"})
+    await add_echo_service(client, upstream)
+    api = await create_service(client, name="api", pathPrefix="/api", stripPrefix=True)
+    await client.post(
+        f"/api/v1/services/{api['id']}/environments",
+        json={"environment": "stage", "baseUrl": upstream.url},
+    )
+    await create_rule(client, name="exact", pattern="/echo/mocked")
+    await create_rule(client, name="template", matchType="Template", pattern="/echo/items/{id}")
+    await create_rule(client, name="post", method="POST", pattern="/echo/post")
+    await create_rule(
+        client,
+        name="conditions",
+        pattern="/echo/c",
+        queryConditions=[{"key": "page", "operator": "equals", "value": "2"}],
+        headerConditions=[{"key": "X-Tenant", "operator": "equals", "value": "a"}],
+    )
+    await create_rule(client, name="regex", matchType="Regex", pattern=r"^/echo/r/\d+$")
+    off = await create_rule(client, name="off", pattern="/echo/off")
+    await client.post(f"{ME_RULES}/{off['id']}/toggle", json={"isEnabled": False})
+
+    cases: list[tuple[str, str, dict[str, str], dict[str, str]]] = [
+        ("GET", "/echo/mocked", {}, {}),
+        ("GET", "/echo/MOCKED/", {}, {}),
+        ("GET", "/echo/items/42", {}, {}),
+        ("GET", "/echo/items/42/more", {}, {}),
+        ("GET", "/echo/post", {}, {}),
+        ("POST", "/echo/post", {}, {}),
+        ("GET", "/echo/c", {"page": "2"}, {"x-tenant": "a"}),
+        ("GET", "/echo/c", {"page": "2"}, {"x-tenant": "b"}),
+        ("GET", "/echo/c", {"page": "3"}, {"x-tenant": "a"}),
+        ("GET", "/echo/r/7", {}, {}),
+        ("GET", "/echo/r/x", {"y": "a b", "z": "1"}, {}),
+        ("GET", "/echo/off", {}, {}),
+        ("GET", "/echo/other", {"x": "1"}, {}),
+        ("PUT", "/echo/other/deep/path", {}, {}),
+        ("GET", "/api/echo/z", {"q": "1"}, {}),
+        ("GET", "/nothing/registered", {}, {}),
+    ]
+
+    async with running_gateway(pg_container, allowed_upstream_hosts=[upstream.host]) as gateway:
+        await becomes(gateway, "/ehtesham/echo/mocked", "mock")  # the Gateway has loaded the rules
+        await becomes(gateway, "/ehtesham/api/echo/z", "proxy")
+
+        async def loaded() -> bool:
+            return (await gateway.client.get("/ehtesham/echo/r/7")).headers[
+                "x-mockan-source"
+            ] == "mock"
+
+        await eventually(loaded, within=TWO_SECONDS)
+
+        for method, path, query, headers in cases:
+            decided = (
+                await client.post(
+                    "/api/v1/me/test-route",
+                    json={"method": method, "path": path, "query": query, "headers": headers},
+                )
+            ).json()
+            served = await gateway.client.request(
+                method, f"/ehtesham{path}", params=query, headers=headers
+            )
+            label = (method, path, query, headers)
+            assert (
+                served.headers["x-mockan-source"]
+                == {
+                    "mock": "mock",
+                    "proxy": "proxy",
+                    "error": "error",
+                }[decided["outcome"]]
+            ), label
+            if decided["outcome"] == "mock":
+                assert served.headers["x-mockan-rule-id"] == decided["rule"]["id"], label
+            elif decided["outcome"] == "proxy":
+                reached = served.json()
+                expected = urlsplit(decided["upstreamUrl"])
+                assert (reached["rawPath"], parse_qs(reached["query"])) == (
+                    expected.path,
+                    parse_qs(expected.query),
+                ), label
+            else:
+                assert served.json()["code"] == decided["errorCode"], label

@@ -205,6 +205,77 @@
         "title": "MatchType",
         "type": "string"
       },
+      "MatchedResponseOut": {
+        "properties": {
+          "delayMs": {
+            "title": "Delayms",
+            "type": "integer"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "statusCode": {
+            "title": "Statuscode",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "statusCode",
+          "delayMs"
+        ],
+        "title": "MatchedResponseOut",
+        "type": "object"
+      },
+      "MatchedRuleOut": {
+        "properties": {
+          "activeResponse": {
+            "$ref": "#/components/schemas/MatchedResponseOut"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "matchType": {
+            "$ref": "#/components/schemas/MatchType"
+          },
+          "method": {
+            "title": "Method",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "pattern": {
+            "title": "Pattern",
+            "type": "string"
+          },
+          "priority": {
+            "title": "Priority",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "method",
+          "matchType",
+          "pattern",
+          "priority",
+          "activeResponse"
+        ],
+        "title": "MatchedRuleOut",
+        "type": "object"
+      },
       "MockResponseIn": {
         "additionalProperties": false,
         "properties": {
@@ -828,6 +899,30 @@
         "title": "RequestSource",
         "type": "string"
       },
+      "RoutedServiceOut": {
+        "properties": {
+          "environment": {
+            "title": "Environment",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "environment"
+        ],
+        "title": "RoutedServiceOut",
+        "type": "object"
+      },
       "ServiceEnvironmentIn": {
         "additionalProperties": false,
         "properties": {
@@ -1045,6 +1140,119 @@
           "serviceEnvironmentId"
         ],
         "title": "ServiceSettingOut",
+        "type": "object"
+      },
+      "TestRouteIn": {
+        "additionalProperties": false,
+        "properties": {
+          "headers": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "maxProperties": 50,
+            "title": "Headers",
+            "type": "object"
+          },
+          "method": {
+            "default": "GET",
+            "enum": [
+              "ANY",
+              "GET",
+              "POST",
+              "PUT",
+              "PATCH",
+              "DELETE",
+              "HEAD",
+              "OPTIONS"
+            ],
+            "title": "Method",
+            "type": "string"
+          },
+          "path": {
+            "title": "Path",
+            "type": "string"
+          },
+          "query": {
+            "additionalProperties": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "maxProperties": 50,
+            "title": "Query",
+            "type": "object"
+          }
+        },
+        "required": [
+          "path"
+        ],
+        "title": "TestRouteIn",
+        "type": "object"
+      },
+      "TestRouteOut": {
+        "properties": {
+          "errorCode": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Errorcode"
+          },
+          "outcome": {
+            "enum": [
+              "mock",
+              "proxy",
+              "error"
+            ],
+            "title": "Outcome",
+            "type": "string"
+          },
+          "reason": {
+            "title": "Reason",
+            "type": "string"
+          },
+          "rule": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MatchedRuleOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "service": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RoutedServiceOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "upstreamUrl": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Upstreamurl"
+          }
+        },
+        "required": [
+          "outcome",
+          "reason"
+        ],
+        "title": "TestRouteOut",
         "type": "object"
       },
       "ToggleAllOut": {
@@ -2315,6 +2523,58 @@
         "summary": "Replace Service Settings",
         "tags": [
           "service-settings"
+        ]
+      }
+    },
+    "/api/v1/me/test-route": {
+      "post": {
+        "description": "Nothing is sent: it runs the Gateway's matching and Service resolution on your rules.\n\nAlways `200`; `outcome` is `mock`, `proxy` or `error` (with the Gateway's `errorCode`).",
+        "operationId": "run_test_route_api_v1_me_test_route_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TestRouteIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TestRouteOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Not signed in (`unauthenticated`)."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`validation_failed` (or `upstream_host_not_allowed`) with field `errors`."
+          }
+        },
+        "summary": "Run Test Route",
+        "tags": [
+          "test-route"
         ]
       }
     },

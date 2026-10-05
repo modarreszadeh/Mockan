@@ -23,6 +23,7 @@ from mockan.admin.routers import (
     rules,
     service_settings,
     services,
+    test_route,
 )
 from mockan.admin.spa import mount_panel
 from mockan.infrastructure.db.migrate import upgrade_to_head
@@ -139,6 +140,7 @@ def create_app(
     api.include_router(rules.router)
     api.include_router(responses.router)
     api.include_router(request_logs.router)
+    api.include_router(test_route.router)
     app.include_router(api)
     app.include_router(hubs.router)  # `/hubs/*`: outside `/api/v1`
 

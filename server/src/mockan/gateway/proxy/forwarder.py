@@ -27,14 +27,13 @@ from mockan.gateway.proxy.transform import (
     RouteMapping,
     build_request_headers,
     build_response_headers,
-    build_upstream_path,
-    build_upstream_url,
     origin_of,
 )
 from mockan.infrastructure.logging import bind_log_context
 from mockan.infrastructure.settings import MockanSettings
 from mockan.matching.errors import ServiceNotResolvedError
 from mockan.matching.service_resolver import resolve_service
+from mockan.matching.upstream import build_upstream_path, build_upstream_url
 
 log = structlog.get_logger()
 
