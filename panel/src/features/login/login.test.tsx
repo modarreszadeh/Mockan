@@ -36,6 +36,7 @@ describe("SCR-01 Login", () => {
     const link = screen.getByRole("link", { name: "Sign in with Keycloak" })
     expect(link).toHaveAttribute("href", LOGIN_URL)
     expect(link.querySelector("svg.lucide-key-round")).toBeInTheDocument()
+    expect(container.querySelector("[data-slot=logo-mark]")).toBeInTheDocument() // the logo mark
     expect(screen.queryByLabelText(/password/i)).not.toBeInTheDocument() // SSO only
     expect(await axe(container)).toHaveNoViolations()
   })

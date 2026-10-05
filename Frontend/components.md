@@ -119,3 +119,7 @@ Renders an `ApiError`'s RFC 7807 problem: `title`, `detail`, `code` in mono, opt
 ## Wordmark
 
 Mockan's own text wordmark (Inter SemiBold + coral dot). No third-party brand assets (prompt §2 rule 5).
+
+## LogoMark
+
+Mockan's own logo mark: a dark rounded tile, an "M" drawn as an SVG path (no font) and the coral dot of the wordmark. Decorative (`aria-hidden`); the `Wordmark` next to it carries the name. Used on the login page above the `Wordmark`; `public/favicon.svg` is the same drawing with literal colours. Prop: `className` (default `size-14`).

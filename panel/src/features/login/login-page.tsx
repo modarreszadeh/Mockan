@@ -9,7 +9,7 @@ import { Navigate } from "react-router"
 
 import { LOGIN_URL } from "@/api/client"
 import { useMe } from "@/api/queries/me"
-import { Wordmark } from "@/components/mockan"
+import { LogoMark, Wordmark } from "@/components/mockan"
 import { Button } from "@/components/ui/button"
 
 /** The identity provider's name as users know it. One place, so a provider change is one edit. */
@@ -39,7 +39,10 @@ export function LoginPage() {
 
   return (
     <main className="flex min-h-svh flex-col items-center justify-center gap-6 bg-background px-4 py-10">
-      <Wordmark />
+      <div className="flex flex-col items-center gap-4">
+        <LogoMark className="size-16" />
+        <Wordmark />
+      </div>
       <section
         aria-labelledby="login-title"
         className="w-full max-w-sm space-y-6 rounded-2xl bg-card p-6 ring-1 ring-border sm:p-8"
