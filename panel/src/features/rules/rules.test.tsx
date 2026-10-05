@@ -64,6 +64,16 @@ describe("SCR-04 Rules", () => {
     await waitFor(() => expect(router.state.location.pathname).toMatch(/^\/rules\/0192/))
   })
 
+  it("copies a rule as a curl command through the gateway", async () => {
+    const { user, router } = renderRoute("/rules")
+    await screen.findByText("Sorted by match precedence")
+    await user.click(within(rowOf("Limsa dashboard")).getByRole("button", { name: "Actions for Limsa dashboard" }))
+    await user.click(await screen.findByRole("menuitem", { name: "Copy as curl" }))
+    expect(await screen.findByText("Copied as curl")).toBeInTheDocument()
+    expect(await navigator.clipboard.readText()).toMatch(/^curl -i .*'https?:\/\/.+\/limsa\/api\/v1\/dashboard'$/)
+    expect(router.state.location.pathname).toBe("/rules")
+  })
+
   it("filters by search text and keeps it in the URL", async () => {
     const { user, router } = renderRoute("/rules")
     await user.type(await screen.findByRole("searchbox", { name: "Search rules" }), "orders")

@@ -8,6 +8,7 @@ import {
   PencilIcon,
   PlusIcon,
   SlidersHorizontalIcon,
+  TerminalIcon,
   Trash2Icon,
   UploadIcon,
 } from "lucide-react"
@@ -23,6 +24,7 @@ import {
   useToggleAllRules,
   useToggleRule,
 } from "@/api/queries/rules"
+import { useMe, usePublicBaseUrl } from "@/api/queries/me"
 import { useServices } from "@/api/queries/services"
 import { HTTP_METHODS, MATCH_TYPES, type MockRule, type Service } from "@/api/types"
 import {
@@ -50,7 +52,8 @@ import { Switch } from "@/components/ui/switch"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { useIsMobile } from "@/hooks/use-mobile"
-import { absoluteTime, pluralize, relativeTime } from "@/lib/format"
+import { ruleToCurl } from "@/lib/curl"
+import { developerBaseUrl, pluralize, relativeTime } from "@/lib/format"
 import { sortByPrecedence } from "@/lib/precedence"
 import { cn } from "@/lib/utils"
 
@@ -131,6 +134,19 @@ const stop = (event: MouseEvent) => event.stopPropagation()
 function RowMenu({ rule, onDelete }: { rule: MockRule; onDelete: () => void }) {
   const navigate = useNavigate()
   const duplicate = useDuplicateRule()
+  const me = useMe()
+  const publicBaseUrl = usePublicBaseUrl()
+  const gatewayBase = developerBaseUrl(publicBaseUrl, me.data?.slug ?? "<your-slug>")
+  const curl = ruleToCurl(rule, gatewayBase)
+  const copyAsCurl = async () => {
+    if (!curl) return
+    try {
+      await navigator.clipboard.writeText(curl)
+      toast.success("Copied as curl")
+    } catch {
+      toast.error("Couldn't copy to the clipboard")
+    }
+  }
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -153,6 +169,10 @@ function RowMenu({ rule, onDelete }: { rule: MockRule; onDelete: () => void }) {
         >
           <CopyIcon aria-hidden />
           Duplicate
+        </DropdownMenuItem>
+        <DropdownMenuItem disabled={!curl} onSelect={() => void copyAsCurl()}>
+          <TerminalIcon aria-hidden />
+          Copy as curl
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem variant="destructive" onSelect={onDelete}>
@@ -215,9 +235,6 @@ function RulesTable({
             <TableHead>Match type</TableHead>
             <TableHead>Pattern</TableHead>
             <TableHead>Service</TableHead>
-            <TableHead>Active scenario</TableHead>
-            <TableHead className="text-right">Priority</TableHead>
-            <TableHead>Updated</TableHead>
             <TableHead className="w-12">
               <span className="sr-only">Actions</span>
             </TableHead>
@@ -269,15 +286,6 @@ function RulesTable({
                 </Tooltip>
               </TableCell>
               <TableCell>{serviceName(services, rule.serviceId)}</TableCell>
-              <TableCell>
-                <Scenario rule={rule} />
-              </TableCell>
-              <TableCell className="text-right font-mono tabular-nums">{rule.priority}</TableCell>
-              <TableCell>
-                <time dateTime={rule.updatedAt} title={absoluteTime(rule.updatedAt)}>
-                  {relativeTime(rule.updatedAt)}
-                </time>
-              </TableCell>
               <TableCell>
                 <RowMenu rule={rule} onDelete={() => onDelete(rule)} />
               </TableCell>
