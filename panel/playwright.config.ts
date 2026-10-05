@@ -2,6 +2,10 @@ import { defineConfig, devices } from "@playwright/test"
 
 const PORT = Number(process.env.E2E_PORT ?? 5299)
 
+const launchOptions = process.env.PLAYWRIGHT_CHROMIUM_PATH
+  ? { executablePath: process.env.PLAYWRIGHT_CHROMIUM_PATH, args: ["--no-sandbox"] }
+  : {}
+
 /**
  * E2E against the Vite dev server with the MSW mock backend.
  * Set PLAYWRIGHT_CHROMIUM_PATH to use a local Chromium-based browser when Playwright's download is blocked.
@@ -23,9 +27,20 @@ export default defineConfig({
       use: {
         ...devices["Desktop Chrome"],
         viewport: { width: 1440, height: 900 },
-        launchOptions: process.env.PLAYWRIGHT_CHROMIUM_PATH
-          ? { executablePath: process.env.PLAYWRIGHT_CHROMIUM_PATH, args: ["--no-sandbox"] }
-          : {},
+        launchOptions,
+      },
+    },
+    {
+      // A phone: overlays are bottom sheets here (Frontend/plan-responsive-overlays.md). Chromium, not WebKit, with
+      // a touch phone viewport, so it runs wherever the desktop project does.
+      name: "mobile",
+      testMatch: /overlays\.spec\.ts/,
+      use: {
+        ...devices["Desktop Chrome"],
+        viewport: { width: 390, height: 844 },
+        isMobile: true,
+        hasTouch: true,
+        launchOptions,
       },
     },
   ],

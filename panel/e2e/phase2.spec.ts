@@ -16,9 +16,9 @@ test("Phase 2: live log → Mock this → scenarios → Test route → export", 
 
   // Mock this on a logged request opens the new rule.
   await page.getByRole("button", { name: "Details of GET /limsa/api/v1/orders/4211" }).click()
-  const drawer = page.getByRole("dialog")
-  await expect(drawer.getByRole("region", { name: "Request headers" })).toContainText("authorization: ***")
-  await drawer.getByRole("button", { name: "Mock this" }).click()
+  const details = page.getByRole("dialog")
+  await expect(details.getByRole("region", { name: "Request headers" })).toContainText("authorization: ***")
+  await details.getByRole("button", { name: "Mock this" }).click()
   await expect(page).toHaveURL(/\/rules\/[0-9a-f-]+$/)
   await expect(page.getByLabel("Pattern", { exact: true })).toHaveValue("/limsa/api/v1/orders/4211")
 
