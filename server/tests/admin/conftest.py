@@ -1,6 +1,7 @@
 """Admin API fixtures: the app on the test database and `as_developer` (no real IdP, testing §3)."""
 
 from collections.abc import AsyncIterator, Awaitable, Callable
+from pathlib import Path
 
 import httpx
 import pytest
@@ -16,6 +17,12 @@ from mockan.infrastructure.settings import MockanSettings
 from tests.infrastructure.helpers import make_developer
 
 ALLOWED_HOSTS = ["identity.stage.internal", "*.dev.internal"]
+
+
+@pytest.fixture(autouse=True)
+def no_panel_build(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    """Tests must not depend on a Panel build left in `admin/static/` by `npm run build:server`."""
+    monkeypatch.setattr("mockan.admin.app.STATIC_DIR", tmp_path / "no-panel-build")
 
 
 @pytest.fixture
