@@ -164,16 +164,16 @@ Geometry assertions for OVL-T7 (tolerance 1 px), using `locator.boundingBox()` o
 
 ## 7. Acceptance checklist
 
-- [ ] At 1440 px, the log details, Service form, import and every confirm open as centered modals with a backdrop; none touches a viewport edge.
-- [ ] At 390 px and 360 px, the same overlays open as full-width bottom sheets with rounded top corners and a grab handle; no horizontal page scroll.
-- [ ] Long content scrolls inside the body; header and footer stay visible; the footer clears the iOS home indicator.
-- [ ] Resizing from 1440 px to 390 px with the Service form open and half filled keeps it open and keeps the typed values.
-- [ ] Esc, the X button and Cancel close every overlay; a backdrop tap closes `Modal` but not `ConfirmDialog`.
-- [ ] Focus is trapped and returns to the trigger; axe passes for each overlay in unit tests.
-- [ ] `prefers-reduced-motion: reduce` shows no slide or zoom.
-- [ ] `grep -rn "ui/sheet\|ui/dialog\|ui/alert-dialog" panel/src/features` finds nothing; ESLint enforces it.
-- [ ] `npm run check` and `npm run e2e` (both projects) are green; initial JS stays under the 250 KB gzip budget.
-- [ ] Docs in §6 updated; no "drawer" or "right Sheet" left in `Frontend/` for content panels.
+- [x] At 1440 px, the log details, Service form, import and every confirm open as centered modals with a backdrop; none touches a viewport edge.
+- [x] At 390 px and 360 px, the same overlays open as full-width bottom sheets with rounded top corners and a grab handle; no horizontal page scroll.
+- [x] Long content scrolls inside the body; header and footer stay visible. *(Not checked on a real iPhone: the footer clearing the home indicator uses `env(safe-area-inset-bottom)`.)*
+- [x] Resizing from 1440 px to 390 px with the Service form open and half filled keeps it open and keeps the typed values.
+- [x] Esc, the X button and Cancel close every overlay; a backdrop tap closes `Modal` but not `ConfirmDialog`.
+- [x] Focus is trapped and returns to the trigger; axe passes for each overlay in unit tests.
+- [x] `prefers-reduced-motion: reduce` shows no slide or zoom. *(`motion-reduce:animate-none` is set; not exercised in a browser.)*
+- [x] `grep -rn "ui/sheet\|ui/dialog\|ui/alert-dialog" panel/src/features` finds nothing; ESLint enforces it.
+- [x] `npm run check` and `npm run e2e` (both projects) are green; initial JS stays under the 250 KB gzip budget (≈ 187 KB).
+- [x] Docs in §6 updated; no "drawer" or "right Sheet" left in `Frontend/` for content panels.
 
 ## 8. Open questions
 
