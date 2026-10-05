@@ -4,13 +4,13 @@ import reactRefresh from "eslint-plugin-react-refresh"
 import globals from "globals"
 import tseslint from "typescript-eslint"
 
-/** Import boundaries (Frontend/project-structure.md): ui ← mockan ← features; features never import each other. */
+/** Import boundaries (docs/frontend/project-structure.md): ui ← mockan ← features; features never import each other. */
 const FEATURES = ["onboarding", "overview", "rules", "services", "settings", "admin", "design"]
 
-/** Overlay panels are `Modal` or `ConfirmDialog` (Frontend/plan-responsive-overlays.md); the raw shadcn ones stay in `ui`. */
+/** Overlay panels are `Modal` or `ConfirmDialog` (docs/frontend/plan-responsive-overlays.md); the raw shadcn ones stay in `ui`. */
 const OVERLAY_PATTERN = {
   group: ["@/components/ui/sheet", "@/components/ui/dialog", "@/components/ui/alert-dialog"],
-  message: "Use Modal or ConfirmDialog from @/components/mockan (Frontend/plan-responsive-overlays.md).",
+  message: "Use Modal or ConfirmDialog from @/components/mockan (docs/frontend/plan-responsive-overlays.md).",
 }
 
 export default tseslint.config(

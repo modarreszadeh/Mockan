@@ -11,7 +11,7 @@ related:
   - design-tokens.md
   - project-structure.md
   - testing.md
-  - ../Agent/prompts/panel-dashboard.md
+  - ../agent/prompts/panel-dashboard.md
 audience: Frontend engineers and AI coding agents working in `panel/`
 ---
 
@@ -139,7 +139,7 @@ Each task is one commit on its own, keeps `npm run check` green, and can be reve
 | OVL-T5 | ESLint guard: in `src/features/**` and `src/components/mockan/**` forbid `@/components/ui/sheet`, `@/components/ui/dialog`, `@/components/ui/alert-dialog` with the message "Use Modal or ConfirmDialog from components/mockan (plan-responsive-overlays.md)". Allow them only in `modal.tsx` and `confirm-dialog.tsx`. | `panel/eslint.config.js` | `npm run lint` fails on a scratch import of `ui/sheet` in a feature, passes on the tree. |
 | OVL-T6 | Viewport meta: add `interactive-widget=resizes-content`. | `panel/index.html` | Present; no layout change at 1440 px. |
 | OVL-T7 | E2E: add a `mobile` Playwright project (390 × 844, `hasTouch`, `isMobile`) next to `chromium`. New `e2e/overlays.spec.ts` opens each of the four overlays at both sizes and asserts geometry (below). Rename the `drawer` variable in `phase2.spec.ts`. | `panel/playwright.config.ts`, `panel/e2e/overlays.spec.ts` (new), `panel/e2e/phase2.spec.ts` | `npm run e2e` green on both projects. |
-| OVL-T8 | Docs (§6) and screenshots: add `scr-07-service-modal-{1440,390}.png`, `scr-09-log-details-{1440,390}.png`, `confirm-dialog-390.png` to `Frontend/screenshots/`. | see §6 | Docs say "modal" everywhere; screenshots table updated. |
+| OVL-T8 | Docs (§6) and screenshots: add `scr-07-service-modal-{1440,390}.png`, `scr-09-log-details-{1440,390}.png`, `confirm-dialog-390.png` to `docs/frontend/screenshots/`. | see §6 | Docs say "modal" everywhere; screenshots table updated. |
 
 Geometry assertions for OVL-T7 (tolerance 1 px), using `locator.boundingBox()` on `getByRole("dialog" | "alertdialog")` after the enter animation:
 
@@ -152,15 +152,15 @@ Geometry assertions for OVL-T7 (tolerance 1 px), using `locator.boundingBox()` o
 
 | File | Change |
 | --- | --- |
-| `Frontend/components.md` | New section **Modal**: purpose, API table (§3.1), layout table (§3.2), usage snippet, states (closed · open · scrolling · pending). **ConfirmDialog**: "built on `AlertDialog` with the Modal surface; bottom sheet < 768 px". |
-| `Frontend/screens.md` | SCR-04: "Import" opens a modal. SCR-07: "create/edit in a right `Sheet`" → "in a modal (bottom sheet on mobile)"; "the sheet keeps the new Service" → "the modal keeps…". SCR-09: "Details drawer" → "Details modal"; "the drawer's one primary button" → "the modal's…"; checklist item wording. Screenshots table: new rows from OVL-T8. |
-| `Frontend/conventions.md` | §5 Styling: "Overlay panels use `Modal` or `ConfirmDialog` from `@/components/mockan`, never `ui/sheet` / `ui/dialog` / `ui/alert-dialog` directly (ESLint). They are modals ≥ 768 px and bottom sheets < 768 px; features do not choose a side or width breakpoint." |
-| `Frontend/design-tokens.md` | §3 Radius: dialogs `rounded-xl`; bottom sheets `rounded-t-xl`. §2: `type-title-md` "Card and modal titles". |
-| `Frontend/project-structure.md` | Import-rules table: add the `ui/sheet|dialog|alert-dialog` restriction. |
-| `Frontend/testing.md` | E2E: the `mobile` project and `overlays.spec.ts`. |
-| `Frontend/README.md` | Documents table: add this plan; Open questions: add OQ-F7, OQ-F8, OQ-F9 (§8). When done, set this plan's `status: Done`. |
-| `Agent/prompts/panel-dashboard.md` | Do not rewrite the brief. Next to the SCR-07 "right `Sheet`" line and the M5 "details drawer" line, add a note that they are superseded by this plan, in the same style as the typography note (commit `96e5cd7`). |
-| `Product/mockan-prd.md` | §SCR-09 checklist: "a details drawer shows" → "a details view shows" (product docs stay layout-neutral). |
+| `docs/frontend/components.md` | New section **Modal**: purpose, API table (§3.1), layout table (§3.2), usage snippet, states (closed · open · scrolling · pending). **ConfirmDialog**: "built on `AlertDialog` with the Modal surface; bottom sheet < 768 px". |
+| `docs/frontend/screens.md` | SCR-04: "Import" opens a modal. SCR-07: "create/edit in a right `Sheet`" → "in a modal (bottom sheet on mobile)"; "the sheet keeps the new Service" → "the modal keeps…". SCR-09: "Details drawer" → "Details modal"; "the drawer's one primary button" → "the modal's…"; checklist item wording. Screenshots table: new rows from OVL-T8. |
+| `docs/frontend/conventions.md` | §5 Styling: "Overlay panels use `Modal` or `ConfirmDialog` from `@/components/mockan`, never `ui/sheet` / `ui/dialog` / `ui/alert-dialog` directly (ESLint). They are modals ≥ 768 px and bottom sheets < 768 px; features do not choose a side or width breakpoint." |
+| `docs/frontend/design-tokens.md` | §3 Radius: dialogs `rounded-xl`; bottom sheets `rounded-t-xl`. §2: `type-title-md` "Card and modal titles". |
+| `docs/frontend/project-structure.md` | Import-rules table: add the `ui/sheet|dialog|alert-dialog` restriction. |
+| `docs/frontend/testing.md` | E2E: the `mobile` project and `overlays.spec.ts`. |
+| `docs/frontend/README.md` | Documents table: add this plan; Open questions: add OQ-F7, OQ-F8, OQ-F9 (§8). When done, set this plan's `status: Done`. |
+| `docs/agent/prompts/panel-dashboard.md` | Do not rewrite the brief. Next to the SCR-07 "right `Sheet`" line and the M5 "details drawer" line, add a note that they are superseded by this plan, in the same style as the typography note (commit `96e5cd7`). |
+| `docs/product/mockan-prd.md` | §SCR-09 checklist: "a details drawer shows" → "a details view shows" (product docs stay layout-neutral). |
 
 ## 7. Acceptance checklist
 
@@ -173,7 +173,7 @@ Geometry assertions for OVL-T7 (tolerance 1 px), using `locator.boundingBox()` o
 - [x] `prefers-reduced-motion: reduce` shows no slide or zoom. *(`motion-reduce:animate-none` is set; not exercised in a browser.)*
 - [x] `grep -rn "ui/sheet\|ui/dialog\|ui/alert-dialog" panel/src/features` finds nothing; ESLint enforces it.
 - [x] `npm run check` and `npm run e2e` (both projects) are green; initial JS stays under the 250 KB gzip budget (≈ 187 KB).
-- [x] Docs in §6 updated; no "drawer" or "right Sheet" left in `Frontend/` for content panels.
+- [x] Docs in §6 updated; no "drawer" or "right Sheet" left in `docs/frontend/` for content panels.
 
 ## 8. Open questions
 

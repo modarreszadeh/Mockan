@@ -1,4 +1,4 @@
-/** Mockan domain components (prompt §4.6). Catalogue: Frontend/components.md. */
+/** Mockan domain components (prompt §4.6). Catalogue: docs/frontend/components.md. */
 export { BaseUrlCard } from "./base-url-card"
 export { CodeBlock } from "./code-block"
 export { ConfirmDialog } from "./confirm-dialog"

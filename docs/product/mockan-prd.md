@@ -3,7 +3,7 @@ title: Mockan — Product Requirements Document
 status: Draft (v0.2)
 date: 2026-10-03
 owner: Product / Backend team
-source: Agent/mockan-architecture.md (Approved baseline v1.1)
+source: docs/agent/mockan-architecture.md (Approved baseline v1.1)
 audience: Product, frontend & backend engineering leads, platform/DevOps, AI coding agents
 ---
 
@@ -11,7 +11,7 @@ audience: Product, frontend & backend engineering leads, platform/DevOps, AI cod
 
 > **In one sentence:** Mockan lets a frontend developer build against an API that does not exist yet by pointing their app at a personal gateway that proxies to the real backend for everything *except* the routes they choose to mock. Their frontend code never contains anything mock-specific.
 
-This PRD covers **what** Mockan must do and **why**. The **how** is in [`Agent/mockan-architecture.md`](../Agent/mockan-architecture.md). Requirement IDs (`FR-xx`, `NFR-xx`), decision IDs (`D-xx`) and open-question IDs (`OQ-xx`) refer to that document. New product-level IDs in this PRD use the `PR-xx` prefix (product requirement), `US-xx` (user story) and `C-xx` (project constraint).
+This PRD covers **what** Mockan must do and **why**. The **how** is in [`docs/agent/mockan-architecture.md`](../agent/mockan-architecture.md). Requirement IDs (`FR-xx`, `NFR-xx`), decision IDs (`D-xx`) and open-question IDs (`OQ-xx`) refer to that document. New product-level IDs in this PRD use the `PR-xx` prefix (product requirement), `US-xx` (user story) and `C-xx` (project constraint).
 
 > **Key constraint (C-01, §4):** all Mockan documentation — product, frontend and backend — is written in Markdown and must be AI-agent-friendly.
 
@@ -69,20 +69,20 @@ Classic mock servers replace the *whole* API, so a developer working on one new 
 
 | Layer | Folder | Must be documented (at minimum) |
 | --- | --- | --- |
-| Product | `Product/` | PRD, product design / UX flows, personas, roadmap and phase scope, decisions and open questions. |
-| Frontend (Panel) | `Frontend/` | Architecture, folder structure, routing, state management, API client, component catalogue (props, states, usage), design tokens, conventions. |
-| Backend | `Backend/` | Architecture, database schema and migrations policy, domain model, Admin API contract, Gateway pipeline, code style and conventions, testing strategy. |
-| Cross-cutting | `Agent/` | System architecture and the rules agents must follow across layers. |
+| Product | `docs/product/` | PRD, product design / UX flows, personas, roadmap and phase scope, decisions and open questions. |
+| Frontend (Panel) | `docs/frontend/` | Architecture, folder structure, routing, state management, API client, component catalogue (props, states, usage), design tokens, conventions. |
+| Backend | `docs/backend/` | Architecture, database schema and migrations policy, domain model, Admin API contract, Gateway pipeline, code style and conventions, testing strategy. |
+| Cross-cutting | `docs/agent/` | System architecture and the rules agents must follow across layers. |
 
 **What "AI-agent-friendly" means (acceptance criteria for every doc):**
 - [ ] **Markdown only.** No `.docx`, PDF, slides, wiki-only pages or images as the only source of truth. Diagrams are written as Mermaid inside the `.md` file; any image is a supplement, never the only copy of the information.
 - [ ] **YAML front matter** at the top with at least `title`, `status`, `date`, `owner`, and `source`/`related` links when the doc derives from another.
 - [ ] **One topic per file**, with a short summary at the top that says what the file covers and who it is for.
 - [ ] **Stable IDs** for everything that can be referenced: requirements (`FR-`, `NFR-`, `PR-`), decisions (`D-`), open questions (`OQ-`), constraints (`C-`), user stories (`US-`). IDs are never reused or renumbered; retired items are marked as such.
-- [ ] **Normative terms** come from the glossary (`Agent/mockan-architecture.md` §2) and are used exactly as written, in docs and in code.
+- [ ] **Normative terms** come from the glossary (`docs/agent/mockan-architecture.md` §2) and are used exactly as written, in docs and in code.
 - [ ] **Explicit over implied:** rules use MUST / MUST NOT / SHOULD; tables and checklists rather than long prose; concrete examples (paths, payloads, commands) instead of descriptions.
 - [ ] **Undecided items are labelled** as open questions with a stated default, so an agent knows what to build and where to leave a `TODO(OQ-xx)` marker.
-- [ ] **Relative links** between docs (e.g. `../Agent/mockan-architecture.md`), so they work in the repo, in an editor and for an agent reading files.
+- [ ] **Relative links** between docs (e.g. `../agent/mockan-architecture.md`), so they work in the repo, in an editor and for an agent reading files.
 - [ ] **Docs change with the code.** A PR that changes behaviour, schema, API or structure updates the matching doc in the same PR; reviewers reject PRs where they disagree.
 
 **Why:** AI agents can't ask hallway questions or open a design tool. If something isn't in a Markdown file in the repo, an agent will guess, and guesses are where drift and rework come from.
@@ -324,7 +324,7 @@ Questions inherited from the architecture keep their `OQ-xx` IDs. New product qu
 | ID | Question | Owner | Blocking? | Current default |
 | --- | --- | --- | --- | --- |
 | OQ-02 | Do our apps authenticate with bearer tokens or cookies? | Frontend leads + Backend | **Resolved 2026-10-05: bearer tokens.** Login and refresh work through Mockan because `Authorization` passes through unchanged. | The `Set-Cookie` rewrite stays implemented as specified, but is not on the critical path. Cookie-based apps (`SameSite=None; Secure`, `__Host-` cookies) are not supported until one appears. |
-| OQ-04 | Which OIDC provider (Keycloak, Azure AD, other)? | Platform/DevOps | **Decided 2026-10-05: the organization's Keycloak** ([`Agent/mockan-authentication.md`](../Agent/mockan-authentication.md)). Still blocking until DevOps registers the client and one real login succeeds. | Generic OIDC config (Authorization Code + PKCE S256), no provider-specific code. Setup: [`Backend/operations.md` §3a](../Backend/operations.md#3a-sign-in-with-keycloak-oq-04). |
+| OQ-04 | Which OIDC provider (Keycloak, Azure AD, other)? | Platform/DevOps | **Decided 2026-10-05: the organization's Keycloak** ([`docs/agent/mockan-authentication.md`](../agent/mockan-authentication.md)). Still blocking until DevOps registers the client and one real login succeeds. | Generic OIDC config (Authorization Code + PKCE S256), no provider-specific code. Setup: [`docs/backend/operations.md` §3a](../backend/operations.md#3a-sign-in-with-keycloak-oq-04). |
 | OQ-05 | Do frontends call one shared API gateway URL or one base URL per microservice? | Frontend leads, per app | Blocking for catalog setup of each app, not for build | Both supported via `PathPrefix` + `StripPrefix`. |
 | OQ-01 | Path-based (`/{slug}/`) or subdomain (`{slug}.mock…`) workspaces? | Engineering + DevOps | Non-blocking | Path-based. |
 | OQ-03 | Panel on the same host (`/_mockan/admin`) or a separate host (`mockan.novin-tools.com`)? | DevOps | Non-blocking | Separate host if DNS/TLS is easy. |

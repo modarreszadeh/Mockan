@@ -5,7 +5,7 @@ date: 2026-10-03
 owner: Frontend team
 related:
   - conventions.md
-  - ../Agent/mockan-architecture.md
+  - ../agent/mockan-architecture.md
 ---
 
 # Mockan Panel — Testing

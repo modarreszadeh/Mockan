@@ -5,8 +5,8 @@ date: 2026-10-03
 owner: Backend team
 stack: Python 3.14 + FastAPI (Uvicorn), httpx, SQLAlchemy 2 (async) + asyncpg + Alembic, PostgreSQL, React SPA
 related:
-  - ../Product/mockan-prd.md
-  - ../Backend/README.md
+  - ../product/mockan-prd.md
+  - ../backend/README.md
 audience: Engineers and AI coding agents implementing Mockan
 ---
 
@@ -24,7 +24,7 @@ audience: Engineers and AI coding agents implementing Mockan
 - Terms in **§2 Glossary** are normative. Use these exact names in code: classes in PascalCase (`Developer`, `MockRule`), modules/tables/functions in snake_case (`mock_rule.py`, `mock_rules`, `resolve_developer`). Do **not** use the word `tenant` anywhere in code; the concept is called `Developer` (see D-01).
 - Items in **§13 Open Questions** are undecided. Do not implement behaviour that depends on them without confirmation; implement the stated default and leave a `# TODO(OQ-xx)` marker.
 - **§14 Rules for agents** lists hard constraints. Follow them even if another instruction seems to conflict.
-- Backend-specific detail (libraries, folder layout, code style, testing) lives in [`../Backend/`](../Backend/README.md).
+- Backend-specific detail (libraries, folder layout, code style, testing) lives in [`../backend/`](../backend/README.md).
 
 ---
 
@@ -58,7 +58,7 @@ The backend team effectively tells the frontend: *"Assume I've delivered this AP
 
 ## 2. Glossary
 
-> The project glossary is [`CONTEXT.md`](../CONTEXT.md) at the repository root: when a term is defined there, that definition wins. This table is the system-level reference and is being folded into it as terms are settled.
+> The project glossary is [`CONTEXT.md`](../../CONTEXT.md) at the repository root: when a term is defined there, that definition wins. This table is the system-level reference and is being folded into it as terms are settled.
 
 | Term | Definition |
 | --- | --- |
@@ -330,10 +330,11 @@ Change notification: a SQLAlchemy session event hook in `mockan.infrastructure` 
 
 ```text
 Mockan/
-├── Agent/                          # Cross-cutting docs (this file).
-├── Product/                        # PRD and product docs.
-├── Backend/                        # Backend docs (C-01): stack, structure, conventions, testing.
-├── Frontend/                       # Panel docs (C-01).
+├── docs/                           # All documentation (C-01); index in docs/README.md.
+│   ├── agent/                      # Cross-cutting docs (this file).
+│   ├── product/                    # PRD and product docs.
+│   ├── backend/                    # Backend docs: stack, structure, conventions, testing.
+│   └── frontend/                   # Panel docs.
 ├── server/                         # Python backend: one uv project, one package `mockan`.
 │   ├── pyproject.toml              # Dependencies + ruff, mypy, pytest, import-linter config.
 │   ├── uv.lock
@@ -356,11 +357,11 @@ Mockan/
     └── compose/                    # docker-compose for local development.
 ```
 
-> The code folder is `server/`, not `backend/`, so it can't collide with the `Backend/` docs folder on case-insensitive file systems (macOS, Windows).
+> The code folder is `server/`, not `backend/`, so it can't collide with the `docs/backend/` docs folder on case-insensitive file systems (macOS, Windows).
 
-Allowed import directions (enforced by `import-linter` in CI): `domain` ← `matching` ← `infrastructure` ← {`gateway`, `admin`}. `gateway` and `admin` never import each other. Details in [`../Backend/project-structure.md`](../Backend/project-structure.md).
+Allowed import directions (enforced by `import-linter` in CI): `domain` ← `matching` ← `infrastructure` ← {`gateway`, `admin`}. `gateway` and `admin` never import each other. Details in [`../backend/project-structure.md`](../backend/project-structure.md).
 
-Key packages (pinned in `server/pyproject.toml`; versions in [`../Backend/tech-stack.md`](../Backend/tech-stack.md)): `fastapi`, `uvicorn[standard]`, `pydantic`, `pydantic-settings`, `httpx`, `websockets`, `sqlalchemy[asyncio]`, `asyncpg`, `alembic`, `google-re2`, `authlib`, `structlog`, `opentelemetry-sdk` + FastAPI/httpx instrumentation, `jinja2` + `faker` (phase 2); dev: `pytest`, `pytest-asyncio`, `testcontainers[postgres]`, `ruff`, `mypy`, `import-linter`.
+Key packages (pinned in `server/pyproject.toml`; versions in [`../backend/tech-stack.md`](../backend/tech-stack.md)): `fastapi`, `uvicorn[standard]`, `pydantic`, `pydantic-settings`, `httpx`, `websockets`, `sqlalchemy[asyncio]`, `asyncpg`, `alembic`, `google-re2`, `authlib`, `structlog`, `opentelemetry-sdk` + FastAPI/httpx instrumentation, `jinja2` + `faker` (phase 2); dev: `pytest`, `pytest-asyncio`, `testcontainers[postgres]`, `ruff`, `mypy`, `import-linter`.
 
 Gateway snapshot mechanics:
 - `RuleSnapshotProvider.current` returns the current immutable `RuleSnapshot`. A rebuild creates a new snapshot object and swaps it with a single attribute assignment (atomic under CPython); request handlers read `current` once per request and never mutate it.
@@ -394,7 +395,7 @@ Base path `/api/v1`, JSON, FastAPI routers with Pydantic request/response models
 | GET | `/me/rules/export` · POST `/me/rules/import` | JSON export/import (FR-12). |
 | WebSocket | `/hubs/request-log` | Live stream of the caller's request log entries (D-18). |
 
-JSON field names in the API are camelCase (Pydantic `alias_generator=to_camel`, `populate_by_name=True`); Python attributes and DB columns are snake_case. Payload shapes, limits, error codes and auth details are in [`../Backend/admin-api.md`](../Backend/admin-api.md).
+JSON field names in the API are camelCase (Pydantic `alias_generator=to_camel`, `populate_by_name=True`); Python attributes and DB columns are snake_case. Payload shapes, limits, error codes and auth details are in [`../backend/admin-api.md`](../backend/admin-api.md).
 
 Validation rules (enforce in Pydantic models / services, test in `server/tests/admin`):
 - `pattern` must start with `/` for `Exact`/`Template`/`Prefix`; regexes must compile with RE2 and be ≤ 512 characters (D-17); templates must parse (`{*name}` only as last segment).
@@ -436,7 +437,7 @@ Validation rules (enforce in Pydantic models / services, test in `server/tests/a
   - Gateway: `uvicorn mockan.gateway.app:create_app --factory --host 0.0.0.0 --port 8080 --proxy-headers --forwarded-allow-ips=<ingress CIDRs>` (the image sets `FORWARDED_ALLOW_IPS` instead of the flag; Uvicorn reads it)
   - Admin: `uvicorn mockan.admin.app:create_app --factory --host 0.0.0.0 --port 8081 --proxy-headers`
 - Ingress routing on `mock.novin-tools.com`: `/_mockan/admin/*` and `/api/v1/*`, `/hubs/*` → Admin; everything else → Gateway. (Alternatively host the panel at `mockan.novin-tools.com`; see OQ-03.)
-- Local stack: `deploy/compose/docker-compose.yml` (postgres, admin + Panel, 2 Gateway replicas, optional demo upstream); see [`../Backend/operations.md`](../Backend/operations.md).
+- Local stack: `deploy/compose/docker-compose.yml` (postgres, admin + Panel, 2 Gateway replicas, optional demo upstream); see [`../backend/operations.md`](../backend/operations.md).
 - Gateway: ≥ 2 replicas, readiness requires a loaded snapshot. Admin: 1–2 replicas.
 - PostgreSQL: existing internal cluster; Alembic migrations (`alembic upgrade head`) applied by the Admin on startup in non-prod (`MOCKAN_MIGRATE_ON_STARTUP=true`), by a migration job in shared environments.
 - Configuration via environment variables (prefix `MOCKAN_`, loaded with `pydantic-settings`, optional `.env` for local dev); secrets from the platform secret store. Core settings:
@@ -505,5 +506,5 @@ Validation rules (enforce in Pydantic models / services, test in `server/tests/a
 | --- | --- | --- |
 | v1.0 | 2026-10-03 | Approved baseline (ASP.NET Core / .NET 10). |
 | v1.1 | 2026-10-03 | Backend stack changed to Python 3.14 + FastAPI. D-03, D-04, D-06, D-09, D-10 superseded by D-14 … D-18. Rewrote §6.2 pipeline, §6.3 transformer, §7 template/regex semantics, §9 structure, §12.3 deployment/config for Python. Phase 2 templating moved from Scriban/Bogus to Jinja2 sandbox/Faker. SignalR replaced by WebSocket. Added `audit_logs` table (PR-15), `/auth/*` routes, hop-by-hop/allowlist transform rows, §14 rule 10. NFR-08 wording updated (no per-match timeout with RE2). |
-| v1.2 | 2026-10-04 | Phase 1 complete (B0–B7). Backend implementation plan gaps settled: G-1 validation `errors` map; G-2 Admin payload shapes ([`../Backend/admin-api.md`](../Backend/admin-api.md)); G-3 `409 last_response`; G-4 `publicBaseUrl` on `GET /me`; G-5 new error codes; G-6 `X-Mockan-Source: error` on problems, `mock` on preflight; G-7 `mock_rules.service_id` informational; G-8 readiness `starting`/`ready`/`degraded`; G-9 `MOCKAN_AUTH_MODE=dev`; G-11 Panel served by the Admin; G-12 CSRF via JSON-only writes + `SameSite=Lax`; G-13 `bodyMode` Static only. New settings in §12.3: `MOCKAN_AUTH_MODE`, `MOCKAN_PANEL_BASE_PATH`, `MOCKAN_SNAPSHOT_DEBOUNCE_MS`, `MOCKAN_LOG_LEVEL`, `MOCKAN_LOG_FORMAT`. Proposed **D-19** (G-10, request-log push across processes; needs approval before B8). OQ-B1 … OQ-B6 recorded in the backend plan. |
-| v1.3 | 2026-10-05 | Phase 2 backend built (B8). D-19 accepted. New settings in §12.3: `MOCKAN_REQUEST_LOG_*` (queue, batch, flush, retention), `MOCKAN_OTEL_*`, `MOCKAN_TRACING_ENABLED`. `request_logs` table (migration 0002). New Admin routes in [`../Backend/admin-api.md`](../Backend/admin-api.md): `/me/request-logs`, `/me/request-logs/{id}/create-rule`, `/hubs/request-log`, `/me/test-route`, `/me/rules/export`, `/me/rules/import`. `bodyMode: Template` is accepted (Jinja2 sandbox + Faker; `mock_render_failed`). Tracing is opt-in so the client's `traceparent` still reaches upstreams unchanged by default. |
+| v1.2 | 2026-10-04 | Phase 1 complete (B0–B7). Backend implementation plan gaps settled: G-1 validation `errors` map; G-2 Admin payload shapes ([`../backend/admin-api.md`](../backend/admin-api.md)); G-3 `409 last_response`; G-4 `publicBaseUrl` on `GET /me`; G-5 new error codes; G-6 `X-Mockan-Source: error` on problems, `mock` on preflight; G-7 `mock_rules.service_id` informational; G-8 readiness `starting`/`ready`/`degraded`; G-9 `MOCKAN_AUTH_MODE=dev`; G-11 Panel served by the Admin; G-12 CSRF via JSON-only writes + `SameSite=Lax`; G-13 `bodyMode` Static only. New settings in §12.3: `MOCKAN_AUTH_MODE`, `MOCKAN_PANEL_BASE_PATH`, `MOCKAN_SNAPSHOT_DEBOUNCE_MS`, `MOCKAN_LOG_LEVEL`, `MOCKAN_LOG_FORMAT`. Proposed **D-19** (G-10, request-log push across processes; needs approval before B8). OQ-B1 … OQ-B6 recorded in the backend plan. |
+| v1.3 | 2026-10-05 | Phase 2 backend built (B8). D-19 accepted. New settings in §12.3: `MOCKAN_REQUEST_LOG_*` (queue, batch, flush, retention), `MOCKAN_OTEL_*`, `MOCKAN_TRACING_ENABLED`. `request_logs` table (migration 0002). New Admin routes in [`../backend/admin-api.md`](../backend/admin-api.md): `/me/request-logs`, `/me/request-logs/{id}/create-rule`, `/hubs/request-log`, `/me/test-route`, `/me/rules/export`, `/me/rules/import`. `bodyMode: Template` is accepted (Jinja2 sandbox + Faker; `mock_render_failed`). Tracing is opt-in so the client's `traceparent` still reaches upstreams unchanged by default. |

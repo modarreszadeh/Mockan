@@ -15,7 +15,4 @@
 server/bench
 server/.env
 server/src/mockan/admin/static
-Agent
-Backend
-Frontend
-Product
+docs

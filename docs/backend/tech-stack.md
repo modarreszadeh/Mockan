@@ -3,7 +3,7 @@ title: Mockan Backend — Tech stack
 status: Draft (v0.1)
 date: 2026-10-03
 owner: Backend team
-source: ../Agent/mockan-architecture.md (D-14 … D-18)
+source: ../agent/mockan-architecture.md (D-14 … D-18)
 audience: Backend engineers and AI coding agents
 ---
 

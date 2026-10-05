@@ -13,7 +13,7 @@
 </p>
 
 <p align="center">
-  <img src="Frontend/screenshots/scr-03-overview-1440.png" alt="The Mockan Panel overview: your base URL, active mocks and a getting-started checklist" width="860">
+  <img src="docs/frontend/screenshots/scr-03-overview-1440.png" alt="The Mockan Panel overview: your base URL, active mocks and a getting-started checklist" width="860">
 </p>
 
 ## Why Mockan
@@ -60,11 +60,11 @@ flowchart LR
 - Upstream **host allowlist** (Mockan is never an open proxy), secrets masked in logs, OIDC sign-in (for example Keycloak).
 
 <p align="center">
-  <img src="Frontend/screenshots/scr-05-rule-editor-1440.png" alt="The rule editor with match type, pattern and a live summary of the response" width="860">
+  <img src="docs/frontend/screenshots/scr-05-rule-editor-1440.png" alt="The rule editor with match type, pattern and a live summary of the response" width="860">
 </p>
 
 <p align="center">
-  <img src="Frontend/screenshots/scr-09-log-details-1440.png" alt="A logged request with its headers and JSON body, and a Mock this button" width="860">
+  <img src="docs/frontend/screenshots/scr-09-log-details-1440.png" alt="A logged request with its headers and JSON body, and a Mock this button" width="860">
 </p>
 
 ## Quick start
@@ -106,7 +106,7 @@ VITE_API_BASE_URL=http://localhost:8090/ehtesham
 ```
 
 > [!WARNING]
-> The compose stack runs with `MOCKAN_AUTH_MODE=dev`: anyone who can reach the Admin can sign in as anyone. It is for local use only. Never run dev mode on a shared network; configure OIDC instead (see [operations](Backend/operations.md)). Mockan is a development tool and is not meant to serve production traffic or to be exposed to the internet.
+> The compose stack runs with `MOCKAN_AUTH_MODE=dev`: anyone who can reach the Admin can sign in as anyone. It is for local use only. Never run dev mode on a shared network; configure OIDC instead (see [operations](docs/backend/operations.md)). Mockan is a development tool and is not meant to serve production traffic or to be exposed to the internet.
 
 ## How it works
 
@@ -123,14 +123,15 @@ Rule changes are written to PostgreSQL and announced with `LISTEN/NOTIFY`; each 
 ## Repository layout
 
 ```
-server/    Python backend: Gateway + Admin (one uv project, one `mockan` package)
-panel/     React single-page app, built into the Admin image
-deploy/    Docker images and the local Compose stack
-Product/   Product requirements, personas, user journey
-Backend/   Backend design, conventions and operations docs
-Frontend/  Panel design tokens, components, screens and conventions
-Agent/     System architecture and the rules coding agents follow
-CONTEXT.md Project glossary
+server/        Python backend: Gateway + Admin (one uv project, one `mockan` package)
+panel/         React single-page app, built into the Admin image
+deploy/        Docker images and the local Compose stack
+docs/          All documentation (see docs/README.md)
+  product/       Product requirements, personas, user journey
+  backend/       Backend design, conventions and operations
+  frontend/      Panel design tokens, components, screens and conventions
+  agent/         System architecture and the rules coding agents follow
+CONTEXT.md     Project glossary
 ```
 
 ## Development
@@ -167,10 +168,10 @@ All project documentation is Markdown, written to be read by people and by AI co
 
 | Start here | |
 | --- | --- |
-| [Product requirements](Product/mockan-prd.md) | What Mockan does, for whom and why. |
-| [Architecture](Agent/mockan-architecture.md) | The system design: request lifecycle, matching, data model, Admin API. |
-| [Backend docs](Backend/README.md) | Stack, structure, Gateway, Admin API, database, operations, testing. |
-| [Frontend docs](Frontend/README.md) | Design tokens, components, screens, conventions, testing. |
+| [Product requirements](docs/product/mockan-prd.md) | What Mockan does, for whom and why. |
+| [Architecture](docs/agent/mockan-architecture.md) | The system design: request lifecycle, matching, data model, Admin API. |
+| [Backend docs](docs/backend/README.md) | Stack, structure, Gateway, Admin API, database, operations, testing. |
+| [Frontend docs](docs/frontend/README.md) | Design tokens, components, screens, conventions, testing. |
 | [Glossary](CONTEXT.md) | MockRule, Scenario, Request log and the other terms used throughout. |
 
 ## Status

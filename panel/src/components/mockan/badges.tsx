@@ -1,7 +1,7 @@
 /**
  * Status language badges (prompt §4.5). Every badge carries text — colour is never the only signal.
  * Contrast note: `muted` and `error` text fail 4.5:1 on `surface-card`, so `ANY` and `DELETE` pills use
- * the canvas fill with a hairline border instead (see Frontend/design-tokens.md).
+ * the canvas fill with a hairline border instead (see docs/frontend/design-tokens.md).
  */
 import type { EnvironmentName, HttpMethodOrAny, MatchType, RequestSource } from "@/api/types"
 import { cn } from "@/lib/utils"

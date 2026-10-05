@@ -1,6 +1,6 @@
 # Mockan
 
-Mockan lets a frontend Developer answer chosen requests with mock responses while every other request goes to the real backend. This file is the project glossary and nothing else; the system design is in [`Agent/mockan-architecture.md`](Agent/mockan-architecture.md) and the product intent in [`Product/mockan-prd.md`](Product/mockan-prd.md).
+Mockan lets a frontend Developer answer chosen requests with mock responses while every other request goes to the real backend. This file is the project glossary and nothing else; the system design is in [`docs/agent/mockan-architecture.md`](docs/agent/mockan-architecture.md) and the product intent in [`docs/product/mockan-prd.md`](docs/product/mockan-prd.md).
 
 ## Language
 

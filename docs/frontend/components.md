@@ -5,7 +5,7 @@ date: 2026-10-03
 owner: Frontend team
 related:
   - design-tokens.md
-  - ../Agent/prompts/panel-dashboard.md
+  - ../agent/prompts/panel-dashboard.md
 ---
 
 # Mockan Panel — Domain components

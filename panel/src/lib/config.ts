@@ -1,4 +1,4 @@
-/** Build-time configuration read from `import.meta.env` (documented in Frontend/README.md). */
+/** Build-time configuration read from `import.meta.env` (documented in docs/frontend/README.md). */
 
 /** Fallback only: the Panel shows `publicBaseUrl` from `GET /me` (OQ-F4) and uses this until it has loaded. */
 export const PUBLIC_BASE_URL = (import.meta.env.VITE_MOCKAN_PUBLIC_BASE_URL || "https://mock.novin-tools.com").replace(

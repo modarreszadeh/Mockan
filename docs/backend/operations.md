@@ -4,7 +4,7 @@ status: Draft (v0.1, Phase 1)
 date: 2026-10-04
 owner: Backend team
 related:
-  - ../Agent/mockan-architecture.md
+  - ../agent/mockan-architecture.md
   - gateway.md
   - admin-api.md
   - database.md
@@ -13,7 +13,7 @@ audience: Engineers deploying and running Mockan, and AI coding agents
 
 # Mockan Backend — Operations
 
-> **Summary:** how to run the stack (compose and images), every `MOCKAN_*` setting, health and readiness, migrations, the runbook for the situations that will happen, and how to add a Service. Design context: [architecture §12](../Agent/mockan-architecture.md#12-security-operations-and-deployment).
+> **Summary:** how to run the stack (compose and images), every `MOCKAN_*` setting, health and readiness, migrations, the runbook for the situations that will happen, and how to add a Service. Design context: [architecture §12](../agent/mockan-architecture.md#12-security-operations-and-deployment).
 
 ## 1. Run it locally (compose)
 
@@ -99,7 +99,7 @@ docker compose -f docker-compose.yml -f docker-compose.sso.yml up --build   # MO
 
 The browser reaches Keycloak at `localhost:8180`, the Admin container at `keycloak:8080`. `KC_HOSTNAME` pins the issuer to the browser address and `KC_HOSTNAME_BACKCHANNEL_DYNAMIC` lets the Admin use the container address for token and JWKS calls. To run the Admin on the host instead, use `MOCKAN_OIDC_ISSUER=http://localhost:8180/realms/internal`. The realm (`deploy/compose/keycloak/realm-internal.json`) and its secrets are for local use only; the users have fixed ids so the admin's `sub` is known (`00000000-0000-4000-8000-000000000001`).
 
-**In shared environments**, the Panel signs developers in through the organization's Keycloak (AD behind it): OIDC authorization code + PKCE S256, no Mockan passwords. Nothing in the code is Keycloak-specific; it uses standard discovery. Decision: [`Agent/mockan-authentication.md`](../Agent/mockan-authentication.md).
+**In shared environments**, the Panel signs developers in through the organization's Keycloak (AD behind it): OIDC authorization code + PKCE S256, no Mockan passwords. Nothing in the code is Keycloak-specific; it uses standard discovery. Decision: [`docs/agent/mockan-authentication.md`](../agent/mockan-authentication.md).
 
 Ask DevOps for a **confidential OIDC client** and these four values:
 

@@ -5,18 +5,18 @@ date: 2026-10-03
 owner: Frontend team
 related:
   - ../mockan-architecture.md
-  - ../../Product/mockan-prd.md
-  - ../../Product/Design/shadcn-design.md
+  - ../../product/mockan-prd.md
+  - ../../product/design/shadcn-design.md
 audience: AI coding agents (and the engineer supervising them) building `panel/`
 ---
 
 # Agent prompt — Design and implement the Mockan Panel (dashboard)
 
-> **What this file is:** a ready-to-use prompt for an AI coding agent. Paste everything under [§ The prompt](#the-prompt) into the agent, or tell it: *"Follow `Agent/prompts/panel-dashboard.md`."* It combines the product scope (PRD), the system contract (architecture) and the visual language (shadcn DESIGN.md) into one brief, and settles the gaps between them so the agent doesn't have to guess.
+> **What this file is:** a ready-to-use prompt for an AI coding agent. Paste everything under [§ The prompt](#the-prompt) into the agent, or tell it: *"Follow `docs/agent/prompts/panel-dashboard.md`."* It combines the product scope (PRD), the system contract (architecture) and the visual language (shadcn DESIGN.md) into one brief, and settles the gaps between them so the agent doesn't have to guess.
 >
 > **Who it's for:** the agent building the Panel, and the engineer reviewing its output.
 >
-> **Superseded since this was written:** the Panel's headings, titles and wordmark are now **Inter SemiBold (600)**, not a serif, and there is a login screen (SCR-01) and a `LogoMark`. Where this brief says "serif" or "Cormorant Garamond", read [`Frontend/design-tokens.md`](../../Frontend/design-tokens.md), [`Frontend/screens.md`](../../Frontend/screens.md) and [`Frontend/components.md`](../../Frontend/components.md), which track the code.
+> **Superseded since this was written:** the Panel's headings, titles and wordmark are now **Inter SemiBold (600)**, not a serif, and there is a login screen (SCR-01) and a `LogoMark`. Where this brief says "serif" or "Cormorant Garamond", read [`docs/frontend/design-tokens.md`](../../frontend/design-tokens.md), [`docs/frontend/screens.md`](../../frontend/screens.md) and [`docs/frontend/components.md`](../../frontend/components.md), which track the code.
 
 ---
 
@@ -26,7 +26,7 @@ audience: AI coding agents (and the engineer supervising them) building `panel/`
 
 You are a senior frontend engineer and product designer. Your job is to **design and build the Mockan Panel**: the React + TypeScript single-page app where a frontend developer claims a workspace, picks a backend environment per service, and creates the mock rules their personal gateway serves (D-11, architecture §11, PRD PR-18).
 
-The Panel must look and feel like the design system in `Product/Design/shadcn-design.md` (warm cream canvas, coral CTAs, serif display headings, dark code surfaces), adapted from a marketing site to a **dense, calm, data-heavy developer tool**, and built on **shadcn/ui**.
+The Panel must look and feel like the design system in `docs/product/design/shadcn-design.md` (warm cream canvas, coral CTAs, serif display headings, dark code surfaces), adapted from a marketing site to a **dense, calm, data-heavy developer tool**, and built on **shadcn/ui**.
 
 Success means a pilot developer can do the core journey (PRD §6) in the Panel in **≤ 5 minutes from first login to first mock** (PRD G4), without reading any docs.
 
@@ -36,10 +36,10 @@ Read them in full before you write code. If this prompt and a source disagree, t
 
 | File | What you take from it |
 | --- | --- |
-| `Product/mockan-prd.md` | Scope and priorities (PR-xx, US-xx), acceptance criteria, empty-state copy, phases. |
-| `Agent/mockan-architecture.md` | Glossary (§2, normative), data model (§8), Admin API routes (§10), Panel screens (§11), validation rules (§10), rules for agents (§14), open questions (§13). |
-| `Product/Design/shadcn-design.md` | Colour, type, radius, spacing tokens and component recipes. Treat its YAML front matter as the token source. |
-| `Backend/README.md` | How the backend docs are organised; mirror this for `Frontend/`. |
+| `docs/product/mockan-prd.md` | Scope and priorities (PR-xx, US-xx), acceptance criteria, empty-state copy, phases. |
+| `docs/agent/mockan-architecture.md` | Glossary (§2, normative), data model (§8), Admin API routes (§10), Panel screens (§11), validation rules (§10), rules for agents (§14), open questions (§13). |
+| `docs/product/design/shadcn-design.md` | Colour, type, radius, spacing tokens and component recipes. Treat its YAML front matter as the token source. |
+| `docs/backend/README.md` | How the backend docs are organised; mirror this for `docs/frontend/`. |
 
 ### 2. Hard rules (MUST / MUST NOT)
 
@@ -51,7 +51,7 @@ Read them in full before you write code. If this prompt and a source disagree, t
 6. **Tokens only.** No raw hex values in components. Every colour, radius and font comes from CSS variables defined once in `panel/src/styles/globals.css` (see §4.2).
 7. **Phase discipline.** Build Phase 1 (P0) completely before any Phase 2 (P1) work (see §7). Phase 2 screens MUST NOT appear in navigation until they work.
 8. **Open questions:** implement the stated default and leave a `// TODO(OQ-xx)` comment at the exact spot (architecture §0).
-9. **Docs change with code (C-01).** Every milestone updates the matching Markdown docs in `Frontend/` in the same change (see §10).
+9. **Docs change with code (C-01).** Every milestone updates the matching Markdown docs in `docs/frontend/` in the same change (see §10).
 10. If something you need contradicts a `D-xx` decision, stop and propose a change instead of deviating (architecture §14 rule 9).
 
 ### 3. Tech stack
@@ -190,7 +190,7 @@ These map product concepts to the palette **without adding a new surface tone** 
 
 #### 4.6 Mockan domain components
 
-Build these in `src/components/mockan/` on top of shadcn primitives. Each gets an entry in `Frontend/components.md` (props, states, usage example).
+Build these in `src/components/mockan/` on top of shadcn primitives. Each gets an entry in `docs/frontend/components.md` (props, states, usage example).
 
 | Component | Built from | Notes |
 | --- | --- | --- |
@@ -301,7 +301,7 @@ Each screen below lists its **data**, **content**, **states** and **acceptance c
 
 - **Visible only when `isAdmin`.** Non-admins hitting the route see a 403 page.
 - **Data:** `POST/PUT/DELETE /services[/{id}]`, `/services/{id}/environments[/{envId}]`.
-- **Content:** table of Services; create/edit in a right `Sheet` (superseded: now a modal, a bottom sheet on mobile, see [`Frontend/plan-responsive-overlays.md`](../../Frontend/plan-responsive-overlays.md)): name, path prefix, strip prefix, rewrite origin, default environment; nested environments list (environment, base URL, timeout seconds default 100, extra headers via `KeyValueEditor`).
+- **Content:** table of Services; create/edit in a right `Sheet` (superseded: now a modal, a bottom sheet on mobile, see [`docs/frontend/plan-responsive-overlays.md`](../../frontend/plan-responsive-overlays.md)): name, path prefix, strip prefix, rewrite origin, default environment; nested environments list (environment, base URL, timeout seconds default 100, extra headers via `KeyValueEditor`).
 - **Accept:**
   - [ ] A base URL whose host is not in the allowlist shows the server's rejection inline on the base URL field, with the text "Only allowlisted dev/stage hosts can be used."
   - [ ] Duplicate name / path prefix errors appear on the field.
@@ -328,13 +328,13 @@ Work in this order. Each milestone ends with: app builds, tests pass, docs updat
 
 | Milestone | Scope | PRD refs |
 | --- | --- | --- |
-| **M0 Foundations** | Vite + TS strict, Tailwind v4, shadcn init, tokens (§4.2), fonts, lint/format, Vitest, MSW, `Frontend/` docs skeleton. A `/__design` route (dev only) that renders every token, type style and domain component in all states — the living style guide. | C-01 |
+| **M0 Foundations** | Vite + TS strict, Tailwind v4, shadcn init, tokens (§4.2), fonts, lint/format, Vitest, MSW, `docs/frontend/` docs skeleton. A `/__design` route (dev only) that renders every token, type style and domain component in all states — the living style guide. | C-01 |
 | **M1 Shell + auth + onboarding** | `AppShell`, auth guard, SCR-02. | PR-01, PR-18 |
 | **M2 Overview, Services, Settings** | SCR-03, SCR-06, SCR-08, `MockKillSwitch`. | PR-03, PR-04, PR-08 |
 | **M3 Rules + editor** | SCR-04, SCR-05. | PR-05, PR-06, PR-07, PR-08 |
 | **M4 Admin catalog** | SCR-07. | PR-10, PR-15 |
 | — | **Stop. Phase 1 complete.** Ask for review before Phase 2. | |
-| **M5 Phase 2** (only when asked) | Scenario tabs + activate (PR-11, `POST …/activate`); SCR-09 Live log over WebSocket `/hubs/request-log` with source filter, details modal (was "drawer"; see [`Frontend/plan-responsive-overlays.md`](../../Frontend/plan-responsive-overlays.md)) and **Mock this** (`POST /me/request-logs/{id}/create-rule`) (PR-12); SCR-10 Test route (`POST /me/test-route`) (PR-13); Export/Import with merge/replace choice (PR-14). | P1 |
+| **M5 Phase 2** (only when asked) | Scenario tabs + activate (PR-11, `POST …/activate`); SCR-09 Live log over WebSocket `/hubs/request-log` with source filter, details modal (was "drawer"; see [`docs/frontend/plan-responsive-overlays.md`](../../frontend/plan-responsive-overlays.md)) and **Mock this** (`POST /me/request-logs/{id}/create-rule`) (PR-12); SCR-10 Test route (`POST /me/test-route`) (PR-13); Export/Import with merge/replace choice (PR-14). | P1 |
 
 ### 8. Quality bar
 
@@ -358,22 +358,22 @@ Work in this order. Each milestone ends with: app builds, tests pass, docs updat
 | OQ-F3 | Is white-on-coral (3.28:1) acceptable for primary buttons? | Keep brand coral; switch to `primary-active` if rejected. | `TODO(OQ-F3)` |
 | OQ-F4 | Where does the Panel get `MOCKAN_PUBLIC_BASE_URL` to display the base URL? `GET /me` doesn't return it. | Build-time `VITE_MOCKAN_PUBLIC_BASE_URL`, default `https://mock.novin-tools.com`. Propose adding `publicBaseUrl` to `GET /me`. | `TODO(OQ-F4)` |
 
-Add these to `Frontend/README.md` under "Open questions". Never renumber them.
+Add these to `docs/frontend/README.md` under "Open questions". Never renumber them.
 
 ### 10. Documentation to produce (C-01)
 
-Create `Frontend/` mirroring `Backend/`. Every file: YAML front matter (`title`, `status`, `date`, `owner`, `related`), a summary line, tables/checklists over prose, relative links.
+Create `docs/frontend/` mirroring `docs/backend/`. Every file: YAML front matter (`title`, `status`, `date`, `owner`, `related`), a summary line, tables/checklists over prose, relative links.
 
 | File | Contents |
 | --- | --- |
-| `Frontend/README.md` | Index, quick facts table, open questions (§9). |
-| `Frontend/tech-stack.md` | Libraries with pinned versions and why. |
-| `Frontend/project-structure.md` | `panel/` folder tree and import rules (`components/ui` ← `components/mockan` ← `features/*`; features never import each other). |
-| `Frontend/design-tokens.md` | The token table from §4.2–4.5 with contrast results, the deviations table from §4.1. |
-| `Frontend/components.md` | Catalogue of §4.6 components: props, states, usage snippet. |
-| `Frontend/screens.md` | SCR-02 … SCR-10: route, data, states, acceptance criteria (move §5 here and keep it current). |
-| `Frontend/conventions.md` | Naming, file layout per feature, query keys, error handling, copy rules. |
-| `Frontend/testing.md` | Test layers, MSW fixtures, how to run, a11y gate. |
+| `docs/frontend/README.md` | Index, quick facts table, open questions (§9). |
+| `docs/frontend/tech-stack.md` | Libraries with pinned versions and why. |
+| `docs/frontend/project-structure.md` | `panel/` folder tree and import rules (`components/ui` ← `components/mockan` ← `features/*`; features never import each other). |
+| `docs/frontend/design-tokens.md` | The token table from §4.2–4.5 with contrast results, the deviations table from §4.1. |
+| `docs/frontend/components.md` | Catalogue of §4.6 components: props, states, usage snippet. |
+| `docs/frontend/screens.md` | SCR-02 … SCR-10: route, data, states, acceptance criteria (move §5 here and keep it current). |
+| `docs/frontend/conventions.md` | Naming, file layout per feature, query keys, error handling, copy rules. |
+| `docs/frontend/testing.md` | Test layers, MSW fixtures, how to run, a11y gate. |
 
 Suggested `panel/` layout:
 

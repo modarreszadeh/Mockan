@@ -4,8 +4,8 @@ status: Draft (v0.1)
 date: 2026-10-03
 owner: Frontend team
 related:
-  - ../Product/Design/shadcn-design.md
-  - ../Agent/prompts/panel-dashboard.md
+  - ../product/design/shadcn-design.md
+  - ../agent/prompts/panel-dashboard.md
   - components.md
 ---
 

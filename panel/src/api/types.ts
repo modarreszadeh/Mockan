@@ -1,7 +1,7 @@
 /**
- * Admin API types, hand-written from Agent/mockan-architecture.md §8 (camelCase on the wire, §10).
+ * Admin API types, hand-written from docs/agent/mockan-architecture.md §8 (camelCase on the wire, §10).
  *
- * The contract is documented in Backend/admin-api.md and pinned by `server/tests/admin/openapi.snapshot.json`
+ * The contract is documented in docs/backend/admin-api.md and pinned by `server/tests/admin/openapi.snapshot.json`
  * (OQ-F5 resolved); change these types in the same commit as that snapshot.
  */
 

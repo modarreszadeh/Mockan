@@ -1,6 +1,6 @@
 # Mockan Panel
 
-React + TypeScript SPA for Mockan (D-11). Documentation lives in [`../Frontend/`](../Frontend/README.md).
+React + TypeScript SPA for Mockan (D-11). Documentation lives in [`../docs/frontend/`](../docs/frontend/README.md).
 
 ```bash
 npm ci

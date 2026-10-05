@@ -4,7 +4,7 @@ status: Draft (v0.1)
 date: 2026-10-03
 owner: Backend team
 related:
-  - ../Agent/mockan-architecture.md
+  - ../agent/mockan-architecture.md
   - project-structure.md
 audience: Backend engineers and AI coding agents
 ---

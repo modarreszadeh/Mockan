@@ -4,16 +4,16 @@ status: Draft (v0.1)
 date: 2026-10-04
 owner: Backend team
 related:
-  - ../Agent/mockan-architecture.md
-  - ../Product/mockan-prd.md
-  - ../Frontend/README.md
-  - ../panel/src/api/types.ts
+  - ../agent/mockan-architecture.md
+  - ../product/mockan-prd.md
+  - ../frontend/README.md
+  - ../../panel/src/api/types.ts
 audience: Backend engineers and AI coding agents building `server/`
 ---
 
 # Mockan Backend — Implementation plan
 
-> **Summary:** the ordered, milestone-by-milestone plan to prepare and build the Mockan backend (`server/`: Gateway + Admin API) in Python/FastAPI. It settles the gaps between the [PRD](../Product/mockan-prd.md), the [architecture](../Agent/mockan-architecture.md) and the contract the Panel already ships against ([`panel/src/api/types.ts`](../panel/src/api/types.ts), [Frontend OQ-F1/F4/F5](../Frontend/README.md#open-questions)). Phase 1 = B0–B7; Phase 2 = B8 (only when asked).
+> **Summary:** the ordered, milestone-by-milestone plan to prepare and build the Mockan backend (`server/`: Gateway + Admin API) in Python/FastAPI. It settles the gaps between the [PRD](../product/mockan-prd.md), the [architecture](../agent/mockan-architecture.md) and the contract the Panel already ships against ([`panel/src/api/types.ts`](../../panel/src/api/types.ts), [Frontend OQ-F1/F4/F5](../frontend/README.md#open-questions)). Phase 1 = B0–B7; Phase 2 = B8 (only when asked).
 
 ## 0. How to use this plan
 
@@ -26,24 +26,24 @@ audience: Backend engineers and AI coding agents building `server/`
 
 | File | Take from it |
 | --- | --- |
-| `Product/mockan-prd.md` | Scope, priorities, acceptance checkboxes (PR-01…PR-19), error codes, phases. |
-| `Agent/mockan-architecture.md` | Glossary (§2, normative), decisions D-05…D-18, pipeline (§6), matching (§7), schema (§8), Admin routes (§10), config (§12.3), agent rules (§14). |
-| `Backend/project-structure.md`, `conventions.md`, `testing.md`, `tech-stack.md` | File placement, import contracts, style, test layers/fixtures, pinned libraries. |
-| `panel/src/api/types.ts`, `panel/src/api/client.ts`, `panel/src/mocks/handlers/*.ts`, `Frontend/README.md` (OQ-F1/F4/F5) | **The wire contract the Panel already ships against.** The Admin API MUST match it unless §2 lists a deliberate change. |
+| `docs/product/mockan-prd.md` | Scope, priorities, acceptance checkboxes (PR-01…PR-19), error codes, phases. |
+| `docs/agent/mockan-architecture.md` | Glossary (§2, normative), decisions D-05…D-18, pipeline (§6), matching (§7), schema (§8), Admin routes (§10), config (§12.3), agent rules (§14). |
+| `docs/backend/project-structure.md`, `conventions.md`, `testing.md`, `tech-stack.md` | File placement, import contracts, style, test layers/fixtures, pinned libraries. |
+| `panel/src/api/types.ts`, `panel/src/api/client.ts`, `panel/src/mocks/handlers/*.ts`, `docs/frontend/README.md` (OQ-F1/F4/F5) | **The wire contract the Panel already ships against.** The Admin API MUST match it unless §2 lists a deliberate change. |
 | `panel/src/lib/validation.ts`, `panel/src/lib/precedence.ts` | Client-side limits and precedence. Server validation MUST be the same or stricter, never looser. |
 
 ## 2. Gaps and conflicts settled by this plan
 
 | # | Gap / conflict | Resolution (default to build) | Doc to update |
 | --- | --- | --- | --- |
-| G-1 | **Validation error shape.** `Backend/conventions.md` §6 says `errors` is a *list* of `{field, message}`. The Panel (OQ-F1) only parses an `errors` *map* `{field: [msg]}` or FastAPI `detail[]`. | Admin returns `422` problem+json, `code: "validation_failed"`, `errors: {"<camelCase.dotted.path>": ["msg", …]}` (e.g. `responses.0.statusCode`). A global `RequestValidationError` handler converts Pydantic errors to this shape. This closes OQ-F1. | `conventions.md` §6, `testing.md`, `Frontend/README.md` OQ-F1 → resolved |
-| G-2 | **Admin payload shapes** (arch §10 lists routes only; OQ-F5). | Adopt the Panel's assumed shapes from `Frontend/README.md` § "OQ-F5 assumed payloads" as the contract (embedded `responses`, `{isEnabled}` toggle bodies, `{updated}` from toggle-all, full-set PUT for service settings, activate returns the rule). Document every route's request/response in new `Backend/admin-api.md`. | `Backend/admin-api.md` (new), arch §10 link |
+| G-1 | **Validation error shape.** `docs/backend/conventions.md` §6 says `errors` is a *list* of `{field, message}`. The Panel (OQ-F1) only parses an `errors` *map* `{field: [msg]}` or FastAPI `detail[]`. | Admin returns `422` problem+json, `code: "validation_failed"`, `errors: {"<camelCase.dotted.path>": ["msg", …]}` (e.g. `responses.0.statusCode`). A global `RequestValidationError` handler converts Pydantic errors to this shape. This closes OQ-F1. | `conventions.md` §6, `testing.md`, `docs/frontend/README.md` OQ-F1 → resolved |
+| G-2 | **Admin payload shapes** (arch §10 lists routes only; OQ-F5). | Adopt the Panel's assumed shapes from `docs/frontend/README.md` § "OQ-F5 assumed payloads" as the contract (embedded `responses`, `{isEnabled}` toggle bodies, `{updated}` from toggle-all, full-set PUT for service settings, activate returns the rule). Document every route's request/response in new `docs/backend/admin-api.md`. | `docs/backend/admin-api.md` (new), arch §10 link |
 | G-3 | **Deleting the last MockResponse.** The ER diagram says a rule has 1..n responses. The Panel's MSW sets `activeResponseId = null`. | Reject: `409 code: "last_response"`. A rule always has an active response. Panel follow-up: show the error (MSW gets aligned in the same PR as B6). | `admin-api.md`, Frontend note |
-| G-4 | **`publicBaseUrl` for the Panel** (OQ-F4). | `GET /me` adds a read-only `publicBaseUrl` (from `MOCKAN_PUBLIC_BASE_URL`). The Panel keeps its env fallback. | `admin-api.md`, `Frontend/README.md` OQ-F4 |
+| G-4 | **`publicBaseUrl` for the Panel** (OQ-F4). | `GET /me` adds a read-only `publicBaseUrl` (from `MOCKAN_PUBLIC_BASE_URL`). The Panel keeps its env fallback. | `admin-api.md`, `docs/frontend/README.md` OQ-F4 |
 | G-5 | **New error codes the Panel already uses** but that aren't in arch: `unauthenticated` 401, `forbidden` 403, `not_found` 404, `slug_taken` 409, `slug_immutable` 409, `upstream_host_not_allowed` 422, `validation_failed` 422, `internal_error` 500. | Add all of them, plus `last_response` 409, `developer_disabled` 403, `name_taken`/`path_prefix_taken` 409 (catalog uniqueness) and `environment_exists` 409, to `mockan.domain.errors.ErrorCode`. Gateway codes stay as arch §14 rule 8. | `admin-api.md` § Error codes |
-| G-6 | **`X-Mockan-Source` on non-rule responses** (testing.md wants it on error and preflight responses; PR-09 only names `mock \| proxy`). | Mockan problem responses send `error`; Mockan-answered preflight sends `mock`; everything else follows PR-09. `TODO(OQ-B2)`. | `Backend/gateway.md` (new) |
+| G-6 | **`X-Mockan-Source` on non-rule responses** (testing.md wants it on error and preflight responses; PR-09 only names `mock \| proxy`). | Mockan problem responses send `error`; Mockan-answered preflight sends `mock`; everything else follows PR-09. `TODO(OQ-B2)`. | `docs/backend/gateway.md` (new) |
 | G-7 | **`mock_rules.service_id` semantics** (an "optional scope" in the ER, never used in §7). | Informational only (Panel grouping/filtering). It does **not** filter matching, because matching runs before Service resolution (§6.2). `TODO(OQ-B1)`. | `gateway.md`, `domain-model.md` |
-| G-8 | **Readiness when `degraded`.** | `/_mockan/health/ready`: `503 {"status":"starting"}` until the first snapshot loads; after that `200 {"status":"ready"\|"degraded", "snapshotAgeSeconds": n}`. Degraded stays in rotation (PR-07: keep serving the last good rules). | `gateway.md`, `Backend/operations.md` (new) |
+| G-8 | **Readiness when `degraded`.** | `/_mockan/health/ready`: `503 {"status":"starting"}` until the first snapshot loads; after that `200 {"status":"ready"\|"degraded", "snapshotAgeSeconds": n}`. Degraded stays in rotation (PR-07: keep serving the last good rules). | `gateway.md`, `docs/backend/operations.md` (new) |
 | G-9 | **Local/dev login without an OIDC provider** (OQ-04 is blocking; the Panel has a dev-only login page for MSW). | New setting `MOCKAN_AUTH_MODE = oidc \| dev` (default `oidc`). In `dev`, `GET /api/v1/auth/login?as=<name>&admin=1` signs in as `sso_subject = dev:<name>`. Startup logs a `WARNING` and the docs say MUST NOT be used in shared environments. | arch §12.3 table, `operations.md` |
 | G-10 | **Live request-log push across processes** (Phase 2). The Gateway writes logs; the Admin owns the `/hubs/request-log` WebSocket; arch doesn't say how Admin learns about new rows. | **Propose D-19:** after each batch insert, the Gateway's writer sends `pg_notify('mockan_request_logged', '<developerId>:<maxId>')`. The Admin's hub keeps one `LISTEN` connection and pushes rows `> lastId` to that Developer's sockets. Needs approval before B8; no silent deviation. | arch §4 (D-19), §8 |
 | G-11 | **Where the Panel is served** (OQ-03). | Admin mounts the built Panel at `MOCKAN_PANEL_BASE_PATH` (default `/`, the separate-host default). The SPA fallback is `index.html` for any GET that is not `/api/*`, `/hubs/*` or a static file. `TODO(OQ-03)`. | arch §12.3, `operations.md` |
@@ -165,7 +165,7 @@ Each milestone row lists what it builds, the requirements it covers, the tests, 
   - NOTIFY fires on commit with the right payloads and **not** on rollback.
   - The loader builds the expected snapshot.
   - The masking table cases.
-- **Exit:** `check` is green, including the db tests, and `Backend/database.md` (new) is written.
+- **Exit:** `check` is green, including the db tests, and `docs/backend/database.md` (new) is written.
 
 ### B3 — Gateway core: lifespan, snapshot service, health, resolution, CORS, mocks, problems (PR-01, PR-03 CORS part, PR-06, PR-07, PR-09, PR-16, D-07, D-13)
 - `gateway/app.py`: `create_app(settings=None, snapshot_provider=None)`.
@@ -228,7 +228,7 @@ Each milestone row lists what it builds, the requirements it covers, the tests, 
   - Env switch takes effect after a snapshot swap.
   - Unreachable → 502; slow → 504.
   - Non-allowlisted destination refused.
-- **Bench** (`server/bench/proxy_overhead.py`, manual, not CI): direct vs via-Gateway latency to `fake_upstream`, target p95 delta ≤ 10 ms (NFR-01). Record the result in `Backend/gateway.md`.
+- **Bench** (`server/bench/proxy_overhead.py`, manual, not CI): direct vs via-Gateway latency to `fake_upstream`, target p95 delta ≤ 10 ms (NFR-01). Record the result in `docs/backend/gateway.md`.
 - **Exit:** a Developer with no rules gets identical behaviour to direct upstream for the whole fake-upstream suite (PR-02 acceptance).
 
 ### B5 — Admin API foundation: app, auth, problems, `/me`, catalog, service settings (PR-01, PR-03 origins, PR-04, PR-10, PR-15, D-08, D-12)
@@ -292,7 +292,7 @@ Each milestone row lists what it builds, the requirements it covers, the tests, 
   - last-response 409;
   - audit actions `create/update/delete/toggle/activate`;
   - **cross-process PR-07 test**: Admin `POST /me/rules` → the running Gateway app (with a real SnapshotService on the same PG) serves the mock within 2 s; then toggle-off → proxied within 2 s.
-- Panel alignment in the same PR: update the MSW handler for G-3 and keep `Frontend/README.md` OQ-F5 in sync (only if something differs from what's assumed).
+- Panel alignment in the same PR: update the MSW handler for G-3 and keep `docs/frontend/README.md` OQ-F5 in sync (only if something differs from what's assumed).
 - **Exit:** the Panel's full M3 flows work against the real Admin API.
 
 ### B7 — Integration, packaging, Phase 1 exit (PR-17 health part, NFR-03, NFR-05, §12.3)
@@ -301,8 +301,8 @@ Each milestone row lists what it builds, the requirements it covers, the tests, 
   - entrypoints per arch §12.3;
   - the Admin image builds `panel/` (`npm ci && npm run build:server`) in a node stage and copies it into `mockan/admin/static/`.
 - `deploy/compose/docker-compose.yml`: `postgres`, `admin` (migrate on startup, `MOCKAN_AUTH_MODE=dev`), `gateway` (2 replicas to prove NFR-03), and an optional `fake-upstream` for demos.
-- `panel/vite.config.ts`: add `server.proxy` for `/api` and `/hubs` → `http://localhost:8081` when `VITE_USE_MSW=false`. This is a small Panel change and updates `Frontend/README.md`.
-- Phase 1 acceptance suite (`tests/acceptance/`, db): one test per row of `Backend/testing.md` §5 (PR-01…PR-16), named by PR ID, plus the PRD §6 journey scripted end to end over HTTP:
+- `panel/vite.config.ts`: add `server.proxy` for `/api` and `/hubs` → `http://localhost:8081` when `VITE_USE_MSW=false`. This is a small Panel change and updates `docs/frontend/README.md`.
+- Phase 1 acceptance suite (`tests/acceptance/`, db): one test per row of `docs/backend/testing.md` §5 (PR-01…PR-16), named by PR ID, plus the PRD §6 journey scripted end to end over HTTP:
   1. Dev login.
   2. Claim the slug.
   3. Proxied token call to `fake_upstream`.
@@ -311,10 +311,10 @@ Each milestone row lists what it builds, the requirements it covers, the tests, 
   6. Disable it → proxied.
 - Optional: run the Panel Playwright journey against the compose stack instead of MSW.
 - Docs (C-01), all in this milestone if not already written:
-  - `Backend/gateway.md`, `admin-api.md`, `database.md`, `domain-model.md`, `operations.md` (config table, deploy, migrations policy, runbook: degraded readiness, LISTEN reconnects, how to add a Service);
-  - `Backend/README.md` quick facts → "Phase 1 complete";
+  - `docs/backend/gateway.md`, `admin-api.md`, `database.md`, `domain-model.md`, `operations.md` (config table, deploy, migrations policy, runbook: degraded readiness, LISTEN reconnects, how to add a Service);
+  - `docs/backend/README.md` quick facts → "Phase 1 complete";
   - arch §12.3 new settings and §15 change log entry v1.2 (G-items + D-19 proposal);
-  - `Frontend/README.md` OQ-F1/F4/F5 marked resolved, with links.
+  - `docs/frontend/README.md` OQ-F1/F4/F5 marked resolved, with links.
 - **Exit = Phase 1 exit (PRD §11):** the compose stack runs; the acceptance suite is green; every PRD P0 checkbox maps to a passing test (`pytest -m req --collect-only -q` lists PR-01…PR-16). **Stop and ask for review before B8.**
 
 ## 5. Phase 2 — B8 (only when asked; needs D-19 approved)

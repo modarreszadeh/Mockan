@@ -1,5 +1,5 @@
 /**
- * The Panel's one overlay panel: a centered modal at ≥ 768 px, a bottom sheet below (Frontend/plan-responsive-overlays.md).
+ * The Panel's one overlay panel: a centered modal at ≥ 768 px, a bottom sheet below (docs/frontend/plan-responsive-overlays.md).
  * The layout is plain CSS (`md:` = 768 px, the same as `useIsMobile`), so one Radix Dialog serves both and resizing
  * never remounts it. Features use `Modal` or `ConfirmDialog`, never `ui/sheet`, `ui/dialog` or `ui/alert-dialog`.
  */

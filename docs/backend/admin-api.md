@@ -4,17 +4,17 @@ status: Draft (v0.2, B5 foundation; B6 rules and responses)
 date: 2026-10-04
 owner: Backend team
 related:
-  - ../Agent/mockan-architecture.md
+  - ../agent/mockan-architecture.md
   - implementation-plan.md
   - conventions.md
   - database.md
-  - ../panel/src/api/types.ts
+  - ../../panel/src/api/types.ts
 audience: Backend engineers, Panel engineers and AI coding agents
 ---
 
 # Mockan Backend — Admin API
 
-> **Summary:** what the control plane serves today, what every route accepts and returns, the validation limits, the error codes and the decisions that are not obvious from the code. The route list is [architecture §10](../Agent/mockan-architecture.md#10-admin-api-control-plane); the wire contract is the one the Panel ships against ([`panel/src/api/types.ts`](../panel/src/api/types.ts)); the live schema is `/api/v1/openapi.json`, pinned by `server/tests/admin/openapi.snapshot.json`. The request log, test route, export/import and live log are Phase 2 (B8).
+> **Summary:** what the control plane serves today, what every route accepts and returns, the validation limits, the error codes and the decisions that are not obvious from the code. The route list is [architecture §10](../agent/mockan-architecture.md#10-admin-api-control-plane); the wire contract is the one the Panel ships against ([`panel/src/api/types.ts`](../../panel/src/api/types.ts)); the live schema is `/api/v1/openapi.json`, pinned by `server/tests/admin/openapi.snapshot.json`. The request log, test route, export/import and live log are Phase 2 (B8).
 
 ## 1. Conventions
 

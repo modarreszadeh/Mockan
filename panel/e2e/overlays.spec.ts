@@ -1,5 +1,5 @@
 /**
- * Overlay panels (Frontend/plan-responsive-overlays.md): a centered modal at ≥ 768 px (project `chromium`, 1440 × 900),
+ * Overlay panels (docs/frontend/plan-responsive-overlays.md): a centered modal at ≥ 768 px (project `chromium`, 1440 × 900),
  * a full-width bottom sheet below (project `mobile`, 390 × 844). Runs in both and checks the geometry.
  */
 import { expect, test, type Locator, type Page } from "@playwright/test"

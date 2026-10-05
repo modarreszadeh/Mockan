@@ -1,7 +1,7 @@
 /*
  * Mockan Panel design tokens — the ONLY place raw colour values are allowed (prompt §2 rule 6).
- * Source: Product/Design/shadcn-design.md `colors:` block, mapped per Agent/prompts/panel-dashboard.md §4.2.
- * Documented in Frontend/design-tokens.md.
+ * Source: docs/product/design/shadcn-design.md `colors:` block, mapped per docs/agent/prompts/panel-dashboard.md §4.2.
+ * Documented in docs/frontend/design-tokens.md.
  */
 @import "tailwindcss";
 @import "tw-animate-css";

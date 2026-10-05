@@ -4,7 +4,7 @@ status: Draft (v0.1, Phase 1)
 date: 2026-10-04
 owner: Backend team
 related:
-  - ../Agent/mockan-architecture.md
+  - ../agent/mockan-architecture.md
   - database.md
   - admin-api.md
   - gateway.md
@@ -13,7 +13,7 @@ audience: Backend engineers and AI coding agents
 
 # Mockan Backend — Domain model
 
-> **Summary:** what the glossary words mean in code, how one request is decided, and the semantics settled while building that the architecture left open. The glossary itself is [architecture §2](../Agent/mockan-architecture.md#2-glossary) (normative). Never use the word `tenant` (D-01).
+> **Summary:** what the glossary words mean in code, how one request is decided, and the semantics settled while building that the architecture left open. The glossary itself is [architecture §2](../agent/mockan-architecture.md#2-glossary) (normative). Never use the word `tenant` (D-01).
 
 ## 1. Entities
 

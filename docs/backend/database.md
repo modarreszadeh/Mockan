@@ -4,7 +4,7 @@ status: Draft (v0.1)
 date: 2026-10-04
 owner: Backend team
 related:
-  - ../Agent/mockan-architecture.md
+  - ../agent/mockan-architecture.md
   - implementation-plan.md
   - project-structure.md
 audience: Backend engineers and AI coding agents
@@ -12,7 +12,7 @@ audience: Backend engineers and AI coding agents
 
 # Mockan Backend — Database
 
-> **Summary:** how the PostgreSQL schema `mockan` is laid out, which deletes cascade, how a committed change reaches the Gateway (`pg_notify`), and the rules for migrations. The table list and columns are in [architecture §8](../Agent/mockan-architecture.md#8-data-model); this file records what the code adds to it. Models: `server/src/mockan/infrastructure/db/models.py`.
+> **Summary:** how the PostgreSQL schema `mockan` is laid out, which deletes cascade, how a committed change reaches the Gateway (`pg_notify`), and the rules for migrations. The table list and columns are in [architecture §8](../agent/mockan-architecture.md#8-data-model); this file records what the code adds to it. Models: `server/src/mockan/infrastructure/db/models.py`.
 
 ## 1. Conventions
 

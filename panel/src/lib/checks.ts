@@ -1,5 +1,5 @@
 /**
- * Plain (zod-free) checks that mirror Agent/mockan-architecture.md §10. Kept separate from the zod schemas in
+ * Plain (zod-free) checks that mirror docs/agent/mockan-architecture.md §10. Kept separate from the zod schemas in
  * validation.ts so components can use them without pulling zod into the initial bundle.
  */
 import type { MatchType } from "@/api/types"

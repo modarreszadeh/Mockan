@@ -1,5 +1,5 @@
 /**
- * Client-side validation that mirrors Agent/mockan-architecture.md §10. These are hints: the Admin API
+ * Client-side validation that mirrors docs/agent/mockan-architecture.md §10. These are hints: the Admin API
  * decides (e.g. RE2 validity), and its field errors are mapped back onto the same form fields.
  * The MSW handlers reuse these rules so the dev backend behaves like the real one.
  */

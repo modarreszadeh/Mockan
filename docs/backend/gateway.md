@@ -4,7 +4,7 @@ status: Draft (v0.2, B3 pipeline, mocks, snapshot service; B4 proxy, WebSocket b
 date: 2026-10-04
 owner: Backend team
 related:
-  - ../Agent/mockan-architecture.md
+  - ../agent/mockan-architecture.md
   - implementation-plan.md
   - database.md
 audience: Backend engineers and AI coding agents
@@ -12,7 +12,7 @@ audience: Backend engineers and AI coding agents
 
 # Mockan Backend — Gateway
 
-> **Summary:** what the data plane does with a request today, in the order it does it, and the decisions that are not obvious from the code. The system-level design is [architecture §6](../Agent/mockan-architecture.md#6-request-lifecycle-gateway); this file records what was built and the gaps settled in the [implementation plan](implementation-plan.md) (G-6, G-7, G-8).
+> **Summary:** what the data plane does with a request today, in the order it does it, and the decisions that are not obvious from the code. The system-level design is [architecture §6](../agent/mockan-architecture.md#6-request-lifecycle-gateway); this file records what was built and the gaps settled in the [implementation plan](implementation-plan.md) (G-6, G-7, G-8).
 
 ## 1. Pipeline
 

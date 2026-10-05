@@ -1,8 +1,8 @@
 """Phase 1 acceptance, one test per PRD requirement (PR-01 ... PR-16), named by its id.
 
 Each test drives the real Admin and Gateway over HTTP (see `conftest.py`) and asserts the
-checkboxes of the requirement in `Product/mockan-prd.md` §7.1. Deeper edge cases live in the unit
-and integration suites; these prove the requirement end to end.
+checkboxes of the requirement in `docs/product/mockan-prd.md` §7.1. Deeper edge cases live in the
+unit and integration suites; these prove the requirement end to end.
 
 Covered elsewhere because they need something this stack doesn't have:
 - PR-02 overhead <= 10 ms p95: `server/bench/proxy_overhead.py` (manual, NFR-01).

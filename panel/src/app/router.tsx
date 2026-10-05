@@ -1,5 +1,5 @@
 /**
- * Route tree (Frontend/screens.md). Feature screens are lazy-loaded; `handle.crumb` feeds the header breadcrumb.
+ * Route tree (docs/frontend/screens.md). Feature screens are lazy-loaded; `handle.crumb` feeds the header breadcrumb.
  * Phase 2 routes (/logs, /test-route) are in the navigation only because they work (prompt §2 rule 7).
  */
 import { createBrowserRouter, type RouteObject } from "react-router"

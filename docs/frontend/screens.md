@@ -4,9 +4,9 @@ status: Draft (v0.1)
 date: 2026-10-03
 owner: Frontend team
 related:
-  - ../Agent/prompts/panel-dashboard.md
-  - ../Agent/mockan-architecture.md
-  - ../Product/mockan-prd.md
+  - ../agent/prompts/panel-dashboard.md
+  - ../agent/mockan-architecture.md
+  - ../product/mockan-prd.md
   - components.md
 ---
 
@@ -109,7 +109,7 @@ flowchart LR
 - **Match:** name; method (`ANY GET POST PUT PATCH DELETE HEAD OPTIONS`); match type segmented control with help + example (arch §7.1); pattern (mono) with helper "Matches the path **after** your slug, e.g. `/limsa/api/v1/dashboard`."; Service scope (default "Any service"); priority (default 100, "lower wins").
 - **Conditions** (collapsible, collapsed when empty): query and header conditions (`equals` / `exists`).
 - **Response:** status (combobox with presets 200, 201, 204, 400, 401, 403, 404, 409, 422, 500, 502, 503; 100–599); content type (default `application/json`); headers; body (`JsonEditor` for JSON, mono textarea otherwise); delay slider 0–30 000 ms + number input + presets 0 / 300 ms / 1 s / 3 s. Also **body mode** `Static` | `Template` (PR-19): a Template body is not JSON until rendered, so it gets the plain textarea and no JSON check (the server checks its syntax on save).
-- **Scenarios (PR-11, OQ-P1):** an existing rule shows one tab per MockResponse (name, status, an **Active** badge on the one the Gateway serves; see [CONTEXT.md](../CONTEXT.md)). The selected tab is the one the form edits and **Save** writes (`PUT …/responses/{id}`). **Make active** (`POST …/activate`) is a separate, immediate action. **Duplicate scenario** (`POST …/responses`) creates a copy of the selected saved scenario named `<name>-copy` and shows it (a scenario is a variant of the same response, so copy-and-tweak is the intended way to make an error or empty variant). **Delete scenario** confirms, and is disabled for the last one (`409 last_response`); deleting the active one makes another active. Switching tab, or duplicating, with unsaved scenario edits asks "Discard unsaved scenario edits?". The summary says "This scenario isn't active" when the selected one is not the active one, and "This rule is disabled: it is skipped…" when `isEnabled` is false (a disabled rule still has an active scenario; it is just never served). A new rule has no tabs (its first scenario becomes live). Body mode is always sent: leaving it out of a `PUT` would reset a Template to Static.
+- **Scenarios (PR-11, OQ-P1):** an existing rule shows one tab per MockResponse (name, status, an **Active** badge on the one the Gateway serves; see [CONTEXT.md](../../CONTEXT.md)). The selected tab is the one the form edits and **Save** writes (`PUT …/responses/{id}`). **Make active** (`POST …/activate`) is a separate, immediate action. **Duplicate scenario** (`POST …/responses`) creates a copy of the selected saved scenario named `<name>-copy` and shows it (a scenario is a variant of the same response, so copy-and-tweak is the intended way to make an error or empty variant). **Delete scenario** confirms, and is disabled for the last one (`409 last_response`); deleting the active one makes another active. Switching tab, or duplicating, with unsaved scenario edits asks "Discard unsaved scenario edits?". The summary says "This scenario isn't active" when the selected one is not the active one, and "This rule is disabled: it is skipped…" when `isEnabled` is false (a disabled rule still has an active scenario; it is just never served). A new rule has no tabs (its first scenario becomes live). Body mode is always sent: leaving it out of a `PUT` would reset a Template to Static.
 - **Live summary:** "`GET` requests to `/limsa/api/v1/orders/{id}` return **200** after **300 ms**" + response headers preview incl. `X-Mockan-Source: mock`.
 - **Behaviour:** creating a rule returns to `/rules`; saving an existing rule stays on the editor. Server field paths map onto form fields (`responses.0.statusCode` → `response.statusCode`); unmapped errors show a `ProblemAlert` above the form. Unsaved changes also trigger the browser's leave-page prompt.
 - **Accept** (tests: `src/features/rules/rule-editor.test.tsx`):

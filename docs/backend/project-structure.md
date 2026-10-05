@@ -3,7 +3,7 @@ title: Mockan Backend — Project structure
 status: Draft (v0.1)
 date: 2026-10-03
 owner: Backend team
-source: ../Agent/mockan-architecture.md (§9)
+source: ../agent/mockan-architecture.md (§9)
 audience: Backend engineers and AI coding agents
 ---
 
@@ -82,7 +82,7 @@ server/
     └── admin/                      # conftest.py: admin_client, as_developer, audit_rows; openapi.snapshot.json
 ```
 
-> The code folder is `server/`, not `backend/`, so it can't collide with the `Backend/` docs folder on case-insensitive file systems.
+> The code folder is `server/`, not `backend/`, so it can't collide with the `docs/backend/` docs folder on case-insensitive file systems.
 
 ## 2. Module boundaries
 

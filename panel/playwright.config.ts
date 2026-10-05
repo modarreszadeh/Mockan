@@ -31,7 +31,7 @@ export default defineConfig({
       },
     },
     {
-      // A phone: overlays are bottom sheets here (Frontend/plan-responsive-overlays.md). Chromium, not WebKit, with
+      // A phone: overlays are bottom sheets here (docs/frontend/plan-responsive-overlays.md). Chromium, not WebKit, with
       // a touch phone viewport, so it runs wherever the desktop project does.
       name: "mobile",
       testMatch: /overlays\.spec\.ts/,

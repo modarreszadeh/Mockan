@@ -4,14 +4,14 @@ status: Draft (v0.1)
 date: 2026-10-03
 owner: Backend team
 related:
-  - ../Agent/mockan-architecture.md
-  - ../Product/mockan-prd.md
+  - ../agent/mockan-architecture.md
+  - ../product/mockan-prd.md
 audience: Backend engineers and AI coding agents working in `server/`
 ---
 
 # Mockan Backend — Documentation index
 
-> **What this folder covers:** how the Mockan backend (Gateway + Admin API) is built in Python/FastAPI: the stack, folder layout, code conventions and testing. **What** the system does and **why** is in the [PRD](../Product/mockan-prd.md); the system-level **how** (pipeline, matching, data model, Admin API) is in the [architecture](../Agent/mockan-architecture.md). This folder does not repeat those; it links to them.
+> **What this folder covers:** how the Mockan backend (Gateway + Admin API) is built in Python/FastAPI: the stack, folder layout, code conventions and testing. **What** the system does and **why** is in the [PRD](../product/mockan-prd.md); the system-level **how** (pipeline, matching, data model, Admin API) is in the [architecture](../agent/mockan-architecture.md). This folder does not repeat those; it links to them.
 
 ## Quick facts
 
@@ -45,11 +45,11 @@ Covered in the architecture doc for now (split into this folder when they grow):
 
 | Topic | Where |
 | --- | --- |
-| Gateway pipeline and proxy transforms | [architecture §6](../Agent/mockan-architecture.md#6-request-lifecycle-gateway) |
-| Matching engine and precedence | [architecture §7](../Agent/mockan-architecture.md#7-mock-matching) |
-| Database schema and change notification | [architecture §8](../Agent/mockan-architecture.md#8-data-model) |
-| Admin API contract and validation | [architecture §10](../Agent/mockan-architecture.md#10-admin-api-control-plane) (live OpenAPI at `/api/v1/openapi.json`) |
-| Configuration variables | [architecture §12.3](../Agent/mockan-architecture.md#123-deployment) |
+| Gateway pipeline and proxy transforms | [architecture §6](../agent/mockan-architecture.md#6-request-lifecycle-gateway) |
+| Matching engine and precedence | [architecture §7](../agent/mockan-architecture.md#7-mock-matching) |
+| Database schema and change notification | [architecture §8](../agent/mockan-architecture.md#8-data-model) |
+| Admin API contract and validation | [architecture §10](../agent/mockan-architecture.md#10-admin-api-control-plane) (live OpenAPI at `/api/v1/openapi.json`) |
+| Configuration variables | [architecture §12.3](../agent/mockan-architecture.md#123-deployment) |
 
 ## Quick start (local)
 

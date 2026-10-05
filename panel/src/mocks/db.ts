@@ -1,6 +1,6 @@
 /**
  * In-memory Admin API state for MSW. In the browser it is persisted to sessionStorage so a reload keeps
- * your changes; `?mswScenario=<name>` resets it to a named scenario (see Frontend/testing.md).
+ * your changes; `?mswScenario=<name>` resets it to a named scenario (see docs/frontend/testing.md).
  */
 import type { Developer, DeveloperServiceSetting, MockRule, RequestLogEntry, Service } from "@/api/types"
 

@@ -23,7 +23,7 @@ def test_openapi_matches_the_snapshot() -> None:
         SNAPSHOT.write_text(actual)
     assert actual == SNAPSHOT.read_text(), (
         "The Admin API contract changed. If that is intended, update the Panel "
-        "(`panel/src/api/types.ts`) and `Backend/admin-api.md`, then regenerate with "
+        "(`panel/src/api/types.ts`) and `docs/backend/admin-api.md`, then regenerate with "
         "`UPDATE_OPENAPI_SNAPSHOT=1 uv run pytest tests/admin/test_openapi.py`."
     )
 
