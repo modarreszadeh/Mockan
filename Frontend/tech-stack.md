@@ -30,7 +30,7 @@ related:
 | Code editor | `@monaco-editor/react`, `monaco-editor` | 4.7.0, 0.57.0 | JSON body editor (arch §11). Bundled locally (no CDN — NFR-05) and lazy-loaded. |
 | Toasts | `sonner` | 2.0.8 | shadcn's toast. |
 | Command palette | `cmdk` | 1.1.1 | Status-code combobox. |
-| Fonts | `@fontsource/inter`, `@fontsource/cormorant-garamond`, `@fontsource/jetbrains-mono` | 5.3.0 | Self-hosted (internal network, NFR-05). Cormorant Garamond 500 substitutes the design file's licensed serif. |
+| Fonts | `@fontsource/inter`, `@fontsource/jetbrains-mono` | 5.3.0 | Self-hosted (internal network, NFR-05). Inter 600 is the heading and title weight. |
 
 ## Development and test
 

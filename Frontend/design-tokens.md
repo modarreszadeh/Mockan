@@ -52,16 +52,16 @@ Utilities are named `type-*` (defined with `@utility` in `globals.css`) so they 
 
 | Utility | Spec | Font | Use |
 | --- | --- | --- | --- |
-| `type-display-md` | 36/1.15, 500, −0.02em | Cormorant Garamond | Overview greeting only. |
-| `type-display-sm` | 28/1.2, 500, −0.02em | Cormorant Garamond | One `<h1>` per page (PageHeader). |
-| `type-title-md` | 18/1.4, 500 | Inter | Card, dialog, sheet titles. |
-| `type-title-sm` | 16/1.4, 500 | Inter | Form section headings. |
+| `type-display-md` | 36/1.15, 600, −0.02em | Inter | Overview greeting only. |
+| `type-display-sm` | 28/1.2, 600, −0.02em | Inter | One `<h1>` per page (PageHeader). |
+| `type-title-md` | 18/1.4, 600 | Inter | Card, dialog, sheet titles. |
+| `type-title-sm` | 16/1.4, 600 | Inter | Form section headings. |
 | `type-body` | 14/1.55, 400 | Inter | Default UI text (set on `body`). |
 | `type-caption` | 13/1.4, 500 | Inter | Labels, badges, table headers. |
 | `type-overline` | 12/1.4, 500, +1.5px, uppercase | Inter | Sidebar group labels, "Your base URL". |
 | `type-code` / `type-code-sm` | 14/1.6 / 13/1.5 | JetBrains Mono | Paths, patterns, URLs, slugs, header names, JSON. Always mono. |
 
-Serif weight is 500 because the substitute (Cormorant Garamond) needs it to match the design file's 400 display weight (design file "Note on Font Substitutes"). Sans labels never exceed 500.
+Headings and titles (`type-display-*`, `type-title-*`, the wordmark and the collapsed-sidebar "M") are Inter SemiBold (600), replacing the earlier Cormorant Garamond serif. Labels, badges and overlines never exceed 500.
 
 ## 3. Radius
 
@@ -110,9 +110,9 @@ Also: visible coral focus ring on every interactive element; targets ≥ 32 px i
 | Design file says | Panel does | Why |
 | --- | --- | --- |
 | Marketing scale: 64 px hero, 96 px section rhythm | Not used. Page padding 24–32 px; 32 px between sections. | Dashboards need density. |
-| Serif for h1–h3 | Serif only for page titles and the Overview greeting. | Density; tables/forms stay sans. |
+| Larger display size for h1–h3 | The 36/28px display sizes only for page titles and the Overview greeting. | Density; tables/forms stay sans. |
 | "Never document hover; nothing changes on hover" | Table rows and nav items get a subtle hover (`surface-soft` rows; `canvas` on the `surface-soft` sidebar). Buttons only change on press. | Pointer feedback in a data-heavy tool (prompt §4.1). |
 | Coral used generously on callout bands | One coral primary button per view; no coral bands. | Coral = "the action". |
 | Dark surfaces for showcase cards | Only for code/machine output (BaseUrlCard, JSON editor, previews). | "Show the product chrome" = real URLs and JSON. |
 | `ANY` muted text, `DELETE` error text on `surface-card` pills (prompt §4.5) | Canvas pill with hairline border. | Both fail 4.5:1 on `surface-card` (4.48 / 4.01). |
-| Copernicus / StyreneB | Cormorant Garamond 500 / Inter, self-hosted. | Licensed fonts; prompt §2 rule 5 (no Anthropic assets). |
+| Copernicus / StyreneB | Inter 600 (headings) / Inter, self-hosted. | Licensed fonts; prompt §2 rule 5 (no Anthropic assets). |

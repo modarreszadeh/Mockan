@@ -9,7 +9,7 @@
 
 @import "@fontsource/inter/400.css";
 @import "@fontsource/inter/500.css";
-@import "@fontsource/cormorant-garamond/500.css";
+@import "@fontsource/inter/600.css";
 @import "@fontsource/jetbrains-mono/400.css";
 @import "@fontsource/jetbrains-mono/500.css";
 
@@ -80,7 +80,6 @@
 @theme inline {
   --font-sans: "Inter", system-ui, sans-serif;
   --font-heading: "Inter", system-ui, sans-serif;
-  --font-serif: "Cormorant Garamond", "EB Garamond", Georgia, serif;
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
 
   --color-background: var(--background);
@@ -163,30 +162,30 @@
 
 /* Type styles (prompt §4.3). Named `type-*` so they never collide with colour utilities. */
 @utility type-display-md {
-  font-family: var(--font-serif);
+  font-family: var(--font-heading);
   font-size: 36px;
   line-height: 1.15;
-  font-weight: 500;
+  font-weight: 600;
   letter-spacing: -0.02em;
 }
 @utility type-display-sm {
-  font-family: var(--font-serif);
+  font-family: var(--font-heading);
   font-size: 28px;
   line-height: 1.2;
-  font-weight: 500;
+  font-weight: 600;
   letter-spacing: -0.02em;
 }
 @utility type-title-md {
-  font-family: var(--font-sans);
+  font-family: var(--font-heading);
   font-size: 18px;
   line-height: 1.4;
-  font-weight: 500;
+  font-weight: 600;
 }
 @utility type-title-sm {
-  font-family: var(--font-sans);
+  font-family: var(--font-heading);
   font-size: 16px;
   line-height: 1.4;
-  font-weight: 500;
+  font-weight: 600;
 }
 @utility type-body {
   font-family: var(--font-sans);

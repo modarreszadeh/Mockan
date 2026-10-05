@@ -119,7 +119,7 @@ function AppSidebar({ isAdmin }: { isAdmin: boolean }) {
           <Wordmark className="group-data-[collapsible=icon]:hidden" />
           <span
             aria-hidden
-            className="hidden size-8 items-center justify-center rounded-lg bg-surface-dark font-serif text-[18px] text-on-dark group-data-[collapsible=icon]:flex"
+            className="hidden size-8 items-center justify-center rounded-lg bg-surface-dark font-heading text-[18px] font-semibold text-on-dark group-data-[collapsible=icon]:flex"
           >
             M
           </span>

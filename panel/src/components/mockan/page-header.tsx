@@ -10,7 +10,7 @@ export interface PageHeaderProps {
   className?: string
 }
 
-/** Serif `<h1>` (display-sm), one-line description in `body`, actions slot (prompt §4.6). */
+/** Display `<h1>` (display-sm), one-line description in `body`, actions slot (prompt §4.6). */
 export function PageHeader({ title, description, actions, className }: PageHeaderProps) {
   return (
     <header className={cn("flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between", className)}>

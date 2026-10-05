@@ -31,7 +31,7 @@ States: loading (skeleton) · no rules ("No mocks", disabled) · on · off · co
 
 ## PageHeader
 
-Serif `<h1>` (`type-display-sm`), a one-line description in `body`, right-aligned actions.
+Display `<h1>` (`type-display-sm`), a one-line description in `body`, right-aligned actions.
 
 | Prop | Type | Notes |
 | --- | --- | --- |
@@ -118,4 +118,4 @@ Renders an `ApiError`'s RFC 7807 problem: `title`, `detail`, `code` in mono, opt
 
 ## Wordmark
 
-Mockan's own text wordmark (serif + coral dot). No third-party brand assets (prompt §2 rule 5).
+Mockan's own text wordmark (Inter SemiBold + coral dot). No third-party brand assets (prompt §2 rule 5).
