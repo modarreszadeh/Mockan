@@ -33,8 +33,16 @@ class Logged:
             except asyncio.QueueEmpty:
                 return found
 
-    def only(self) -> LogEntry:
-        (entry,) = self.entries()
+    async def settled(self, count: int) -> list[LogEntry]:
+        """The entry is offered when the response ends, a moment after the client has it."""
+        for _ in range(200):
+            if self.queue.qsize() >= count:
+                break
+            await asyncio.sleep(0.01)
+        return self.entries()
+
+    async def only(self) -> LogEntry:
+        (entry,) = await self.settled(1)
         return entry
 
 
@@ -76,7 +84,7 @@ async def test_a_mocked_request_is_logged_with_what_the_panel_needs(
 
     response = await gateway.client.get("/ehtesham/limsa/dash?page=2", headers={"x-a": "1"})
 
-    entry = gateway.only()
+    entry = await gateway.only()
     assert response.headers["x-mockan-source"] == "mock"
     assert entry.developer_id == dev.id
     assert (entry.method, entry.path, entry.query) == ("GET", "/limsa/dash", "page=2")
@@ -97,7 +105,7 @@ async def test_a_proxied_request_is_logged_with_its_service_and_both_body_sample
 
     response = await gateway.client.post("/ehtesham/echo", content=b"hello upstream")
 
-    entry = gateway.only()
+    entry = await gateway.only()
     assert response.headers["x-mockan-source"] == "proxy"
     assert (entry.developer_id, entry.service_id, entry.source) == (
         dev_id,
@@ -117,7 +125,7 @@ async def test_mockan_errors_are_logged_as_errors(
 
     response = await gateway.client.get("/ehtesham/nothing/here")
 
-    entry = gateway.only()
+    entry = await gateway.only()
     assert response.status_code == 502
     assert (entry.source, entry.status_code) == (RequestSource.ERROR, 502)
     assert b"service_not_resolved" in entry.response_sample
@@ -136,6 +144,7 @@ async def test_requests_without_a_developer_are_not_logged(
     )
     await gateway.client.get("/_mockan/health/live")
 
+    await asyncio.sleep(0.2)  # long enough for an entry to have been offered
     assert gateway.entries() == []
 
 
@@ -155,7 +164,7 @@ async def test_body_samples_stop_at_16_kb_while_the_whole_body_streams(
 
     assert sent.json()["bodyLength"] == 32 * 65536  # the proxy still carried every byte
     assert len(downloaded.content) == 2 * 1024 * 1024
-    upload_entry, download_entry = gateway.entries()
+    upload_entry, download_entry = await gateway.settled(2)
     assert len(upload_entry.request_sample) == SAMPLE_BYTES
     assert len(download_entry.response_sample) == SAMPLE_BYTES
 

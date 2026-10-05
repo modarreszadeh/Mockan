@@ -21,6 +21,7 @@ from mockan.admin.routers import (
     request_logs,
     responses,
     rules,
+    rules_io,
     service_settings,
     services,
     test_route,
@@ -137,6 +138,7 @@ def create_app(
     api.include_router(me.router)
     api.include_router(services.router)
     api.include_router(service_settings.router)
+    api.include_router(rules_io.router)  # before `/me/rules/{rule_id}`: `export` isn't an id
     api.include_router(rules.router)
     api.include_router(responses.router)
     api.include_router(request_logs.router)

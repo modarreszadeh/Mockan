@@ -68,7 +68,7 @@ def _find_response(rule: MockRule, response_id: uuid.UUID) -> MockResponse:
 # ---- audit payloads (NFR-07: no bodies, masked headers) ----
 
 
-def _conditions_json(conditions: Sequence[ConditionIn]) -> list[dict[str, Any]]:
+def conditions_json(conditions: Sequence[ConditionIn]) -> list[dict[str, Any]]:
     stored: list[dict[str, Any]] = []
     for condition in conditions:
         item: dict[str, Any] = {"key": condition.key.strip(), "operator": condition.operator.value}
@@ -110,7 +110,7 @@ def _response_values(response: MockResponse) -> dict[str, Any]:
 # ---- validation ----
 
 
-def _template_errors(responses: Sequence[MockResponseIn], prefix: str = "") -> dict[str, list[str]]:
+def template_errors(responses: Sequence[MockResponseIn], prefix: str = "") -> dict[str, list[str]]:
     """Syntax errors of `Template` bodies, from the compiler the Gateway uses (PR-19)."""
     errors: dict[str, list[str]] = {}
     for index, response in enumerate(responses):
@@ -126,7 +126,7 @@ async def _validate_rule(
     session: AsyncSession, data: MockRuleUpdateIn, responses: Sequence[MockResponseIn] = ()
 ) -> None:
     """The same compiler the Gateway runs (§2 risk), plus the Service reference and templates."""
-    errors: dict[str, list[str]] = _template_errors(responses, "responses.")
+    errors: dict[str, list[str]] = template_errors(responses, "responses.")
     try:
         compile_rule(
             match_type=data.match_type,
@@ -165,7 +165,7 @@ def _touch(rule: MockRule) -> None:
     rule.updated_at = func.now()  # a SQL expression, evaluated on flush
 
 
-def _new_response(rule_id: uuid.UUID | None, data: MockResponseIn) -> MockResponse:
+def new_response(rule_id: uuid.UUID | None, data: MockResponseIn) -> MockResponse:
     return MockResponse(
         rule_id=rule_id,
         name=data.name,
@@ -192,12 +192,12 @@ async def create_rule(
         method=data.method,
         match_type=data.match_type,
         pattern=data.pattern,
-        query_conditions=_conditions_json(data.query_conditions),
-        header_conditions=_conditions_json(data.header_conditions),
+        query_conditions=conditions_json(data.query_conditions),
+        header_conditions=conditions_json(data.header_conditions),
         priority=data.priority,
         is_enabled=True if data.is_enabled is None else data.is_enabled,
     )
-    rule.responses = [_new_response(None, response) for response in data.responses]
+    rule.responses = [new_response(None, response) for response in data.responses]
     async with _service_may_vanish(session):
         session.add(rule)
         await session.flush()  # inserts the rule, then its responses
@@ -226,8 +226,8 @@ async def update_rule(
     rule.method = data.method
     rule.match_type = data.match_type
     rule.pattern = data.pattern
-    rule.query_conditions = _conditions_json(data.query_conditions)
-    rule.header_conditions = _conditions_json(data.header_conditions)
+    rule.query_conditions = conditions_json(data.query_conditions)
+    rule.header_conditions = conditions_json(data.header_conditions)
     rule.priority = data.priority
     if data.is_enabled is not None:
         rule.is_enabled = data.is_enabled
@@ -307,7 +307,7 @@ async def create_response(
     session: AsyncSession, developer: Developer, rule_id: uuid.UUID, data: MockResponseIn
 ) -> MockResponse:
     rule = await get_rule(session, developer, rule_id)
-    if errors := _template_errors([data]):
+    if errors := template_errors([data]):
         raise validation_error(errors)
     if len(rule.responses) >= MAX_RESPONSES_PER_RULE:
         raise DomainError(
@@ -316,7 +316,7 @@ async def create_response(
             "Too many responses",
             f"A rule can have at most {MAX_RESPONSES_PER_RULE} responses.",
         )
-    response = _new_response(rule.id, data)
+    response = new_response(rule.id, data)
     session.add(response)
     await session.flush()
     if rule.active_response_id is None:
@@ -343,7 +343,7 @@ async def update_response(
 ) -> MockResponse:
     rule = await get_rule(session, developer, rule_id)
     response = _find_response(rule, response_id)
-    if errors := _template_errors([data]):
+    if errors := template_errors([data]):
         raise validation_error(errors)
     old = _response_values(response)
     response.name = data.name

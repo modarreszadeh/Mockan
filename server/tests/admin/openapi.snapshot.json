@@ -195,6 +195,249 @@
         "title": "EnvironmentName",
         "type": "string"
       },
+      "ExportedResponse": {
+        "properties": {
+          "body": {
+            "title": "Body",
+            "type": "string"
+          },
+          "bodyMode": {
+            "$ref": "#/components/schemas/BodyMode"
+          },
+          "contentType": {
+            "title": "Contenttype",
+            "type": "string"
+          },
+          "delayMs": {
+            "title": "Delayms",
+            "type": "integer"
+          },
+          "headers": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Headers",
+            "type": "object"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "statusCode": {
+            "title": "Statuscode",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "name",
+          "statusCode",
+          "headers",
+          "contentType",
+          "body",
+          "bodyMode",
+          "delayMs"
+        ],
+        "title": "ExportedResponse",
+        "type": "object"
+      },
+      "ExportedRule": {
+        "properties": {
+          "activeResponse": {
+            "title": "Activeresponse",
+            "type": "integer"
+          },
+          "headerConditions": {
+            "items": {
+              "$ref": "#/components/schemas/ConditionOut"
+            },
+            "title": "Headerconditions",
+            "type": "array"
+          },
+          "isEnabled": {
+            "title": "Isenabled",
+            "type": "boolean"
+          },
+          "matchType": {
+            "$ref": "#/components/schemas/MatchType"
+          },
+          "method": {
+            "title": "Method",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "pattern": {
+            "title": "Pattern",
+            "type": "string"
+          },
+          "priority": {
+            "title": "Priority",
+            "type": "integer"
+          },
+          "queryConditions": {
+            "items": {
+              "$ref": "#/components/schemas/ConditionOut"
+            },
+            "title": "Queryconditions",
+            "type": "array"
+          },
+          "responses": {
+            "items": {
+              "$ref": "#/components/schemas/ExportedResponse"
+            },
+            "title": "Responses",
+            "type": "array"
+          },
+          "serviceName": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Servicename"
+          }
+        },
+        "required": [
+          "name",
+          "method",
+          "matchType",
+          "pattern",
+          "queryConditions",
+          "headerConditions",
+          "priority",
+          "isEnabled",
+          "serviceName",
+          "activeResponse",
+          "responses"
+        ],
+        "title": "ExportedRule",
+        "type": "object"
+      },
+      "ImportResult": {
+        "properties": {
+          "created": {
+            "title": "Created",
+            "type": "integer"
+          },
+          "deleted": {
+            "title": "Deleted",
+            "type": "integer"
+          },
+          "mode": {
+            "enum": [
+              "merge",
+              "replace"
+            ],
+            "title": "Mode",
+            "type": "string"
+          }
+        },
+        "required": [
+          "mode",
+          "created",
+          "deleted"
+        ],
+        "title": "ImportResult",
+        "type": "object"
+      },
+      "ImportedRule": {
+        "additionalProperties": false,
+        "properties": {
+          "activeResponse": {
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Activeresponse",
+            "type": "integer"
+          },
+          "headerConditions": {
+            "items": {
+              "$ref": "#/components/schemas/ConditionIn"
+            },
+            "maxItems": 20,
+            "title": "Headerconditions",
+            "type": "array"
+          },
+          "isEnabled": {
+            "default": true,
+            "title": "Isenabled",
+            "type": "boolean"
+          },
+          "matchType": {
+            "$ref": "#/components/schemas/MatchType"
+          },
+          "method": {
+            "default": "ANY",
+            "enum": [
+              "ANY",
+              "GET",
+              "POST",
+              "PUT",
+              "PATCH",
+              "DELETE",
+              "HEAD",
+              "OPTIONS"
+            ],
+            "title": "Method",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "pattern": {
+            "title": "Pattern",
+            "type": "string"
+          },
+          "priority": {
+            "default": 100,
+            "maximum": 2147483647.0,
+            "minimum": 0.0,
+            "title": "Priority",
+            "type": "integer"
+          },
+          "queryConditions": {
+            "items": {
+              "$ref": "#/components/schemas/ConditionIn"
+            },
+            "maxItems": 20,
+            "title": "Queryconditions",
+            "type": "array"
+          },
+          "responses": {
+            "items": {
+              "$ref": "#/components/schemas/MockResponseIn"
+            },
+            "maxItems": 50,
+            "minItems": 1,
+            "title": "Responses",
+            "type": "array"
+          },
+          "serviceName": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Servicename"
+          }
+        },
+        "required": [
+          "name",
+          "matchType",
+          "pattern",
+          "responses"
+        ],
+        "title": "ImportedRule",
+        "type": "object"
+      },
       "MatchType": {
         "enum": [
           "Exact",
@@ -921,6 +1164,52 @@
           "environment"
         ],
         "title": "RoutedServiceOut",
+        "type": "object"
+      },
+      "RuleExport": {
+        "properties": {
+          "rules": {
+            "items": {
+              "$ref": "#/components/schemas/ExportedRule"
+            },
+            "title": "Rules",
+            "type": "array"
+          },
+          "version": {
+            "const": 1,
+            "default": 1,
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "rules"
+        ],
+        "title": "RuleExport",
+        "type": "object"
+      },
+      "RuleImport": {
+        "additionalProperties": false,
+        "properties": {
+          "rules": {
+            "items": {
+              "$ref": "#/components/schemas/ImportedRule"
+            },
+            "maxItems": 200,
+            "title": "Rules",
+            "type": "array"
+          },
+          "version": {
+            "const": 1,
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "version",
+          "rules"
+        ],
+        "title": "RuleImport",
         "type": "object"
       },
       "ServiceEnvironmentIn": {
@@ -1757,6 +2046,118 @@
           }
         },
         "summary": "Create Rule",
+        "tags": [
+          "rules"
+        ]
+      }
+    },
+    "/api/v1/me/rules/export": {
+      "get": {
+        "description": "Every rule of yours with its responses, no ids: `{version: 1, rules: [...]}`.\n\nServices are named (`serviceName`), not identified. Headers and bodies are exported as stored:\n**they may contain secrets you put there**, so look before you share the file.",
+        "operationId": "export_rules_api_v1_me_rules_export_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RuleExport"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Not signed in (`unauthenticated`)."
+          }
+        },
+        "summary": "Export Rules",
+        "tags": [
+          "rules"
+        ]
+      }
+    },
+    "/api/v1/me/rules/import": {
+      "post": {
+        "description": "All or nothing. Everything is validated first; every problem is reported at once as\n`rules.<index>.<field>`. `merge` (default) adds the rules to yours (importing a file twice\nduplicates them); `replace` deletes your current rules first.",
+        "operationId": "import_rules_api_v1_me_rules_import_post",
+        "parameters": [
+          {
+            "description": "Add to, or replace, your rules.",
+            "in": "query",
+            "name": "mode",
+            "required": false,
+            "schema": {
+              "default": "merge",
+              "description": "Add to, or replace, your rules.",
+              "enum": [
+                "merge",
+                "replace"
+              ],
+              "title": "Mode",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RuleImport"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Not signed in (`unauthenticated`)."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`forbidden` (not an admin) or `developer_disabled`."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`validation_failed` (or `upstream_host_not_allowed`) with field `errors`."
+          }
+        },
+        "summary": "Import Rules",
         "tags": [
           "rules"
         ]

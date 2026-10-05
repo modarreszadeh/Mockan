@@ -125,13 +125,9 @@ class MockResponseOut(CamelModel):
 # ---- rules ----
 
 
-class MockRuleUpdateIn(CamelInput):
-    """Body of `PUT /me/rules/{id}`: the rule's own fields (responses have their own routes).
+class RuleFieldsIn(CamelInput):
+    """The matching fields every rule input has (also the import file's)."""
 
-    `isEnabled` left out keeps the current value.
-    """
-
-    service_id: uuid.UUID | None = None
     name: Annotated[str, _named("rule", MAX_RULE_NAME_LENGTH)]
     method: Method = "ANY"
     match_type: MatchType
@@ -139,6 +135,15 @@ class MockRuleUpdateIn(CamelInput):
     query_conditions: Conditions = Field(default_factory=list)
     header_conditions: Conditions = Field(default_factory=list)
     priority: Annotated[StrictInt, Field(ge=0, le=MAX_PRIORITY)] = DEFAULT_PRIORITY
+
+
+class MockRuleUpdateIn(RuleFieldsIn):
+    """Body of `PUT /me/rules/{id}`: the rule's own fields (responses have their own routes).
+
+    `isEnabled` left out keeps the current value.
+    """
+
+    service_id: uuid.UUID | None = None
     is_enabled: StrictBool | None = None
 
 
