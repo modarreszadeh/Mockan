@@ -91,7 +91,10 @@ A **disabled** Developer can still read (`GET /me` returns `isEnabled: false`, w
 | PUT | `/me/rules/{id}/responses/{responseId}` | Writer | `MockResponseInput` → `MockResponse` | |
 | DELETE | `/me/rules/{id}/responses/{responseId}` | Writer | → `204` | The last response → `409 last_response` (G-3). Deleting the active one activates the next. |
 | POST | `/me/rules/{id}/responses/{responseId}/activate` | Writer | → `MockRule` | |
-| — | `/me/test-route`, `/me/request-logs*`, `/me/rules/export\|import`, `/hubs/request-log` | | | Phase 2 (B8) |
+| GET | `/me/request-logs?cursor=&source=&path=&limit=` | session | → `{items: RequestLogEntry[], nextCursor}` | Newest first; keyset on the id (`cursor` = the previous page's `nextCursor`). `source` ∈ `Proxied\|Mocked\|Error`; `path` = contains, case-insensitive (`%` and `_` are literal); `limit` 1–200 (default 50). Headers and bodies are already masked. Kept 7 days / 5,000 per Developer. |
+| POST | `/me/request-logs/{id}/create-rule` | Writer | → `201 MockRule` | "Mock this" (FR-09): an **Exact** rule for the logged method (else `ANY`) and path, answering with the logged status, content type, headers and body. Masked headers (`***`), `Set-Cookie`, framing, `x-mockan-*` and CORS headers are left out; the body is what was logged (so secrets stay `***`). A response body cut at 16 KB is `422`; a path that can't be an Exact pattern is `422` on `pattern`. |
+| WS | `/hubs/request-log` | session cookie | server → client: one `RequestLogEntry` JSON per message | Only the caller's entries, only those logged after connecting (history is the REST list). Refused during the handshake (`403`) without a valid session. D-19: the Gateway notifies, one LISTEN connection per Admin process pushes. |
+| — | `/me/test-route`, `/me/rules/export\|import` | | | Phase 2 (B8b, B8d) |
 
 ## 4. Payloads and validation
 

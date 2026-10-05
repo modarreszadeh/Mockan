@@ -38,6 +38,7 @@ from mockan.domain.enums import (
     BodyMode,
     EnvironmentName,
     MatchType,
+    RequestSource,
 )
 
 SCHEMA = "mockan"
@@ -272,3 +273,35 @@ class AuditLog(Base):
     changes: Mapped[dict[str, Any]] = mapped_column(
         JSONB, default=dict, server_default=_empty_object
     )
+
+
+class RequestLog(Base):
+    """One request through the Gateway (PR-12, D-18). Headers and body samples arrive masked
+    (NFR-07). No FKs, like `audit_logs`; retention keeps 7 days and 5,000 rows per Developer."""
+
+    __tablename__ = "request_logs"
+    __table_args__ = (
+        Index("ix_request_logs_developer_id_id", "developer_id", "id"),
+        Index("ix_request_logs_timestamp", "timestamp"),
+        _enum_check("source", RequestSource),
+    )
+
+    id: Mapped[int] = mapped_column(BigInteger, Identity(), primary_key=True)
+    developer_id: Mapped[uuid.UUID] = mapped_column(Uuid)
+    timestamp: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=_now)
+    method: Mapped[str] = mapped_column(String(16))
+    path: Mapped[str] = mapped_column(Text)  # after the Developer slug, as rules see it
+    query: Mapped[str] = mapped_column(Text, default="", server_default="")
+    service_id: Mapped[uuid.UUID | None] = mapped_column(Uuid)
+    source: Mapped[RequestSource] = mapped_column(_enum(RequestSource, 10))
+    rule_id: Mapped[uuid.UUID | None] = mapped_column(Uuid)
+    status_code: Mapped[int] = mapped_column(Integer)
+    duration_ms: Mapped[int] = mapped_column(Integer)
+    request_headers: Mapped[dict[str, str]] = mapped_column(
+        JSONB, default=dict, server_default=_empty_object
+    )
+    response_headers: Mapped[dict[str, str]] = mapped_column(
+        JSONB, default=dict, server_default=_empty_object
+    )
+    request_body_sample: Mapped[str | None] = mapped_column(Text)
+    response_body_sample: Mapped[str | None] = mapped_column(Text)

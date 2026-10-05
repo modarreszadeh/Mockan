@@ -25,6 +25,7 @@ class MockanContext:
     started_at: float = field(default_factory=time.perf_counter)
     source: RequestSource | None = None
     rule_id: UUID | None = None
+    service_id: UUID | None = None  # set when the proxy resolves a Service
 
 
 def is_internal(scope: Scope) -> bool:

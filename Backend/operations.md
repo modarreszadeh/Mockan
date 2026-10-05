@@ -76,6 +76,9 @@ All are environment variables with the `MOCKAN_` prefix (`infrastructure/setting
 | `MOCKAN_PANEL_BASE_PATH` | admin | `/` | Where the built Panel is served. `TODO(OQ-03)`. |
 | `MOCKAN_SNAPSHOT_RELOAD_SECONDS` | gateway | `60` | Safety-net full reload. |
 | `MOCKAN_SNAPSHOT_DEBOUNCE_MS` | gateway | `200` | Coalesces notifications. |
+| `MOCKAN_REQUEST_LOG_QUEUE_SIZE` | gateway | `10000` | Bounded; when full the Gateway drops the entry and counts it (never slows a request). |
+| `MOCKAN_REQUEST_LOG_BATCH_SIZE`, `_FLUSH_MS` | gateway | `200`, `500` | Writer batching. |
+| `MOCKAN_REQUEST_LOG_RETENTION_DAYS`, `_MAX_ROWS_PER_DEVELOPER`, `_CLEANUP_SECONDS` | gateway | `7`, `5000`, `600` | Retention job (one Gateway prunes at a time, advisory lock). |
 
 ## 4. Health and readiness (G-8)
 
@@ -97,6 +100,7 @@ Alembic, schema `mockan` ([database.md §4](database.md#4-migrations)). Non-prod
 | **Readiness is `degraded`** | A Gateway can't reach PostgreSQL. It keeps serving its last good rules, so mocks and the proxy still work; edits made in the Admin won't arrive until the database is back. Check the database and the Gateway's `snapshot_reload_failed` logs. It recovers by itself (full reload on reconnect). |
 | **A rule change takes longer than 2 s** | Check `snapshotAgeSeconds` on each Gateway. The LISTEN connection may have dropped: the service reconnects with backoff (≤ 30 s) and does a full reload; otherwise the 60 s periodic reload applies. Look for `snapshot_listening` / `snapshot_reconnecting` log lines. Restarting a Gateway is safe (it is stateless). |
 | **A Developer was disabled or edited with plain SQL and the Gateways didn't notice** | A bulk `UPDATE` bypasses the ORM hook that sends `pg_notify`, so Gateways pick it up only at the next periodic reload (≤ 60 s). To make it immediate: `SELECT pg_notify('mockan_config_changed', '<developer-id>');` (use `catalog` after catalog edits). |
+| **The live log lags or entries are missing** | The Gateway drops entries when its queue is full (`MOCKAN_REQUEST_LOG_QUEUE_SIZE`) or when a batch fails to insert (`request_log_write_failed` in its log). The Admin hub reconnects its LISTEN connection by itself (`request_log_hub_failed`). Missing history beyond 7 days / 5,000 rows is retention, not a bug. |
 | **Users get `developer_not_found`** | Mistyped slug, a disabled Developer, or a Gateway that hasn't loaded the new Developer yet (≤ 2 s after claiming a slug). |
 | **`service_not_resolved`** | No Service prefix matches the path, or the Service has no environment for the Developer's choice or default. Add the Service/environment (§7) or fix the default. |
 | **`upstream_host_not_allowed` when saving** | The base URL's host isn't in `MOCKAN_ALLOWED_UPSTREAM_HOSTS`. Add the dev/stage host to the setting on **both** processes (the Gateway re-checks) and restart. |

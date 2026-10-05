@@ -16,6 +16,7 @@ from mockan.gateway.proxy.websocket import proxy_websocket
 from mockan.gateway.snapshot_service import SnapshotService
 from mockan.infrastructure.db.session import create_engine, create_session_factory
 from mockan.infrastructure.logging import configure_logging
+from mockan.infrastructure.request_log import RequestLogQueue, RequestLogWriter
 from mockan.infrastructure.settings import MockanSettings
 from mockan.matching.snapshot import RuleSnapshotProvider
 
@@ -33,6 +34,7 @@ def create_app(
     settings = settings or MockanSettings()
     provider = snapshot_provider or RuleSnapshotProvider()
     manages_snapshot = snapshot_provider is None
+    request_log = RequestLogQueue(settings.request_log_queue_size)
 
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
@@ -42,15 +44,21 @@ def create_app(
         client = create_http_client()
         app.state.http_client = client
         app.state.forwarder = ProxyForwarder(client, settings)
-        engine = service = None
+        engine = service = writer = None
         if manages_snapshot:
             engine = create_engine(settings)
-            service = SnapshotService(settings, provider, create_session_factory(engine))
+            factory = create_session_factory(engine)
+            service = SnapshotService(settings, provider, factory)
             app.state.snapshot_service = service
             await service.start()
+            writer = RequestLogWriter(settings, factory, request_log)
+            app.state.request_log_writer = writer
+            await writer.start()
         try:
             yield
         finally:
+            if writer is not None:
+                await writer.stop()  # flushes what is queued while the engine is still open
             if service is not None:
                 await service.stop()
             if engine is not None:
@@ -68,6 +76,8 @@ def create_app(
     app.state.settings = settings
     app.state.snapshot_provider = provider
     app.state.snapshot_service = None
+    app.state.request_log = request_log
+    app.state.request_log_writer = None
     app.state.http_client = None  # set by the lifespan
     app.state.forwarder = None
 
@@ -87,5 +97,5 @@ def create_app(
     app.add_middleware(
         MockanCorsMiddleware, provider=provider, default_origins=settings.default_allowed_origins
     )
-    app.add_middleware(RequestLogCaptureMiddleware)
+    app.add_middleware(RequestLogCaptureMiddleware, queue=request_log)
     return app

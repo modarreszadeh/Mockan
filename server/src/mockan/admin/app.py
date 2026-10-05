@@ -11,10 +11,19 @@ from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
 from starlette.middleware.sessions import SessionMiddleware
 
 from mockan.admin import auth
+from mockan.admin.hub import RequestLogHub
 from mockan.admin.oidc import OidcClient
 from mockan.admin.openapi import use_problem_422
 from mockan.admin.problems import install_problem_handlers
-from mockan.admin.routers import me, responses, rules, service_settings, services
+from mockan.admin.routers import (
+    hubs,
+    me,
+    request_logs,
+    responses,
+    rules,
+    service_settings,
+    services,
+)
 from mockan.admin.spa import mount_panel
 from mockan.infrastructure.db.migrate import upgrade_to_head
 from mockan.infrastructure.db.session import create_engine, create_session_factory
@@ -86,9 +95,13 @@ def create_app(
         if settings.migrate_on_startup:
             log.info("migrating_database")
             await upgrade_to_head(settings.database_url)
+        hub = RequestLogHub(settings, app.state.session_factory)
+        app.state.hub = hub
+        await hub.start()
         try:
             yield
         finally:
+            await hub.stop()
             if engine is not None:
                 await engine.dispose()
 
@@ -101,6 +114,7 @@ def create_app(
     )
     app.state.settings = settings
     app.state.session_factory = session_factory  # else set by the lifespan
+    app.state.hub = None  # the request-log hub, started by the lifespan
     app.state.oidc = OidcClient(settings) if settings.auth_mode == "oidc" else None
 
     install_problem_handlers(app, settings)
@@ -124,7 +138,9 @@ def create_app(
     api.include_router(service_settings.router)
     api.include_router(rules.router)
     api.include_router(responses.router)
+    api.include_router(request_logs.router)
     app.include_router(api)
+    app.include_router(hubs.router)  # `/hubs/*`: outside `/api/v1`
 
     panel_dir = static_dir or STATIC_DIR
     if (panel_dir / "index.html").is_file():

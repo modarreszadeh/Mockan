@@ -128,7 +128,7 @@ The backend team effectively tells the frontend: *"Assume I've delivered this AP
 | D-16 | **PostgreSQL** is accessed through **SQLAlchemy 2.x async ORM + asyncpg**. Schema migrations use **Alembic**. `LISTEN` uses a dedicated asyncpg connection (`add_listener`). | Relational model, JSONB for conditions/headers, built-in `LISTEN/NOTIFY`; SQLAlchemy + Alembic is the mature Python equivalent of EF Core + migrations. |
 | D-17 | Regex rules are compiled with **RE2** (`google-re2`), a linear-time engine. Patterns RE2 can't compile (backreferences, lookaround) and patterns longer than 512 characters are rejected when saved. | NFR-08. Python's built-in `re` backtracks and has no timeout. RE2 guarantees linear-time matching, so no per-match timeout is needed (replaces the 50 ms timeout of D-09). |
 | D-18 | Request log entries are put on a bounded **`asyncio.Queue`** (`put_nowait`; drop and count when full) and written by a background batch writer. The live view is pushed to the panel over a **FastAPI WebSocket** at `/hubs/request-log`. | Logging never blocks the request path. Native WebSockets avoid a SignalR dependency. |
-| D-19 *(proposed, needs approval before B8)* | Live request-log push across processes: after each batch insert the Gateway's writer runs `SELECT pg_notify('mockan_request_logged', '<developerId>:<maxId>')`; the Admin's `/hubs/request-log` hub keeps one `LISTEN` connection and pushes rows `> lastId` to that Developer's sockets. | The Gateway writes logs but the Admin owns the WebSocket; this reuses the mechanism of D-07 and keeps both processes stateless. |
+| D-19 *(accepted 2026-10-05, B8a)* | Live request-log push across processes: after each batch insert the Gateway's writer runs `SELECT pg_notify('mockan_request_logged', '<developerId>:<maxId>')`; the Admin's `/hubs/request-log` hub keeps one `LISTEN` connection and pushes rows `> lastId` to that Developer's sockets. | The Gateway writes logs but the Admin owns the WebSocket; this reuses the mechanism of D-07 and keeps both processes stateless. |
 
 ---
 
@@ -451,6 +451,9 @@ Validation rules (enforce in Pydantic models / services, test in `server/tests/a
 | `MOCKAN_MIGRATE_ON_STARTUP` | admin | `false` |
 | `MOCKAN_SNAPSHOT_RELOAD_SECONDS` | gateway | `60` |
 | `MOCKAN_SNAPSHOT_DEBOUNCE_MS` | gateway | `200` (coalesce `LISTEN` notifications before rebuilding) |
+| `MOCKAN_REQUEST_LOG_QUEUE_SIZE` | gateway | `10000` (bounded queue; a full queue drops the entry and counts it) |
+| `MOCKAN_REQUEST_LOG_BATCH_SIZE`, `MOCKAN_REQUEST_LOG_FLUSH_MS` | gateway | `200`, `500` (the writer inserts a batch when it has this many entries or this long has passed) |
+| `MOCKAN_REQUEST_LOG_RETENTION_DAYS`, `MOCKAN_REQUEST_LOG_MAX_ROWS_PER_DEVELOPER`, `MOCKAN_REQUEST_LOG_CLEANUP_SECONDS` | gateway | `7`, `5000`, `600` (retention job) |
 | `MOCKAN_AUTH_MODE` | admin | `oidc` (default) or `dev`: local login without an identity provider; MUST NOT be used in shared environments |
 | `MOCKAN_PANEL_BASE_PATH` | admin | `/` (where the built Panel is mounted; `# TODO(OQ-03)`) |
 | `MOCKAN_LOG_LEVEL` | both | `INFO` |

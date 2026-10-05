@@ -20,7 +20,7 @@ Pure ASGI middleware (never `BaseHTTPMiddleware`), outermost first. `create_app(
 
 | # | Step | File | What it does |
 | --- | --- | --- | --- |
-| 1 | Request-log capture | `middleware/request_log_capture.py` | No-op passthrough in Phase 1 (real in B8a, D-18). |
+| 1 | Request-log capture | `middleware/request_log_capture.py` | Tees at most 16 KB of each body (wrapping `receive`/`send`, nothing else buffered) and, when the response ends, `put_nowait`s one `LogEntry` on a bounded queue (full = drop and count). Source comes from the response's `X-Mockan-Source`, the Service from the context. Only requests that reached a Developer are logged: unknown slugs, preflights and health are not. A background `RequestLogWriter` (`infrastructure/request_log.py`) batches, masks, inserts and notifies; the request path never touches the database (D-18). |
 | 2 | CORS | `middleware/cors.py` | Answers preflights with `204`, adds CORS headers to every response (§3). |
 | 3 | Error boundary | `middleware/error_boundary.py` | An unexpected exception becomes a `500 internal_error` problem that still passes through CORS. A response already started is not rewritten. |
 | 4 | Developer resolution | `middleware/developer_resolution.py` | First path segment → `Developer`; `404 developer_not_found` for unknown, disabled, empty or reserved slugs. Stores a `MockanContext` in `scope["state"]["mockan"]`. |

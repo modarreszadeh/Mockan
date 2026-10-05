@@ -5,6 +5,7 @@ from pathlib import Path
 
 import asyncpg
 import pytest
+import structlog
 from alembic import command
 from alembic.config import Config
 from sqlalchemy import text
@@ -71,3 +72,10 @@ async def listener(pg_container: str, engine: AsyncEngine) -> AsyncIterator[List
     await connection.add_listener(notify.CHANNEL, listener)
     yield listener
     await connection.close()
+
+
+@pytest.fixture(autouse=True)
+def _fresh_structlog() -> None:
+    """An app lifespan in an earlier test points structlog at that test's captured stdout, which is
+    closed by the time a later test logs; start every test from structlog's defaults."""
+    structlog.reset_defaults()

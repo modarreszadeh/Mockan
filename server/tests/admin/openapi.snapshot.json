@@ -670,6 +670,164 @@
         "title": "Problem",
         "type": "object"
       },
+      "RequestLogOut": {
+        "description": "Headers and bodies arrive already masked (NFR-07); never unmask them.",
+        "properties": {
+          "developerId": {
+            "format": "uuid",
+            "title": "Developerid",
+            "type": "string"
+          },
+          "durationMs": {
+            "title": "Durationms",
+            "type": "integer"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "method": {
+            "title": "Method",
+            "type": "string"
+          },
+          "path": {
+            "title": "Path",
+            "type": "string"
+          },
+          "query": {
+            "title": "Query",
+            "type": "string"
+          },
+          "requestBodySample": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requestbodysample"
+          },
+          "requestHeaders": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Requestheaders",
+            "type": "object"
+          },
+          "responseBodySample": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Responsebodysample"
+          },
+          "responseHeaders": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Responseheaders",
+            "type": "object"
+          },
+          "ruleId": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ruleid"
+          },
+          "serviceId": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Serviceid"
+          },
+          "source": {
+            "$ref": "#/components/schemas/RequestSource"
+          },
+          "statusCode": {
+            "title": "Statuscode",
+            "type": "integer"
+          },
+          "timestamp": {
+            "format": "date-time",
+            "title": "Timestamp",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "developerId",
+          "timestamp",
+          "method",
+          "path",
+          "query",
+          "serviceId",
+          "source",
+          "ruleId",
+          "statusCode",
+          "durationMs",
+          "requestHeaders",
+          "responseHeaders",
+          "requestBodySample",
+          "responseBodySample"
+        ],
+        "title": "RequestLogOut",
+        "type": "object"
+      },
+      "RequestLogPage": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/RequestLogOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "nextCursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nextcursor"
+          }
+        },
+        "required": [
+          "items",
+          "nextCursor"
+        ],
+        "title": "RequestLogPage",
+        "type": "object"
+      },
+      "RequestSource": {
+        "enum": [
+          "Proxied",
+          "Mocked",
+          "Error"
+        ],
+        "title": "RequestSource",
+        "type": "string"
+      },
       "ServiceEnvironmentIn": {
         "additionalProperties": false,
         "properties": {
@@ -1117,6 +1275,188 @@
         "summary": "Update Me",
         "tags": [
           "me"
+        ]
+      }
+    },
+    "/api/v1/me/request-logs": {
+      "get": {
+        "description": "Newest first. Page backwards with `cursor`. Kept 7 days, at most 5,000 per Developer.",
+        "operationId": "list_request_logs_api_v1_me_request_logs_get",
+        "parameters": [
+          {
+            "description": "`nextCursor` of the previous page.",
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "`nextCursor` of the previous page.",
+              "title": "Cursor"
+            }
+          },
+          {
+            "in": "query",
+            "name": "source",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/RequestSource"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Source"
+            }
+          },
+          {
+            "description": "Contains, case-insensitive.",
+            "in": "query",
+            "name": "path",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 500,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Contains, case-insensitive.",
+              "title": "Path"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestLogPage"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Not signed in (`unauthenticated`)."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`validation_failed` (or `upstream_host_not_allowed`) with field `errors`."
+          }
+        },
+        "summary": "List Request Logs",
+        "tags": [
+          "request-logs"
+        ]
+      }
+    },
+    "/api/v1/me/request-logs/{log_id}/create-rule": {
+      "post": {
+        "description": "\"Mock this\": an Exact rule that answers with what was logged (FR-09). Secrets the log\nmasked as `***` are left out of the headers; a body cut at 16 KB is refused.",
+        "operationId": "create_rule_from_request_api_v1_me_request_logs__log_id__create_rule_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "log_id",
+            "required": true,
+            "schema": {
+              "title": "Log Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MockRuleOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Not signed in (`unauthenticated`)."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`forbidden` (not an admin) or `developer_disabled`."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`not_found`: unknown, or someone else's."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`validation_failed` (or `upstream_host_not_allowed`) with field `errors`."
+          }
+        },
+        "summary": "Create Rule From Request",
+        "tags": [
+          "request-logs"
         ]
       }
     },

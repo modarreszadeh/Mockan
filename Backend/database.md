@@ -69,7 +69,8 @@ sequenceDiagram
 - Known autogenerate trap: it inlines the circular FK `mock_rules.active_response_id` in `create_table`, which fails because `mock_responses` doesn't exist yet. `0001` creates that FK in a separate `op.create_foreign_key` after both tables; keep it that way if you regenerate.
 - `alembic check` must show no drift. `tests/infrastructure/test_database.py` runs it, plus a downgrade → upgrade round trip.
 - Apply: `uv run alembic upgrade head`. The Admin applies migrations on startup when `MOCKAN_MIGRATE_ON_STARTUP=true` (non-prod); shared environments use a migration job.
-- `request_logs` arrives with Phase 2 (B8a) in its own migration.
+- `request_logs` (migration `0002`, B8a): `bigint identity` id, no FKs (like `audit_logs`), indexes `(developer_id, id)` and `(timestamp)`. `path` is the path **after the slug**, as rules see it. Headers and the 16 KB body samples are **masked before insert** (NFR-07; JSON by key, even when cut at 16 KB; form bodies by field; binary, encoded and non-text bodies are not stored). Retention: 7 days and the newest 5,000 rows per Developer, deleted by a loop in the Gateway (an advisory lock lets one Gateway do it).
+- **`pg_notify('mockan_request_logged', '<developerId>:<maxId>')`** is sent by the Gateway's writer in the same transaction as each batch insert, once per Developer in the batch (D-19). Only the Admin's hub listens.
 
 ## 5. Test database
 

@@ -32,6 +32,13 @@ class MockanSettings(BaseSettings):
     # --- gateway ---
     snapshot_reload_seconds: int = Field(default=60, ge=1)
     snapshot_debounce_ms: int = Field(default=200, ge=0)
+    # Request log (PR-12, D-18): a bounded queue (full = drop and count), a batch writer, retention.
+    request_log_queue_size: int = Field(default=10_000, ge=1)
+    request_log_batch_size: int = Field(default=200, ge=1)
+    request_log_flush_ms: int = Field(default=500, ge=1)
+    request_log_retention_days: int = Field(default=7, ge=1)
+    request_log_max_rows_per_developer: int = Field(default=5_000, ge=1)
+    request_log_cleanup_seconds: int = Field(default=600, ge=1)
 
     @property
     def database_dsn(self) -> str:

@@ -112,6 +112,7 @@ class ProxyForwarder:
             raise ProxyError(ErrorCode.SERVICE_NOT_RESOLVED, 502, error.detail) from error
         service, environment = resolved.service, resolved.environment
         bind_log_context(service=service.name)
+        context.service_id = service.id  # for the request log
 
         raw_path = scope.get("raw_path")
         path = build_upstream_path(
