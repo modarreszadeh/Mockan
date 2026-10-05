@@ -75,7 +75,7 @@ class ForwardInfo:
     scheme: str  # "http" | "https" as seen by the client (after Uvicorn's proxy-headers handling)
     host: str | None  # the Host header the client used (Mockan's own host)
     client_ip: str | None
-    path_prefix: str = ""  # where a reverse proxy mounts Mockan, e.g. "/mock" (from PUBLIC_BASE_URL)
+    path_prefix: str = ""  # a reverse proxy's mount path, e.g. "/mock" (from PUBLIC_BASE_URL)
 
 
 def _origin(url: str) -> tuple[str, str, int | None]:
@@ -143,9 +143,9 @@ def build_request_headers(
 class RouteMapping:
     """How an upstream URL path maps back into the client's (Mockan) URL space.
 
-    The inverse of the request rewrite: the path of `public_base_url` (a reverse proxy's mount point,
-    e.g. `/mock`) + `/{slug}` + (the Service prefix when `strip_prefix`) + the upstream path below
-    the environment's `BaseUrl` path.
+    The inverse of the request rewrite: the path of `public_base_url` (a reverse proxy's mount
+    point, e.g. `/mock`) + `/{slug}` + (the Service prefix when `strip_prefix`) + the upstream path
+    below the environment's `BaseUrl` path.
     """
 
     developer_slug: str
