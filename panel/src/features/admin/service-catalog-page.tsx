@@ -22,7 +22,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { useIsMobile } from "@/hooks/use-mobile"
 
-import { ServiceSheet } from "./service-sheet"
+import { ServiceModal } from "./service-modal"
 
 const stop = (event: MouseEvent) => event.stopPropagation()
 
@@ -181,7 +181,7 @@ export function ServiceCatalogPage() {
     <div className="space-y-6">
       {header}
       {body}
-      <ServiceSheet
+      <ServiceModal
         open={editing !== null}
         service={editing?.service ?? null}
         onOpenChange={(open) => !open && setEditing(null)}

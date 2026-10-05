@@ -1,5 +1,5 @@
 /**
- * Create/edit a Service and its environments in a right Sheet (SCR-07, PR-10). The server rejects base URLs
+ * Create/edit a Service and its environments in a modal (a bottom sheet on mobile, SCR-07, PR-10). The server rejects base URLs
  * whose host isn't allowlisted (PR-15, NFR-06); that error lands inline on the base URL field.
  */
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -11,12 +11,21 @@ import { toast } from "sonner"
 import { ApiError } from "@/api/client"
 import { CatalogSaveError, useSaveService, useServices } from "@/api/queries/services"
 import { ENVIRONMENTS, type Service } from "@/api/types"
-import { KeyValueEditor, ProblemAlert } from "@/components/mockan"
+import {
+  KeyValueEditor,
+  Modal,
+  ModalBody,
+  ModalContent,
+  ModalDescription,
+  ModalFooter,
+  ModalHeader,
+  ModalTitle,
+  ProblemAlert,
+} from "@/components/mockan"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { Switch } from "@/components/ui/switch"
 import { recordToRows, rowsToRecord } from "@/lib/format"
 import { serviceFormSchema, type EnvironmentFormValues, type ServiceFormValues } from "@/lib/validation"
@@ -170,7 +179,7 @@ function ServiceForm({ service, onDone }: { service: Service | null; onDone: () 
 
   return (
     <form noValidate onSubmit={onSubmit} className="flex min-h-0 flex-1 flex-col">
-      <div className="min-h-0 flex-1 space-y-6 overflow-y-auto px-6 pb-6">
+      <ModalBody className="space-y-6">
         {unmapped ? <ProblemAlert error={unmapped} /> : null}
 
         <div className="grid gap-4 sm:grid-cols-2">
@@ -375,20 +384,20 @@ function ServiceForm({ service, onDone }: { service: Service | null; onDone: () 
             )
           })}
         </section>
-      </div>
-      <SheetFooter className="flex-row justify-end gap-2 border-t px-6 py-4">
+      </ModalBody>
+      <ModalFooter>
         <Button type="button" variant="outline" onClick={onDone}>
           Cancel
         </Button>
         <Button type="submit" disabled={save.isPending}>
           {save.isPending ? "Saving…" : service ? "Save Service" : "Create Service"}
         </Button>
-      </SheetFooter>
+      </ModalFooter>
     </form>
   )
 }
 
-export function ServiceSheet({
+export function ServiceModal({
   open,
   service,
   onOpenChange,
@@ -399,16 +408,16 @@ export function ServiceSheet({
   onOpenChange: (open: boolean) => void
 }) {
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="flex w-full flex-col gap-0 p-0 sm:max-w-xl">
-        <SheetHeader className="p-6">
-          <SheetTitle>{service ? `Edit ${service.name}` : "Add a Service"}</SheetTitle>
-          <SheetDescription className="text-body">
+    <Modal open={open} onOpenChange={onOpenChange}>
+      <ModalContent size="md">
+        <ModalHeader>
+          <ModalTitle>{service ? `Edit ${service.name}` : "Add a Service"}</ModalTitle>
+          <ModalDescription>
             Path prefix and base URLs decide where Developers' requests are proxied. {ALLOWLIST_MESSAGE}
-          </SheetDescription>
-        </SheetHeader>
+          </ModalDescription>
+        </ModalHeader>
         {open ? <ServiceForm key={service?.id ?? "new"} service={service} onDone={() => onOpenChange(false)} /> : null}
-      </SheetContent>
-    </Sheet>
+      </ModalContent>
+    </Modal>
   )
 }
