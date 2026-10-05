@@ -15,6 +15,8 @@ audience: AI coding agents (and the engineer supervising them) building `panel/`
 > **What this file is:** a ready-to-use prompt for an AI coding agent. Paste everything under [§ The prompt](#the-prompt) into the agent, or tell it: *"Follow `Agent/prompts/panel-dashboard.md`."* It combines the product scope (PRD), the system contract (architecture) and the visual language (shadcn DESIGN.md) into one brief, and settles the gaps between them so the agent doesn't have to guess.
 >
 > **Who it's for:** the agent building the Panel, and the engineer reviewing its output.
+>
+> **Superseded since this was written:** the Panel's headings, titles and wordmark are now **Inter SemiBold (600)**, not a serif, and there is a login screen (SCR-01) and a `LogoMark`. Where this brief says "serif" or "Cormorant Garamond", read [`Frontend/design-tokens.md`](../../Frontend/design-tokens.md), [`Frontend/screens.md`](../../Frontend/screens.md) and [`Frontend/components.md`](../../Frontend/components.md), which track the code.
 
 ---
 
