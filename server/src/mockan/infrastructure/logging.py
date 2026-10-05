@@ -2,11 +2,22 @@
 
 import logging
 import sys
+from collections.abc import MutableMapping
 from typing import Any
 
 import structlog
 
 from mockan.infrastructure.masking import mask_event_dict
+from mockan.infrastructure.telemetry import current_trace_id
+
+
+def add_trace_id(
+    _logger: object, _method: str, event_dict: MutableMapping[str, Any]
+) -> MutableMapping[str, Any]:
+    """structlog processor: `trace_id` of the active span, when tracing is on (PR-17)."""
+    if (trace_id := current_trace_id()) is not None:
+        event_dict["trace_id"] = trace_id
+    return event_dict
 
 
 def configure_logging(level: str = "INFO", log_format: str = "json") -> None:
@@ -23,6 +34,7 @@ def configure_logging(level: str = "INFO", log_format: str = "json") -> None:
             structlog.contextvars.merge_contextvars,
             structlog.processors.add_log_level,
             structlog.processors.TimeStamper(fmt="iso", utc=True),
+            add_trace_id,
             mask_event_dict,
             structlog.processors.format_exc_info,
             renderer,

@@ -90,3 +90,28 @@ async def test_the_lifespan_does_not_migrate_by_default(
         async with admin.connect() as connection:
             await connection.execute(text('DROP DATABASE "no_migration" WITH (FORCE)'))
         await admin.dispose()
+
+
+@pytest.mark.req("PR-17")
+async def test_the_admin_is_traced_only_when_asked(admin_settings: MockanSettings) -> None:
+    from opentelemetry.sdk.trace.export import SimpleSpanProcessor
+    from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
+
+    from mockan.infrastructure.telemetry import make_tracer_provider
+
+    exporter = InMemorySpanExporter()
+    settings = admin_settings.model_copy(update={"tracing_enabled": True})
+    provider = make_tracer_provider("mockan-admin", settings)
+    provider.add_span_processor(SimpleSpanProcessor(exporter))
+    traced = create_app(settings, tracer_provider=provider)
+    plain = create_app(admin_settings)
+
+    for app in (traced, plain):
+        async with httpx.AsyncClient(
+            transport=httpx.ASGITransport(app=app), base_url="http://admin"
+        ) as client:
+            await client.get("/api/v1/openapi.json")  # needs no database
+
+    spans = exporter.get_finished_spans()
+    assert spans and all(s.resource.attributes["service.name"] == "mockan-admin" for s in spans)
+    assert len({s.context.trace_id for s in spans}) == 1  # only the traced app produced any

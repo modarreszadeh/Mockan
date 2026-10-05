@@ -221,11 +221,13 @@ class ProxyForwarder:
             )
 
         context.source = RequestSource.PROXIED
+        bind_log_context(source="proxy")
         headers = build_response_headers(_decode(upstream.headers.raw), plan.mapping)
         return UpstreamResponse(upstream, _encode(headers), plan.service_name)
 
     def _problem(self, error: ProxyError, context: MockanContext, path: str) -> Response:
         context.source = RequestSource.ERROR
+        bind_log_context(source="error")
         return problem_response(
             error.code,
             error.status,

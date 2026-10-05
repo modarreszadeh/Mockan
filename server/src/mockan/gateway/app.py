@@ -4,11 +4,15 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
+from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
+from opentelemetry.instrumentation.httpx import HTTPXClientInstrumentor
+from opentelemetry.sdk.trace import TracerProvider
 
 from mockan.gateway import health
 from mockan.gateway.middleware.cors import MockanCorsMiddleware
 from mockan.gateway.middleware.developer_resolution import DeveloperResolutionMiddleware
 from mockan.gateway.middleware.error_boundary import ErrorBoundaryMiddleware
+from mockan.gateway.middleware.metrics import MetricsMiddleware
 from mockan.gateway.middleware.mock_matching import MockMatchingMiddleware
 from mockan.gateway.middleware.request_log_capture import RequestLogCaptureMiddleware
 from mockan.gateway.proxy.forwarder import ProxyForwarder, create_http_client, proxy_http
@@ -18,6 +22,7 @@ from mockan.infrastructure.db.session import create_engine, create_session_facto
 from mockan.infrastructure.logging import configure_logging
 from mockan.infrastructure.request_log import RequestLogQueue, RequestLogWriter
 from mockan.infrastructure.settings import MockanSettings
+from mockan.infrastructure.telemetry import Telemetry, make_tracer_provider
 from mockan.matching.snapshot import RuleSnapshotProvider
 
 _METHODS = ["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"]
@@ -26,6 +31,8 @@ _METHODS = ["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"]
 def create_app(
     settings: MockanSettings | None = None,
     snapshot_provider: RuleSnapshotProvider | None = None,
+    telemetry: Telemetry | None = None,
+    tracer_provider: TracerProvider | None = None,
 ) -> FastAPI:
     """Build the Gateway.
 
@@ -35,6 +42,10 @@ def create_app(
     provider = snapshot_provider or RuleSnapshotProvider()
     manages_snapshot = snapshot_provider is None
     request_log = RequestLogQueue(settings.request_log_queue_size)
+    owns_telemetry = telemetry is None
+    telemetry = telemetry or Telemetry("mockan-gateway", settings)
+    if settings.tracing_enabled and tracer_provider is None:
+        tracer_provider = make_tracer_provider("mockan-gateway", settings)
 
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
@@ -42,6 +53,8 @@ def create_app(
         configure_logging(settings.log_level, settings.log_format)
         # D-15: one shared upstream client per process, closed with the app.
         client = create_http_client()
+        if tracer_provider is not None:  # a child `traceparent` goes upstream (same trace id)
+            HTTPXClientInstrumentor.instrument_client(client, tracer_provider=tracer_provider)
         app.state.http_client = client
         app.state.forwarder = ProxyForwarder(client, settings)
         engine = service = writer = None
@@ -65,6 +78,10 @@ def create_app(
                 await engine.dispose()
             app.state.forwarder = None
             await client.aclose()
+            if owns_telemetry:
+                telemetry.shutdown()
+            if tracer_provider is not None:
+                tracer_provider.shutdown()
 
     app = FastAPI(
         title="Mockan Gateway",
@@ -78,6 +95,11 @@ def create_app(
     app.state.snapshot_service = None
     app.state.request_log = request_log
     app.state.request_log_writer = None
+    app.state.telemetry = telemetry
+    telemetry.observe_snapshot_age(
+        lambda: app.state.snapshot_service.age_seconds if app.state.snapshot_service else None
+    )
+    telemetry.observe_request_log_dropped(lambda: request_log.dropped)
     app.state.http_client = None  # set by the lifespan
     app.state.forwarder = None
 
@@ -98,4 +120,9 @@ def create_app(
         MockanCorsMiddleware, provider=provider, default_origins=settings.default_allowed_origins
     )
     app.add_middleware(RequestLogCaptureMiddleware, queue=request_log)
+    app.add_middleware(MetricsMiddleware, telemetry=telemetry)
+    if tracer_provider is not None:
+        FastAPIInstrumentor.instrument_app(
+            app, tracer_provider=tracer_provider, excluded_urls="_mockan/health"
+        )
     return app

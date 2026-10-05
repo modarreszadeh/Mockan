@@ -18,6 +18,12 @@ class MockanSettings(BaseSettings):
     )
     log_level: str = "INFO"
     log_format: Literal["json", "console"] = "json"
+    # Observability (PR-17, arch §12.2). Metrics always exist in-process; `otel_endpoint` (an
+    # OTLP/HTTP collector, e.g. `http://collector:4318`) makes both processes export them. Tracing
+    # is opt-in: it continues the caller's trace and sends upstreams a child `traceparent`.
+    otel_endpoint: str = ""
+    otel_export_interval_seconds: int = Field(default=30, ge=1)
+    tracing_enabled: bool = False
 
     # --- admin ---
     auth_mode: Literal["oidc", "dev"] = "oidc"  # `dev` is for local use only (G-9)

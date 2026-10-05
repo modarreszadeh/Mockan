@@ -7,6 +7,8 @@ from pathlib import Path
 
 import structlog
 from fastapi import APIRouter, FastAPI
+from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
+from opentelemetry.sdk.trace import TracerProvider
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
 from starlette.middleware.sessions import SessionMiddleware
 
@@ -31,6 +33,7 @@ from mockan.infrastructure.db.migrate import upgrade_to_head
 from mockan.infrastructure.db.session import create_engine, create_session_factory
 from mockan.infrastructure.logging import configure_logging
 from mockan.infrastructure.settings import MockanSettings
+from mockan.infrastructure.telemetry import make_tracer_provider
 
 log = structlog.get_logger()
 
@@ -71,6 +74,7 @@ def create_app(
     settings: MockanSettings | None = None,
     session_factory: async_sessionmaker[AsyncSession] | None = None,
     static_dir: Path | None = None,
+    tracer_provider: TracerProvider | None = None,
 ) -> FastAPI:
     """Build the Admin app.
 
@@ -145,6 +149,11 @@ def create_app(
     api.include_router(test_route.router)
     app.include_router(api)
     app.include_router(hubs.router)  # `/hubs/*`: outside `/api/v1`
+
+    if settings.tracing_enabled and tracer_provider is None:
+        tracer_provider = make_tracer_provider("mockan-admin", settings)
+    if tracer_provider is not None:
+        FastAPIInstrumentor.instrument_app(app, tracer_provider=tracer_provider)
 
     panel_dir = static_dir or STATIC_DIR
     if (panel_dir / "index.html").is_file():

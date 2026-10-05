@@ -24,7 +24,7 @@ audience: Backend engineers and AI coding agents working in `server/`
 | Database | PostgreSQL via SQLAlchemy 2 async + asyncpg; migrations with Alembic (D-16) |
 | Proxy | `httpx.AsyncClient` streaming + `websockets` bridge (D-15) |
 | Regex engine | RE2 via `google-re2` (D-17) |
-| Phase | **Phase 1 complete** (B0 → B7): skeleton, matching, infrastructure, Gateway, proxy, Admin API, packaging and the acceptance suite. Phase 2 (B8) only when asked. Build order in [implementation-plan.md](implementation-plan.md). |
+| Phase | **Phase 1 complete** (B0 → B7) and **Phase 2 built** (B8a request log, B8b test route, B8c templated bodies, B8d export/import, B8e operability). Phase 3 is not planned yet. Build order in [implementation-plan.md](implementation-plan.md). |
 
 ## Documents
 

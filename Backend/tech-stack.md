@@ -39,7 +39,7 @@ audience: Backend engineers and AI coding agents
 | JWT validation | `joserfc` | `>=1.7.5` | Bearer-token validation in `admin/oidc.py` (the library Authlib itself uses). Declared explicitly because we import it directly. |
 | Sessions | Starlette `SessionMiddleware` (+ `itsdangerous`) | `itsdangerous>=2.2,<3` | Signed session cookie for the Panel. Pinned explicitly because Starlette only imports it lazily. |
 | Logging | `structlog` | `>=26,<27` | JSON logs, masking processor (NFR-07). |
-| Tracing / metrics | `opentelemetry-sdk`, `opentelemetry-instrumentation-fastapi`, `opentelemetry-instrumentation-httpx` | `>=1.45` / `>=0.66b0` | Metrics names in architecture §12.2. |
+| Tracing / metrics | `opentelemetry-sdk`, `opentelemetry-exporter-otlp-proto-http`, `opentelemetry-instrumentation-fastapi`, `opentelemetry-instrumentation-httpx` | `>=1.45` / `>=0.66b0` | Metric names in architecture §12.2 (`mockan.infrastructure.telemetry`). Each app owns its providers (nothing global), so tests read them with in-memory readers. Tracing is opt-in. |
 | Templated bodies | `jinja2` (`SandboxedEnvironment`, `StrictUndefined`) | `>=3.1,<4` | PR-19 (B8c). Used by `mockan.matching.templating` only. |
 | Fake data | `faker` | `>=40,<50` | PR-19 (B8c). Imported lazily on the first `fake.*` call; only a whitelist of generators is reachable from templates. |
 

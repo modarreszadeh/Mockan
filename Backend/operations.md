@@ -68,6 +68,8 @@ All are environment variables with the `MOCKAN_` prefix (`infrastructure/setting
 | `MOCKAN_PUBLIC_BASE_URL` | both | `https://mock.novin-tools.com` | `Location` rewrite; returned as `publicBaseUrl` by `GET /me`. |
 | `MOCKAN_DEFAULT_ALLOWED_ORIGINS` | both | `["http://localhost:*","http://127.0.0.1:*"]` | New Developers' `allowedOrigins`; Gateway fallback for unknown slugs. |
 | `MOCKAN_LOG_LEVEL`, `MOCKAN_LOG_FORMAT` | both | `INFO`, `json` | `console` for local reading. |
+| `MOCKAN_OTEL_ENDPOINT`, `MOCKAN_OTEL_EXPORT_INTERVAL_SECONDS` | both | empty, `30` | OTLP/HTTP collector for metrics (and spans); empty = no export. |
+| `MOCKAN_TRACING_ENABLED` | both | `false` | Opt-in tracing (see §4a). |
 | `MOCKAN_AUTH_MODE` | admin | `oidc` | `dev` = no identity provider, local only. |
 | `MOCKAN_OIDC_ISSUER`, `_CLIENT_ID`, `_CLIENT_SECRET` | admin | empty | Required in `oidc` mode; the Admin **refuses to start** without them. `TODO(OQ-04)`. |
 | `MOCKAN_SESSION_SECRET` | admin | empty | ≥ 32 random characters outside dev mode; same value on every Admin replica. |
@@ -88,6 +90,21 @@ All are environment variables with the `MOCKAN_` prefix (`infrastructure/setting
 | `GET /_mockan/health/ready` | `503 {"status":"starting"}` until the first snapshot loads; then `200 {"status":"ready"\|"degraded","snapshotAgeSeconds":n}`. **`degraded` stays in rotation:** the database is unreachable but the last good rules keep serving (PR-07). |
 
 Use `ready` for the load balancer, and alert on `degraded` or a growing `snapshotAgeSeconds` (it should stay below `MOCKAN_SNAPSHOT_RELOAD_SECONDS` plus a few seconds).
+
+## 4a. Metrics and tracing (PR-17)
+
+Metrics are always collected in-process (OpenTelemetry SDK, no cost on the request path beyond a counter increment). Set `MOCKAN_OTEL_ENDPOINT` (an OTLP/HTTP collector, e.g. `http://collector:4318`) and both processes export them every `MOCKAN_OTEL_EXPORT_INTERVAL_SECONDS`.
+
+| Metric | Type | Meaning / what to alert on |
+| --- | --- | --- |
+| `mockan_requests_total{source}` | counter | Gateway responses by `mock`, `proxy`, `error` (unknown slugs and Mockan problems are `error`; health checks and WebSockets aren't counted). A rising `error` share is `service_not_resolved`, `upstream_*` or `developer_not_found`: look at the logs. |
+| `mockan_proxy_duration_ms` | histogram | Duration of proxied requests, Gateway overhead and the upstream included, streaming bodies timed to their end. |
+| `mockan_snapshot_age_seconds` | gauge | Seconds since the rule snapshot was brought up to date. Should stay below `MOCKAN_SNAPSHOT_RELOAD_SECONDS` plus a few seconds; growing = the Gateway is `degraded`. Absent until the first snapshot loads. |
+| `mockan_request_log_dropped_total` | counter | Request-log entries dropped (full queue or failed insert). Non-zero is not an outage (logging never slows requests) but the live view has gaps. |
+
+**Tracing is opt-in** (`MOCKAN_TRACING_ENABLED=true`): the FastAPI and httpx instrumentation continue the caller's trace and the upstream then receives a **child** `traceparent` (same trace id, new span id) instead of the client's value unchanged; spans go to the same OTLP endpoint (health checks aren't traced). Off by default so that a request through Mockan is byte-identical to one sent directly (PR-03).
+
+**Logs** are structured JSON with `developer`, `service`, `source` (`mock`/`proxy`/`error`), `rule_id` and, when tracing is on, `trace_id` wherever they are known at that point of the request.
 
 ## 5. Migrations
 

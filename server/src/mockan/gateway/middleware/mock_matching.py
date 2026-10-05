@@ -13,6 +13,7 @@ from mockan.domain.enums import RequestSource
 from mockan.domain.errors import ErrorCode
 from mockan.gateway.context import MockanContext, get_context, is_internal
 from mockan.gateway.problems import RULE_ID_HEADER, SOURCE_HEADER, problem_response
+from mockan.infrastructure.logging import bind_log_context
 from mockan.matching.matcher import match_request
 from mockan.matching.model import CompiledResponse, CompiledRule, RequestFacts
 from mockan.matching.templating import TemplateRenderError, render
@@ -43,6 +44,7 @@ class MockMatchingMiddleware:
         rule, active = result.rule, result.rule.active_response
         context.source = RequestSource.MOCKED
         context.rule_id = rule.id
+        bind_log_context(source="mock", rule_id=str(rule.id))
         if active.delay_ms:
             await asyncio.sleep(active.delay_ms / 1000)  # never time.sleep (arch §14 rule 10)
         body = active.body_bytes
