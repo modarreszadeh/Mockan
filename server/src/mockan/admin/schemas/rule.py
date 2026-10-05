@@ -61,10 +61,8 @@ def _body(value: str) -> str:
     return no_nul(value)
 
 
-def _static_only(value: BodyMode) -> BodyMode:
+def _supported_mode(value: BodyMode) -> BodyMode:
     # G-13: the DB CHECK allows all three modes; the API opens them phase by phase.
-    if value is BodyMode.TEMPLATE:
-        raise ValueError("Template bodies aren't available yet (Phase 2).")
     if value is BodyMode.PROXY_AND_PATCH:
         raise ValueError("ProxyAndPatch bodies aren't available yet (Phase 3).")
     return value
@@ -106,7 +104,7 @@ class MockResponseIn(CamelInput):
     )
     content_type: Annotated[str, _text(MAX_CONTENT_TYPE_LENGTH)] = "application/json"
     body: Annotated[str, AfterValidator(_body)] = ""
-    body_mode: Annotated[BodyMode, AfterValidator(_static_only)] = BodyMode.STATIC
+    body_mode: Annotated[BodyMode, AfterValidator(_supported_mode)] = BodyMode.STATIC
     delay_ms: Annotated[StrictInt, Field(ge=0, le=MAX_DELAY_MS)] = 0
 
 

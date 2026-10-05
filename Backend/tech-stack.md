@@ -40,8 +40,8 @@ audience: Backend engineers and AI coding agents
 | Sessions | Starlette `SessionMiddleware` (+ `itsdangerous`) | `itsdangerous>=2.2,<3` | Signed session cookie for the Panel. Pinned explicitly because Starlette only imports it lazily. |
 | Logging | `structlog` | `>=26,<27` | JSON logs, masking processor (NFR-07). |
 | Tracing / metrics | `opentelemetry-sdk`, `opentelemetry-instrumentation-fastapi`, `opentelemetry-instrumentation-httpx` | `>=1.45` / `>=0.66b0` | Metrics names in architecture §12.2. |
-| Templated bodies (Phase 2) | `jinja2` (`SandboxedEnvironment`) | `>=3.1,<4` | PR-19. Not installed in Phase 1. |
-| Fake data (Phase 2) | `faker` | `>=40` | PR-19. Not installed in Phase 1. |
+| Templated bodies | `jinja2` (`SandboxedEnvironment`, `StrictUndefined`) | `>=3.1,<4` | PR-19 (B8c). Used by `mockan.matching.templating` only. |
+| Fake data | `faker` | `>=40,<50` | PR-19 (B8c). Imported lazily on the first `fake.*` call; only a whitelist of generators is reachable from templates. |
 
 > **Watch:** Authlib 1.8's `httpx` integration prefers the new `httpx2` package and warns (`AuthlibDeprecationWarning: The httpx module is deprecated; please use httpx2 instead`) when it falls back to `httpx`. The fallback will be removed in a future Authlib release. The Admin uses it only for the OIDC token and JWKS calls. Adding `httpx2` would silence the warning and is a stack decision (D-15 names `httpx`); not done in B5.
 

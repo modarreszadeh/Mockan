@@ -160,7 +160,7 @@ Each entry's `serviceEnvironmentId` must belong to its `serviceId`, each Service
 | `contentType` | ≤ 255, no NUL. Default `application/json`. Sent as `Content-Type`. |
 | `headers` | ≤ 50. Names are HTTP tokens; values contain no `\r`, `\n`, NUL. **Not allowed:** `Content-Type`/`Content-Length`/`Transfer-Encoding`/`Connection`/`Keep-Alive`/`Proxy-Authenticate`/`Proxy-Authorization`/`TE`/`Trailer`/`Upgrade` (`FORBIDDEN_MOCK_HEADERS`; the Gateway also drops them). |
 | `body` | ≤ 1 MiB **of UTF-8 bytes** (`"é"` counts 2), valid UTF-8 (a lone surrogate such as `"\ud800"` is `422`), no NUL. **Not required to be valid JSON** (PR-06: checking is the Panel's job, so a deliberately broken body stays possible). |
-| `bodyMode` | `Static` only (G-13): `Template` → `422` until Phase 2, `ProxyAndPatch` → `422` until Phase 3. Default `Static`. |
+| `bodyMode` | `Static` (default) or `Template` (B8c, PR-19); `ProxyAndPatch` → `422` until Phase 3 (G-13). A `Template` body is **syntax-checked on save** with the Gateway's own compiler: an error is `422` on `body` (`responses.<i>.body` when creating a rule) with the line number (`"Line 2: …"`). Runtime errors (an undefined variable) only show when the mock is called (`500 mock_render_failed`). Variables and generators: [gateway.md §4](gateway.md#4-mock-responses-pr-06). |
 
 NUL is rejected everywhere because PostgreSQL `text`/`jsonb` can't store it. All errors of a request are reported at once; in a create, a failing response is keyed `responses.<i>.<field>`. `PUT` is a full replace of the listed fields: a field left out takes its default, except `isEnabled`.
 

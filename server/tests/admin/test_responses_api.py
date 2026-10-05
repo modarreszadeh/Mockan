@@ -154,7 +154,6 @@ ONE_MIB = 1_048_576
         ({"headers": {"X-A": "a\0"}}, "headers"),
         ({"headers": {f"X-{i}": "v" for i in range(51)}}, "headers"),
         ({"headers": {"X-A": 1}}, "headers.X-A"),
-        ({"bodyMode": "Template"}, "bodyMode"),
         ({"bodyMode": "ProxyAndPatch"}, "bodyMode"),
         ({"bodyMode": "Markdown"}, "bodyMode"),
         ({"ruleId": str(uuid.uuid4())}, "ruleId"),
@@ -247,7 +246,7 @@ async def test_errors_name_the_response_that_failed_when_creating_a_rule(
             "pattern": "/a",
             "responses": [
                 {"name": "ok", "statusCode": 200},
-                {"name": "", "statusCode": 700, "bodyMode": "Template"},
+                {"name": "", "statusCode": 700, "bodyMode": "ProxyAndPatch"},
             ],
         },
     )
@@ -442,3 +441,79 @@ async def test_activating_changes_the_rule_notification(
     )
 
     assert await listener.payloads(1) == [str(developer.id)]
+
+
+# ---- templated bodies (PR-19) ----------------------------------------------------------------
+
+
+@pytest.mark.req("PR-19")
+async def test_a_template_body_is_saved_and_returned_as_written(
+    admin_client: httpx.AsyncClient, as_developer: AsDeveloper
+) -> None:
+    await as_developer("ehtesham")
+    source = '{"id": {{ route.id }}, "who": "{{ fake.name() }}"}'
+
+    rule = await create_rule(
+        admin_client,
+        matchType="Template",
+        pattern="/orders/{id}",
+        responses=[response_body(body=source, bodyMode="Template")],
+    )
+
+    assert rule["responses"][0]["bodyMode"] == "Template"
+    assert rule["responses"][0]["body"] == source  # stored, not rendered
+
+
+@pytest.mark.req("PR-19")
+async def test_template_syntax_errors_are_422_on_the_body_with_the_line(
+    admin_client: httpx.AsyncClient, as_developer: AsDeveloper
+) -> None:
+    await as_developer("ehtesham")
+    rule = await create_rule(admin_client)
+    broken = response_body(bodyMode="Template", body="ok\n{% for x in %}\n")
+
+    created = await admin_client.post(f"{ME_RULES}/{rule['id']}/responses", json=broken)
+    updated = await admin_client.put(
+        f"{ME_RULES}/{rule['id']}/responses/{rule['activeResponseId']}", json=broken
+    )
+    new_rule = await admin_client.post(
+        ME_RULES,
+        json={
+            "name": "r",
+            "matchType": "Exact",
+            "pattern": "/a",
+            "responses": [response_body(), broken],
+        },
+    )
+
+    for response, field in ((created, "body"), (updated, "body"), (new_rule, "responses.1.body")):
+        assert response.status_code == 422
+        assert response.json()["errors"][field][0].startswith("Line 2:")
+    assert await get_rule(admin_client, rule["id"]) == rule  # nothing changed
+
+
+@pytest.mark.req("PR-19")
+async def test_a_static_body_that_looks_like_a_template_is_not_checked(
+    admin_client: httpx.AsyncClient, as_developer: AsDeveloper
+) -> None:
+    await as_developer("ehtesham")
+
+    rule = await create_rule(admin_client, responses=[response_body(body="{% not a template")])
+
+    assert rule["responses"][0]["bodyMode"] == "Static"
+
+
+@pytest.mark.req("PR-19")
+async def test_switching_a_response_to_template_mode(
+    admin_client: httpx.AsyncClient, as_developer: AsDeveloper, audit_rows: AuditRows
+) -> None:
+    await as_developer("ehtesham")
+    rule = await create_rule(admin_client)
+
+    response = await admin_client.put(
+        f"{ME_RULES}/{rule['id']}/responses/{rule['activeResponseId']}",
+        json=response_body(bodyMode="Template", body="{{ request.path }}"),
+    )
+
+    assert response.json()["bodyMode"] == "Template"
+    assert (await audit_rows())[-1].changes["bodyMode"] == {"from": "Static", "to": "Template"}

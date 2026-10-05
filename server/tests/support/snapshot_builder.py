@@ -117,6 +117,7 @@ class SnapshotBuilder:
         response_headers: Mapping[str, str] | None = None,
         content_type: str = "application/json",
         delay_ms: int = 0,
+        body_mode: BodyMode = BodyMode.STATIC,
         created_at: datetime | None = None,
     ) -> CompiledRule:
         self._tick += 1
@@ -127,7 +128,7 @@ class SnapshotBuilder:
             headers=response_headers or {},
             content_type=content_type,
             body=body,
-            body_mode=BodyMode.STATIC,
+            body_mode=body_mode,
             delay_ms=delay_ms,
         )
         rule = compile_rule(

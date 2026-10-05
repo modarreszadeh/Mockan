@@ -20,7 +20,7 @@ from mockan.admin.schemas.rule import (
 )
 from mockan.admin.services.changes import diff
 from mockan.domain.constants import MAX_RESPONSES_PER_RULE
-from mockan.domain.enums import AuditAction, AuditEntityType, ConditionOperator
+from mockan.domain.enums import AuditAction, AuditEntityType, BodyMode, ConditionOperator
 from mockan.domain.errors import ErrorCode
 from mockan.infrastructure import audit
 from mockan.infrastructure.db import notify
@@ -29,6 +29,7 @@ from mockan.infrastructure.db.models import Developer, MockResponse, MockRule, S
 from mockan.matching.compile import compile_rule
 from mockan.matching.errors import PatternError
 from mockan.matching.model import Condition
+from mockan.matching.templating import compile_template
 
 # ---- reading ----
 
@@ -109,9 +110,23 @@ def _response_values(response: MockResponse) -> dict[str, Any]:
 # ---- validation ----
 
 
-async def _validate_rule(session: AsyncSession, data: MockRuleUpdateIn) -> None:
-    """The same compiler the Gateway runs (§2 risk), plus the Service reference."""
+def _template_errors(responses: Sequence[MockResponseIn], prefix: str = "") -> dict[str, list[str]]:
+    """Syntax errors of `Template` bodies, from the compiler the Gateway uses (PR-19)."""
     errors: dict[str, list[str]] = {}
+    for index, response in enumerate(responses):
+        if response.body_mode is BodyMode.TEMPLATE:
+            try:
+                compile_template(response.body)
+            except PatternError as error:
+                errors[f"{prefix}{index}.body" if prefix else "body"] = [error.message]
+    return errors
+
+
+async def _validate_rule(
+    session: AsyncSession, data: MockRuleUpdateIn, responses: Sequence[MockResponseIn] = ()
+) -> None:
+    """The same compiler the Gateway runs (§2 risk), plus the Service reference and templates."""
+    errors: dict[str, list[str]] = _template_errors(responses, "responses.")
     try:
         compile_rule(
             match_type=data.match_type,
@@ -169,7 +184,7 @@ def _new_response(rule_id: uuid.UUID | None, data: MockResponseIn) -> MockRespon
 async def create_rule(
     session: AsyncSession, developer: Developer, data: MockRuleCreateIn
 ) -> MockRule:
-    await _validate_rule(session, data)
+    await _validate_rule(session, data, data.responses)
     rule = MockRule(
         developer_id=developer.id,
         service_id=data.service_id,
@@ -292,6 +307,8 @@ async def create_response(
     session: AsyncSession, developer: Developer, rule_id: uuid.UUID, data: MockResponseIn
 ) -> MockResponse:
     rule = await get_rule(session, developer, rule_id)
+    if errors := _template_errors([data]):
+        raise validation_error(errors)
     if len(rule.responses) >= MAX_RESPONSES_PER_RULE:
         raise DomainError(
             ErrorCode.VALIDATION_FAILED,
@@ -326,6 +343,8 @@ async def update_response(
 ) -> MockResponse:
     rule = await get_rule(session, developer, rule_id)
     response = _find_response(rule, response_id)
+    if errors := _template_errors([data]):
+        raise validation_error(errors)
     old = _response_values(response)
     response.name = data.name
     response.status_code = data.status_code

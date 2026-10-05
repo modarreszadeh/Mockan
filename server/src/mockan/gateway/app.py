@@ -89,7 +89,7 @@ def create_app(
 
     # `add_middleware` makes the last one added the outermost. Order, outermost first (arch §6.2):
     # request log, CORS, error boundary, Developer resolution, mock matching, then the proxy route.
-    app.add_middleware(MockMatchingMiddleware)
+    app.add_middleware(MockMatchingMiddleware, public_base_url=settings.public_base_url)
     app.add_middleware(
         DeveloperResolutionMiddleware, provider=provider, public_base_url=settings.public_base_url
     )

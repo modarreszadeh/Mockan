@@ -59,4 +59,4 @@ Rules are matched against the path **after** the slug and **before** the Service
 | A Developer only reaches their own data. | Every `/me/*` query filters by `developer_id`; a foreign id is `404`. |
 | Every config write is audited in the same transaction, secrets and bodies masked. | `infrastructure/audit.py`, Admin services. |
 | Every committed config change reaches the Gateways. | `before_commit` hook sends `pg_notify` per Developer id or `catalog`; bulk statements call `notify.mark`. |
-| `bodyMode` is `Static` until Phase 2/3 (G-13). | Admin validation (the DB `CHECK` already allows all three). |
+| `bodyMode` is `Static` or `Template`; `ProxyAndPatch` waits for Phase 3 (G-13). A `Template` body compiles. | Admin validation (the DB `CHECK` already allows all three); `compile_template` on save and when the snapshot is built. |

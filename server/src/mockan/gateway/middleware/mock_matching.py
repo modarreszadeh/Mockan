@@ -4,22 +4,28 @@ import asyncio
 from collections.abc import Mapping
 from urllib.parse import parse_qs
 
+import structlog
 from starlette.responses import Response
 from starlette.types import ASGIApp, Receive, Scope, Send
 
 from mockan.domain.constants import FORBIDDEN_MOCK_HEADERS
 from mockan.domain.enums import RequestSource
+from mockan.domain.errors import ErrorCode
 from mockan.gateway.context import MockanContext, get_context, is_internal
-from mockan.gateway.problems import RULE_ID_HEADER, SOURCE_HEADER
+from mockan.gateway.problems import RULE_ID_HEADER, SOURCE_HEADER, problem_response
 from mockan.matching.matcher import match_request
 from mockan.matching.model import CompiledResponse, CompiledRule, RequestFacts
+from mockan.matching.templating import TemplateRenderError, render
+
+log = structlog.get_logger()
 
 _BODYLESS = frozenset({204, 304}) | frozenset(range(100, 200))
 
 
 class MockMatchingMiddleware:
-    def __init__(self, app: ASGIApp) -> None:
+    def __init__(self, app: ASGIApp, *, public_base_url: str = "") -> None:
         self.app = app
+        self._public_base_url = public_base_url
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         context = get_context(scope) if scope["type"] == "http" and not is_internal(scope) else None
@@ -39,7 +45,32 @@ class MockMatchingMiddleware:
         context.rule_id = rule.id
         if active.delay_ms:
             await asyncio.sleep(active.delay_ms / 1000)  # never time.sleep (arch §14 rule 10)
-        await _mock_response(rule, active)(scope, receive, send)
+        body = active.body_bytes
+        if active.template is not None and active.status_code not in _BODYLESS:
+            facts = _facts(scope, context)
+            try:
+                body = render(
+                    active.template,
+                    method=facts.method,
+                    path=facts.path,
+                    query=facts.query,
+                    headers=facts.headers,
+                    params=result.params,
+                ).encode("utf-8")
+            except TemplateRenderError as error:
+                log.warning("mock_render_failed", rule_id=str(rule.id), reason=str(error))
+                context.source = RequestSource.ERROR
+                problem = problem_response(
+                    ErrorCode.MOCK_RENDER_FAILED,
+                    500,
+                    f"The template of rule “{rule.name}” could not be rendered: {error}",
+                    public_base_url=self._public_base_url,
+                    developer=context.developer.slug,
+                    path=scope["path"],
+                )
+                await problem(scope, receive, send)
+                return
+        await _mock_response(rule, active, body)(scope, receive, send)
 
 
 def _facts(scope: Scope, context: MockanContext) -> RequestFacts:
@@ -66,10 +97,10 @@ def _safe_headers(headers: Mapping[str, str]) -> dict[str, str]:
     return safe
 
 
-def _mock_response(rule: CompiledRule, response: CompiledResponse) -> Response:
+def _mock_response(rule: CompiledRule, response: CompiledResponse, body: bytes) -> Response:
     headers = _safe_headers(response.headers)
     headers["content-type"] = response.content_type
     headers[SOURCE_HEADER] = "mock"
     headers[RULE_ID_HEADER] = str(rule.id)
-    body = b"" if response.status_code in _BODYLESS else response.body_bytes
+    body = b"" if response.status_code in _BODYLESS else body
     return Response(content=body, status_code=response.status_code, headers=headers)

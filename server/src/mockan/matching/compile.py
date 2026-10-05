@@ -20,6 +20,7 @@ from mockan.matching.model import (
 )
 from mockan.matching.paths import normalise, segments
 from mockan.matching.template import parse_template
+from mockan.matching.templating import compile_template
 
 TYPE_RANK: Mapping[MatchType, int] = {
     MatchType.EXACT: 0,
@@ -184,6 +185,8 @@ def compile_response(
     body_mode: BodyMode = BodyMode.STATIC,
     delay_ms: int = 0,
 ) -> CompiledResponse:
+    """Compile a response; a `Template` body is compiled here (`PatternError("body", ...)`)."""
+    template = compile_template(body) if body_mode is BodyMode.TEMPLATE else None
     return CompiledResponse(
         id=response_id,
         name=name,
@@ -194,6 +197,7 @@ def compile_response(
         body_bytes=body.encode("utf-8"),
         body_mode=body_mode,
         delay_ms=delay_ms,
+        template=template,
     )
 
 

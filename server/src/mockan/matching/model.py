@@ -6,6 +6,8 @@ from datetime import datetime
 from typing import Protocol
 from uuid import UUID
 
+from jinja2 import Template
+
 from mockan.domain.enums import BodyMode, ConditionOperator, EnvironmentName, MatchType
 
 
@@ -35,6 +37,7 @@ class CompiledResponse:
     body_bytes: bytes
     body_mode: BodyMode
     delay_ms: int
+    template: Template | None = None  # compiled when `body_mode` is `Template`
 
 
 type SortKey = tuple[int, int, int, datetime]
