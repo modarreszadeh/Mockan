@@ -23,7 +23,7 @@ import {
 } from "@/components/mockan"
 import { Button } from "@/components/ui/button"
 import { absoluteTime, formatSample, headersText } from "@/lib/format"
-import { cn } from "@/lib/utils"
+import { type CodeLanguage, detectBodyLanguage } from "@/lib/highlight"
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -34,9 +34,19 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   )
 }
 
-function Block({ label, code, empty }: { label: string; code: string | null | undefined; empty: string }) {
+function Block({
+  label,
+  code,
+  empty,
+  language,
+}: {
+  label: string
+  code: string | null | undefined
+  empty: string
+  language?: CodeLanguage
+}) {
   if (!code) return <p className="text-[13px] text-muted-foreground">{empty}</p>
-  return <CodeBlock label={label} code={code} className={cn("max-h-72 overflow-y-auto")} />
+  return <CodeBlock label={label} code={code} language={language ?? detectBodyLanguage(code)} className="max-h-72" />
 }
 
 export function LogDetailsModal({
@@ -105,7 +115,12 @@ export function LogDetailsModal({
                 </dl>
               ) : null}
               <Section title="Request headers">
-                <Block label="Request headers" code={headersText(entry.requestHeaders)} empty="No headers captured." />
+                <Block
+                  label="Request headers"
+                  code={headersText(entry.requestHeaders)}
+                  empty="No headers captured."
+                  language="http"
+                />
               </Section>
               <Section title="Request body">
                 <Block
@@ -119,6 +134,7 @@ export function LogDetailsModal({
                   label="Response headers"
                   code={headersText(entry.responseHeaders)}
                   empty="No headers captured."
+                  language="http"
                 />
               </Section>
               <Section title="Response body">

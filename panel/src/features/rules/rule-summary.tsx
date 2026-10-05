@@ -113,7 +113,7 @@ export function RuleSummary({
       </p>
       <div className="space-y-1.5">
         <p className="type-caption text-ink">Response headers</p>
-        <CodeBlock label="Response headers preview" code={headerLines.join("\n")} />
+        <CodeBlock label="Response headers preview" code={headerLines.join("\n")} language="http" />
       </div>
     </section>
   )

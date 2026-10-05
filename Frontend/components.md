@@ -60,12 +60,14 @@ States: default · copied (2 s).
 
 ## CodeBlock
 
-Read-only mono block on `surface-dark-soft`; horizontal scroll, keyboard-focusable region.
+Read-only code window: a `surface-dark-elevated` header with the **language at the top-left** and a **Copy** button (confirms with "Copied"), over a `surface-dark-soft` body. The body scrolls both ways and is a keyboard-focusable region. Syntax colours come from the dark tokens (`src/lib/highlight.ts`, no dependency): keys `on-dark`, strings `success`, numbers `accent-amber`, `true`/`false`/`null` and the HTTP version `primary`, punctuation `on-dark-soft`.
 
-| Prop | Type |
-| --- | --- |
-| `code` | `string` |
-| `label` | `string` (accessible name) |
+| Prop | Type | Notes |
+| --- | --- | --- |
+| `code` | `string` | |
+| `label` | `string` | Accessible name of the scrollable region; also names the Copy button. |
+| `language?` | `"json" \| "http" \| "env" \| "text"` | Label and colours. Default `text` (uncoloured). Headers use `http`; bodies use `detectBodyLanguage()`. |
+| `className?` | `string` | Sizes the whole window, e.g. `max-h-72`. |
 
 ## JsonEditor
 

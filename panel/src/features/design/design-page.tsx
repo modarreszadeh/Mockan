@@ -205,9 +205,19 @@ export function DesignPage() {
         <BaseUrlCard slug="ehtesham" />
         <CodeBlock
           label="Response headers preview"
+          language="http"
           code={
             "HTTP/1.1 200 OK\nContent-Type: application/json\nX-Mockan-Source: mock\nX-Mockan-Rule-Id: 0192f5a0-0000-7000-8000-0000000a0001"
           }
+        />
+        <CodeBlock
+          label="Response body preview"
+          language="json"
+          code={JSON.stringify(
+            { id: 42, status: "shipped", paid: true, coupon: null, items: [{ sku: "A-1", qty: 2 }] },
+            null,
+            2,
+          )}
         />
       </Section>
 

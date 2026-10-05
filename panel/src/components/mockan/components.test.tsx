@@ -10,6 +10,7 @@ import { axe, renderWithProviders } from "@/test/render"
 
 import {
   BaseUrlCard,
+  CodeBlock,
   EmptyState,
   EnvBadge,
   ConfirmDialog,
@@ -37,6 +38,20 @@ describe("BaseUrlCard", () => {
     await user.click(screen.getByRole("button", { name: "Copy .env line" }))
     expect(await screen.findByRole("button", { name: "Copied .env line" })).toHaveTextContent("Copied")
     expect(await axe(container)).toHaveNoViolations()
+  })
+})
+
+describe("CodeBlock", () => {
+  it("shows the language at the top-left, colours tokens and copies the code", async () => {
+    const user = userEvent.setup()
+    const code = '{\n  "id": 42,\n  "name": "Ada"\n}'
+    renderWithProviders(<CodeBlock label="Body" language="json" code={code} />)
+    expect(screen.getByTestId("code-language")).toHaveTextContent("json")
+    const region = screen.getByRole("region", { name: "Body" })
+    expect(region).toHaveTextContent('"id": 42')
+    expect(screen.getByText('"Ada"')).toHaveClass("text-success")
+    await user.click(screen.getByRole("button", { name: "Copy Body" }))
+    expect(await screen.findByRole("button", { name: "Copied Body" })).toBeInTheDocument()
   })
 })
 
