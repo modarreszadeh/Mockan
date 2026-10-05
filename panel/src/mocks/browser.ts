@@ -3,6 +3,7 @@ import { setupWorker } from "msw/browser"
 
 import { isScenario, resetDb } from "./db"
 import { handlers } from "./handlers"
+import { liveLogHandlers } from "./live-log"
 
 export async function startMockBackend() {
   const params = new URLSearchParams(window.location.search)
@@ -17,7 +18,7 @@ export async function startMockBackend() {
       `${window.location.pathname}${query ? `?${query}` : ""}${window.location.hash}`,
     )
   }
-  const worker = setupWorker(...handlers)
+  const worker = setupWorker(...handlers, ...liveLogHandlers)
   await worker.start({
     onUnhandledRequest: "bypass",
     serviceWorker: { url: `${import.meta.env.BASE_URL}mockServiceWorker.js` },

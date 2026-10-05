@@ -1,7 +1,7 @@
 /**
- * The MockResponse ("Scenario") sub-form: status, content type, headers, body, delay (PR-06, US-12).
- * TODO(OQ-P1): Phase 1 edits only the active response. Phase 2 renders one of these per scenario tab; the
- * component reads/writes `response.*` in the surrounding form and is keyed by response id by its parent.
+ * The MockResponse ("Scenario") sub-form: status, content type, headers, body, delay (PR-06, PR-19, US-12).
+ * It reads/writes `response.*` in the surrounding form and shows one scenario at a time: the parent keys it
+ * by response id and puts the scenario tabs in `header` (PR-11).
  */
 import type { ReactNode } from "react"
 import { Controller, useFormContext, useWatch } from "react-hook-form"
@@ -10,6 +10,7 @@ import { JsonEditor, KeyValueEditor } from "@/components/mockan"
 import { BODY_MODES, type BodyMode } from "@/api/types"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
+import { TabsContent } from "@/components/ui/tabs"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { byteLength, isJsonContentType, MAX_BODY_BYTES, type RuleFormValues } from "@/lib/validation"
 import { formatBytes } from "@/lib/format"
@@ -32,15 +33,19 @@ const BODY_MODE_HELP: Record<BodyMode, ReactNode> = {
   ProxyAndPatch: "Not available yet.",
 }
 
-export function ResponseForm() {
+/**
+ * `panelFor`: the scenario tab (inside a `<Tabs>`) these fields belong to, so the tab's `aria-controls` is real.
+ * Without it (a new rule has one scenario and no tabs) the fields are a plain group.
+ */
+export function ResponseForm({ header, panelFor }: { header?: ReactNode; panelFor?: string }) {
   const { control, register, formState } = useFormContext<RuleFormValues>()
   const errors = formState.errors.response
   const contentType = useWatch({ control, name: "response.contentType" })
   const bodyMode = useWatch({ control, name: "response.bodyMode" })
   const json = isJsonContentType(contentType ?? "") && bodyMode === "Static"
 
-  return (
-    <FormSection title="Response" description="What Mockan returns instead of proxying.">
+  const fields = (
+    <>
       <div className="grid gap-5 sm:grid-cols-2">
         <Field id="response-name" label="Scenario name" error={errors?.name?.message}>
           <Input
@@ -207,6 +212,19 @@ export function ResponseForm() {
           )}
         />
       </Field>
+    </>
+  )
+
+  return (
+    <FormSection title="Response" description="What Mockan returns instead of proxying.">
+      {header}
+      {panelFor ? (
+        <TabsContent value={panelFor} className="space-y-5 text-base">
+          {fields}
+        </TabsContent>
+      ) : (
+        <div className="space-y-5">{fields}</div>
+      )}
     </FormSection>
   )
 }

@@ -57,3 +57,27 @@ export const recordToRows = (record: Record<string, string>) =>
 
 export const rowsToRecord = (rows: readonly { key: string; value: string }[]) =>
   Object.fromEntries(rows.filter((r) => r.key.trim()).map((r) => [r.key.trim(), r.value]))
+
+/** Time of day for log rows (`14:03:22`), with the date when it isn't today. */
+export function logTime(iso: string, now: Date = new Date()): string {
+  const date = new Date(iso)
+  const time = date.toLocaleTimeString("en-GB", { hour12: false })
+  return date.toDateString() === now.toDateString()
+    ? time
+    : `${date.toLocaleDateString("en-GB", { day: "numeric", month: "short" })} ${time}`
+}
+
+/** `Name: value` lines for a header map, for CodeBlock. */
+export const headersText = (headers: Record<string, string>) =>
+  Object.entries(headers)
+    .map(([name, value]) => `${name}: ${value}`)
+    .join("\n")
+
+/** A captured body sample, pretty-printed when it is JSON (a sample cut off mid-way stays as it is). */
+export function formatSample(sample: string): string {
+  try {
+    return JSON.stringify(JSON.parse(sample), null, 2)
+  } catch {
+    return sample
+  }
+}

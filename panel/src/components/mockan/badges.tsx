@@ -8,7 +8,8 @@ import { cn } from "@/lib/utils"
 
 const pill = "inline-flex h-6 shrink-0 items-center gap-1.5 rounded-full px-2.5 whitespace-nowrap"
 
-export function MethodBadge({ method, className }: { method: HttpMethodOrAny; className?: string }) {
+/** `method` is a string because a logged request can use any verb; the known ones get their tones. */
+export function MethodBadge({ method, className }: { method: HttpMethodOrAny | (string & {}); className?: string }) {
   const tone =
     method === "DELETE"
       ? "border border-hairline bg-canvas text-error"

@@ -22,10 +22,16 @@ export function RuleSummary({
   control,
   services,
   ruleId,
+  isEnabled,
+  activeScenarioName,
 }: {
   control: Control<RuleFormValues>
   services: Service[] | undefined
   ruleId?: string
+  /** The saved rule's state; `undefined` for a rule that doesn't exist yet. */
+  isEnabled?: boolean
+  /** Set when the scenario being edited is not the active one (PR-11). */
+  activeScenarioName?: string
 }) {
   const values = useWatch({ control }) as RuleFormValues
   const response = values.response
@@ -91,6 +97,17 @@ export function RuleSummary({
         )}
         .
       </p>
+      {isEnabled === false ? (
+        <p className="text-[13px] text-ink" data-testid="disabled-note">
+          This rule is disabled: it is skipped and matching requests are proxied to the real backend.
+        </p>
+      ) : null}
+      {activeScenarioName ? (
+        <p className="text-[13px] text-ink" data-testid="not-active-note">
+          This scenario isn't active: when the rule matches, requests get{" "}
+          <span className="font-mono">{activeScenarioName}</span> until you make this one active.
+        </p>
+      ) : null}
       <p className="text-[13px] text-muted-foreground">
         Matched against the path after your slug. Requests that don't match are proxied to the real backend.
       </p>

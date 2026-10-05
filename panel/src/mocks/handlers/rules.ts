@@ -18,9 +18,9 @@ import { byteLength, MAX_BODY_BYTES, MAX_DELAY_MS, patternProblem } from "@/lib/
 import { db, persist } from "../db"
 import { fastApi422, guard, newId, notFound, now, problem } from "../problem"
 
-type Issue = { loc: (string | number)[]; msg: string }
+export type Issue = { loc: (string | number)[]; msg: string }
 
-function validateRule(input: MockRuleUpdate): Issue[] {
+export function validateRule(input: MockRuleUpdate): Issue[] {
   const issues: Issue[] = []
   if (!input.name?.trim()) issues.push({ loc: ["name"], msg: "Name the rule." })
   if (!HTTP_METHODS.includes(input.method)) issues.push({ loc: ["method"], msg: "Unknown method." })
@@ -37,7 +37,7 @@ function validateRule(input: MockRuleUpdate): Issue[] {
   return issues
 }
 
-function validateResponse(input: MockResponseInput, prefix: (string | number)[] = []): Issue[] {
+export function validateResponse(input: MockResponseInput, prefix: (string | number)[] = []): Issue[] {
   const issues: Issue[] = []
   const at = (field: string) => [...prefix, field]
   if (!input.name?.trim()) issues.push({ loc: at("name"), msg: "Name the scenario." })
@@ -49,7 +49,7 @@ function validateResponse(input: MockResponseInput, prefix: (string | number)[] 
   return issues
 }
 
-const toResponse = (ruleId: string, input: MockResponseInput, id: string = newId()): MockResponse => ({
+export const toResponse = (ruleId: string, input: MockResponseInput, id: string = newId()): MockResponse => ({
   id,
   ruleId,
   name: input.name.trim(),
@@ -63,7 +63,7 @@ const toResponse = (ruleId: string, input: MockResponseInput, id: string = newId
   updatedAt: now(),
 })
 
-const ruleFields = (input: MockRuleUpdate) => ({
+export const ruleFields = (input: MockRuleUpdate) => ({
   serviceId: input.serviceId,
   name: input.name.trim(),
   method: input.method,

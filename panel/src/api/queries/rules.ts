@@ -9,6 +9,9 @@ import type {
   MockRule,
   MockRuleCreate,
   MockRuleUpdate,
+  ImportMode,
+  ImportResult,
+  RulesExport,
   ToggleAllResult,
 } from "../types"
 import { ruleKeys } from "./keys"
@@ -196,5 +199,52 @@ export function useDuplicateRule() {
       return api.post<MockRule>("/me/rules", body)
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ruleKeys.list() }),
+  })
+}
+
+// ---- Scenarios (PR-11): a rule's MockResponses; exactly one is active ----
+
+/** Make a scenario the one the Gateway serves. Idempotent. */
+export function useActivateResponse(ruleId: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (responseId: string) => api.post<MockRule>(`/me/rules/${ruleId}/responses/${responseId}/activate`),
+    onSuccess: (rule) => {
+      queryClient.setQueryData(ruleKeys.detail(rule.id), rule)
+      void queryClient.invalidateQueries({ queryKey: ruleKeys.list() })
+    },
+  })
+}
+
+export function useAddResponse(ruleId: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (input: MockResponseInput) => api.post<MockResponse>(`/me/rules/${ruleId}/responses`, input),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ruleKeys.all }),
+  })
+}
+
+/** Deleting the rule's last response is `409 last_response`; the editor disables the button before that. */
+export function useDeleteResponse(ruleId: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (responseId: string) => api.delete(`/me/rules/${ruleId}/responses/${responseId}`),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ruleKeys.all }),
+  })
+}
+
+// ---- Export / import (FR-12, PR-14) ----
+
+export function useExportRules() {
+  return useMutation({ mutationFn: () => api.get<RulesExport>("/me/rules/export") })
+}
+
+/** Validated server-side as a whole and written all-or-nothing; every problem comes back as `rules.<i>.<field>`. */
+export function useImportRules() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ file, mode }: { file: unknown; mode: ImportMode }) =>
+      api.post<ImportResult>(`/me/rules/import?mode=${mode}`, file),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ruleKeys.all }),
   })
 }

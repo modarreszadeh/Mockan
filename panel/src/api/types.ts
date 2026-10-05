@@ -170,6 +170,73 @@ export interface RequestLogEntry {
   responseBodySample: string | null
 }
 
+/** `GET /me/request-logs`: newest first, keyset-paged (`nextCursor` is `null` on the last page). */
+export interface RequestLogPage {
+  items: RequestLogEntry[]
+  nextCursor: string | null
+}
+
+export interface RequestLogFilters {
+  source?: RequestSource
+  /** Contains, case-insensitive. */
+  path?: string
+}
+
+/** Body of `POST /me/test-route` (PR-13). `path` is the path after the slug, without a query string. */
+export interface TestRouteRequest {
+  method?: HttpMethodOrAny
+  path: string
+  headers?: Record<string, string>
+  query?: Record<string, string[]>
+}
+
+export type TestRouteOutcome = "mock" | "proxy" | "error"
+
+export interface TestRouteResult {
+  outcome: TestRouteOutcome
+  reason: string
+  rule?: {
+    id: string
+    name: string
+    method: string
+    matchType: MatchType
+    pattern: string
+    priority: number
+    activeResponse: { id: string; name: string; statusCode: number; delayMs: number }
+  } | null
+  service?: { id: string; name: string; environment: string } | null
+  upstreamUrl?: string | null
+  errorCode?: string | null
+}
+
+/** One rule of an export file (FR-12): no ids; a Service is named, the active response is an index. */
+export interface ExportedRule {
+  name: string
+  method: string
+  matchType: MatchType
+  pattern: string
+  queryConditions: Condition[]
+  headerConditions: Condition[]
+  priority: number
+  isEnabled: boolean
+  serviceName: string | null
+  activeResponse: number
+  responses: MockResponseInput[]
+}
+
+export interface RulesExport {
+  version: 1
+  rules: ExportedRule[]
+}
+
+export type ImportMode = "merge" | "replace"
+
+export interface ImportResult {
+  mode: ImportMode
+  created: number
+  deleted: number
+}
+
 /** RFC 7807 problem+json as returned by the Admin API. */
 export interface ProblemDetails {
   type?: string

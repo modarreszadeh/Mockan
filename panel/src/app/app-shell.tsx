@@ -4,8 +4,10 @@
  */
 import {
   BlocksIcon,
+  FlaskConicalIcon,
   LayoutDashboardIcon,
   LogOutIcon,
+  ScrollTextIcon,
   ServerIcon,
   SettingsIcon,
   SlidersHorizontalIcon,
@@ -68,11 +70,12 @@ interface NavItem {
 const MAIN_NAV: NavItem[] = [
   { to: "/", label: "Overview", icon: LayoutDashboardIcon, end: true },
   { to: "/rules", label: "Rules", icon: SlidersHorizontalIcon },
+  { to: "/logs", label: "Live log", icon: ScrollTextIcon },
+  { to: "/test-route", label: "Test route", icon: FlaskConicalIcon },
   { to: "/services", label: "Services", icon: ServerIcon },
   { to: "/settings", label: "Settings", icon: SettingsIcon },
 ]
 
-// Phase 2 (SCR-09 Live log, SCR-10 Test route) are added here only when they work (prompt §2 rule 7).
 const ADMIN_NAV: NavItem[] = [{ to: "/admin/services", label: "Service catalog", icon: BlocksIcon }]
 
 function NavItems({ items }: { items: NavItem[] }) {

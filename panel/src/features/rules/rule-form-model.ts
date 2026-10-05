@@ -3,9 +3,9 @@ import type { FieldPath } from "react-hook-form"
 
 import { activeResponse } from "@/api/queries/rules"
 import type { SaveRuleInput } from "@/api/queries/rules"
-import type { Condition, HttpMethodOrAny, MockRule } from "@/api/types"
+import type { Condition, HttpMethodOrAny, MockResponse, MockRule } from "@/api/types"
 import { recordToRows, rowsToRecord } from "@/lib/format"
-import type { KeyValueRow, RuleFormValues } from "@/lib/validation"
+import type { KeyValueRow, ResponseFormValues, RuleFormValues } from "@/lib/validation"
 
 /** Sentinel for "Any service" in the scope select (Radix Select can't use an empty value). */
 export const ANY_SERVICE = "__any"
@@ -37,8 +37,20 @@ const rowToCondition = (row: KeyValueRow): Condition =>
     ? { key: row.key.trim(), operator: "exists" }
     : { key: row.key.trim(), operator: "equals", value: row.value }
 
-export function toFormValues(rule: MockRule): RuleFormValues {
-  const response = activeResponse(rule)
+export const toResponseFormValues = (response: MockResponse): ResponseFormValues => ({
+  id: response.id,
+  name: response.name,
+  statusCode: response.statusCode,
+  contentType: response.contentType,
+  headers: recordToRows(response.headers),
+  body: response.body,
+  bodyMode: response.bodyMode,
+  delayMs: response.delayMs,
+})
+
+/** The editor shows one scenario at a time: `responseId` (default: the active one) fills `response`. */
+export function toFormValues(rule: MockRule, responseId?: string): RuleFormValues {
+  const response = rule.responses.find((r) => r.id === responseId) ?? activeResponse(rule)
   return {
     name: rule.name,
     method: rule.method,
@@ -48,18 +60,7 @@ export function toFormValues(rule: MockRule): RuleFormValues {
     priority: rule.priority,
     queryConditions: rule.queryConditions.map(conditionToRow),
     headerConditions: rule.headerConditions.map(conditionToRow),
-    response: response
-      ? {
-          id: response.id,
-          name: response.name,
-          statusCode: response.statusCode,
-          contentType: response.contentType,
-          headers: recordToRows(response.headers),
-          body: response.body,
-          bodyMode: response.bodyMode,
-          delayMs: response.delayMs,
-        }
-      : NEW_RULE_DEFAULTS.response,
+    response: response ? toResponseFormValues(response) : NEW_RULE_DEFAULTS.response,
   }
 }
 

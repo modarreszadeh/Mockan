@@ -17,3 +17,8 @@ export const serviceKeys = {
 export const serviceSettingKeys = {
   all: ["service-settings"] as const,
 }
+
+export const logKeys = {
+  all: ["request-logs"] as const,
+  list: (filters: { source?: string; path?: string }) => [...logKeys.all, "list", filters] as const,
+}

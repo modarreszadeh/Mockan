@@ -1,6 +1,6 @@
 /**
  * Route tree (Frontend/screens.md). Feature screens are lazy-loaded; `handle.crumb` feeds the header breadcrumb.
- * Phase 2 routes (/logs, /test-route) are added only when they work.
+ * Phase 2 routes (/logs, /test-route) are in the navigation only because they work (prompt §2 rule 7).
  */
 import { createBrowserRouter, type RouteObject } from "react-router"
 
@@ -77,6 +77,17 @@ export const routes: RouteObject[] = [
                       import("@/features/rules/rule-editor-page").then((m) => ({ Component: m.RuleEditorPage })),
                   },
                 ],
+              },
+              {
+                path: "logs",
+                handle: crumb("Live log"),
+                lazy: () => import("@/features/logs/logs-page").then((m) => ({ Component: m.LogsPage })),
+              },
+              {
+                path: "test-route",
+                handle: crumb("Test route"),
+                lazy: () =>
+                  import("@/features/test-route/test-route-page").then((m) => ({ Component: m.TestRoutePage })),
               },
               {
                 path: "services",

@@ -2,7 +2,7 @@
  * Realistic fixtures for the MSW dev backend (prompt §6): Developer `ehtesham`, Services `identity`,
  * `limsa`, `portal`, and the dashboard rule from the PRD §6 journey.
  */
-import type { Developer, DeveloperServiceSetting, MockResponse, MockRule, Service } from "@/api/types"
+import type { Developer, DeveloperServiceSetting, MockResponse, MockRule, RequestLogEntry, Service } from "@/api/types"
 import { DEFAULT_ALLOWED_ORIGINS, PUBLIC_BASE_URL } from "@/lib/config"
 
 /** Mirrors MOCKAN_ALLOWED_UPSTREAM_HOSTS (arch §12.3). `*.` wildcard allowed. */
@@ -232,6 +232,105 @@ export function rulesFixture(): MockRule[] {
       queryConditions: [{ key: "force", operator: "exists" }],
       isEnabled: true,
       res: (id) => ({ ...response(id, "no-content", 204, ""), contentType: "text/plain" }),
+    }),
+  ]
+}
+
+/** Request log fixtures, newest first, with secrets already masked the way the server does (NFR-07). */
+export function logsFixture(): RequestLogEntry[] {
+  const minutesAgo = (m: number) => new Date(Date.now() - m * 60_000).toISOString()
+  const entry = (
+    id: number,
+    minutes: number,
+    fields: Pick<RequestLogEntry, "method" | "path" | "source" | "statusCode" | "durationMs"> &
+      Partial<RequestLogEntry>,
+  ): RequestLogEntry => ({
+    id,
+    developerId: DEVELOPER_ID,
+    timestamp: minutesAgo(minutes),
+    query: "",
+    serviceId: SVC.limsa,
+    ruleId: null,
+    requestHeaders: { accept: "application/json", authorization: "***", "user-agent": "vite-dev" },
+    responseHeaders: { "content-type": "application/json" },
+    requestBodySample: null,
+    responseBodySample: null,
+    ...fields,
+  })
+  const ORDER = JSON.stringify({ id: 4211, customer: "Pars Lab", status: "pending" })
+  return [
+    entry(12, 1, {
+      method: "GET",
+      path: "/limsa/api/v1/dashboard",
+      source: "Mocked",
+      statusCode: 200,
+      durationMs: 301,
+      ruleId: "0192f5a0-0000-7000-8000-0000000a0001",
+      responseHeaders: { "content-type": "application/json", "x-mockan-source": "mock" },
+      responseBodySample: DASHBOARD_BODY,
+    }),
+    entry(11, 2, {
+      method: "GET",
+      path: "/limsa/api/v1/orders/4211",
+      source: "Proxied",
+      statusCode: 200,
+      durationMs: 88,
+      responseBodySample: ORDER,
+    }),
+    entry(10, 3, {
+      method: "POST",
+      path: "/identity/connect/token",
+      query: "tenant=lab",
+      source: "Proxied",
+      statusCode: 200,
+      durationMs: 142,
+      serviceId: SVC.identity,
+      requestHeaders: { "content-type": "application/json", authorization: "***" },
+      requestBodySample: JSON.stringify({ username: "ehtesham", password: "***" }),
+      responseBodySample: JSON.stringify({ access_token: "***", expires_in: 3600 }),
+    }),
+    entry(9, 5, {
+      method: "GET",
+      path: "/limsa/api/v1/reports/monthly",
+      source: "Mocked",
+      statusCode: 200,
+      durationMs: 3,
+      ruleId: "0192f5a0-0000-7000-8000-0000000a0003",
+      responseBodySample: JSON.stringify({ items: [], total: 0 }),
+    }),
+    entry(8, 6, {
+      method: "GET",
+      path: "/limsa/api/v1/items/17",
+      source: "Mocked",
+      statusCode: 404,
+      durationMs: 2,
+      ruleId: "0192f5a0-0000-7000-8000-0000000a0004",
+      responseBodySample: JSON.stringify({ title: "Not found", status: 404 }),
+    }),
+    entry(7, 9, {
+      method: "GET",
+      path: "/limsa/api/v1/orders",
+      query: "status=pending&page=2",
+      source: "Error",
+      statusCode: 502,
+      durationMs: 5003,
+      responseHeaders: { "content-type": "application/problem+json", "x-mockan-source": "error" },
+      responseBodySample: JSON.stringify({ code: "upstream_unreachable", status: 502 }),
+    }),
+    entry(6, 14, {
+      method: "GET",
+      path: "/portal/api/me",
+      source: "Proxied",
+      statusCode: 401,
+      durationMs: 61,
+      serviceId: SVC.portal,
+    }),
+    entry(5, 20, {
+      method: "OPTIONS",
+      path: "/limsa/api/v1/dashboard",
+      source: "Proxied",
+      statusCode: 204,
+      durationMs: 4,
     }),
   ]
 }

@@ -6,25 +6,45 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { ChevronDownIcon, SearchXIcon } from "lucide-react"
 import { useEffect, useState } from "react"
 import { Controller, FormProvider, useForm, useFormContext, useWatch, type FieldPath } from "react-hook-form"
+import { useQueryClient } from "@tanstack/react-query"
 import { Link, useBlocker, useNavigate, useParams } from "react-router"
 import { toast } from "sonner"
 
 import { ApiError } from "@/api/client"
-import { LIVE_SOON, useDeleteRule, useRule, useSaveRule } from "@/api/queries/rules"
+import { ruleKeys } from "@/api/queries/keys"
+import {
+  activeResponse,
+  LIVE_SOON,
+  useActivateResponse,
+  useAddResponse,
+  useDeleteResponse,
+  useDeleteRule,
+  useRule,
+  useSaveRule,
+} from "@/api/queries/rules"
 import { useServices } from "@/api/queries/services"
-import { HTTP_METHODS, MATCH_TYPES, type MatchType, type MockRule, type Service } from "@/api/types"
+import { HTTP_METHODS, MATCH_TYPES, type MatchType, type MockResponse, type MockRule, type Service } from "@/api/types"
 import { ConfirmDialog, EmptyState, KeyValueEditor, PageHeader, ProblemAlert } from "@/components/mockan"
 import { Button } from "@/components/ui/button"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Skeleton } from "@/components/ui/skeleton"
+import { Tabs } from "@/components/ui/tabs"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { ruleFormSchema, type RuleFormValues } from "@/lib/validation"
 
 import { describedBy, Field, FormSection } from "./field"
 import { ResponseForm } from "./response-form"
-import { ANY_SERVICE, formFieldFor, NEW_RULE_DEFAULTS, toFormValues, toSaveInput } from "./rule-form-model"
+import {
+  ANY_SERVICE,
+  formFieldFor,
+  NEW_RULE_DEFAULTS,
+  toFormValues,
+  toResponseFormValues,
+  toSaveInput,
+} from "./rule-form-model"
+import { ScenarioBar } from "./scenario-bar"
 import { RuleSummary } from "./rule-summary"
 
 /** Help text and examples per match type (arch §7.1). */
@@ -43,6 +63,9 @@ const MATCH_HELP: Record<MatchType, { help: string; example: string }> = {
     example: "^/limsa/api/v1/(items|goods)/\\d+$",
   },
 }
+
+const errorText = (error: unknown) =>
+  error instanceof ApiError ? error.message : "Check your connection and try again."
 
 /** Typed form context for the editor sections. */
 const useFormContextTyped = () => useFormContext<RuleFormValues>()
@@ -273,12 +296,91 @@ function RuleForm({ rule, services }: { rule?: MockRule; services: Service[] | u
   const [confirmDelete, setConfirmDelete] = useState(false)
   // Set when leaving on purpose (after create/delete); the effect below navigates once the blocker sees it.
   const [leavingTo, setLeavingTo] = useState<string | null>(null)
+  // PR-11: the scenario shown in the Response section (edited and saved with the rule); the live one is `activeResponseId`.
+  const [selectedId, setSelectedId] = useState<string | undefined>(rule ? activeResponse(rule)?.id : undefined)
+  // A scenario change waiting for "discard your unsaved scenario edits?".
+  const [pendingScenarioAction, setPendingScenarioAction] = useState<(() => void) | null>(null)
+  const [confirmDeleteScenario, setConfirmDeleteScenario] = useState(false)
+  const queryClient = useQueryClient()
+  const activate = useActivateResponse(rule?.id ?? "")
+  const addResponse = useAddResponse(rule?.id ?? "")
+  const deleteResponse = useDeleteResponse(rule?.id ?? "")
 
   const form = useForm<RuleFormValues>({
     resolver: zodResolver(ruleFormSchema),
     defaultValues: rule ? toFormValues(rule) : NEW_RULE_DEFAULTS,
   })
   const isDirty = form.formState.isDirty
+  const responseDirty = Boolean(form.formState.dirtyFields.response)
+  const selected = rule?.responses.find((r) => r.id === selectedId) ?? (rule ? activeResponse(rule) : undefined)
+
+  /** Show another scenario in the form; unsaved edits to the current one need a yes first. */
+  const showScenario = (target: MockResponse) => {
+    const apply = () => {
+      setSelectedId(target.id)
+      form.resetField("response", { defaultValue: toResponseFormValues(target) })
+    }
+    if (responseDirty) setPendingScenarioAction(() => apply)
+    else apply()
+  }
+  const selectScenario = (id: string) => {
+    const target = rule?.responses.find((r) => r.id === id)
+    if (target && target.id !== selected?.id) showScenario(target)
+  }
+  const duplicateScenario = () => {
+    if (!rule || !selected) return
+    const taken = new Set(rule.responses.map((r) => r.name))
+    let name = `${selected.name}-copy`
+    for (let n = 2; taken.has(name); n += 1) name = `${selected.name}-copy-${n}`
+    const create = () =>
+      addResponse.mutate(
+        {
+          name,
+          statusCode: selected.statusCode,
+          headers: selected.headers,
+          contentType: selected.contentType,
+          body: selected.body,
+          bodyMode: selected.bodyMode,
+          delayMs: selected.delayMs,
+        },
+        {
+          onSuccess: (created) => {
+            toast.success(`Duplicated “${selected.name}” as “${created.name}”`)
+            showScenario(created)
+          },
+          onError: (error) => toast.error("Couldn't duplicate the scenario", { description: errorText(error) }),
+        },
+      )
+    // The copy replaces the form's unsaved edits, so ask first.
+    if (responseDirty) setPendingScenarioAction(() => create)
+    else create()
+  }
+  const makeActive = () => {
+    if (!selected) return
+    activate.mutate(selected.id, {
+      onSuccess: () => toast.success(`“${selected.name}” is now active — live in about 2 seconds`),
+      onError: (error) => toast.error("Couldn't make it active", { description: errorText(error) }),
+    })
+  }
+  const removeScenario = () => {
+    if (!rule || !selected) return
+    deleteResponse.mutate(selected.id, {
+      onSuccess: () => {
+        setConfirmDeleteScenario(false)
+        toast.success(`Deleted “${selected.name}”`)
+        const fresh = queryClient.getQueryData<MockRule>(ruleKeys.detail(rule.id))
+        const next = fresh ? activeResponse(fresh) : undefined
+        if (next) {
+          setSelectedId(next.id)
+          form.resetField("response", { defaultValue: toResponseFormValues(next) })
+        }
+      },
+      onError: (error) => {
+        setConfirmDeleteScenario(false)
+        toast.error("Couldn't delete the scenario", { description: errorText(error) })
+      },
+    })
+  }
 
   const blocker = useBlocker(
     ({ currentLocation, nextLocation }) =>
@@ -301,7 +403,7 @@ function RuleForm({ rule, services }: { rule?: MockRule; services: Service[] | u
     save.mutate(toSaveInput(values, rule?.id), {
       onSuccess: (saved) => {
         toast.success(LIVE_SOON)
-        form.reset(toFormValues(saved))
+        form.reset(toFormValues(saved, selected?.id))
         if (!rule) setLeavingTo("/rules")
       },
       onError: (error) => {
@@ -330,8 +432,27 @@ function RuleForm({ rule, services }: { rule?: MockRule; services: Service[] | u
             {unmappedError ? <ProblemAlert error={unmappedError} /> : null}
             <MatchSection services={services} />
             <ConditionsSection />
-            {/* TODO(OQ-P1): Phase 2 turns this into scenario tabs, one ResponseForm per MockResponse. */}
-            <ResponseForm key={rule?.activeResponseId ?? "new"} />
+            {rule && selected ? (
+              <Tabs value={selected.id} onValueChange={selectScenario} className="gap-0">
+                {/* Not keyed by scenario: `resetField` swaps the values, and the Monaco editor stays mounted. */}
+                <ResponseForm
+                  panelFor={selected.id}
+                  header={
+                    <ScenarioBar
+                      scenarios={rule.responses}
+                      activeId={rule.activeResponseId}
+                      selectedId={selected.id}
+                      onDuplicate={duplicateScenario}
+                      onActivate={makeActive}
+                      onDelete={() => setConfirmDeleteScenario(true)}
+                      busy={activate.isPending || addResponse.isPending || deleteResponse.isPending}
+                    />
+                  }
+                />
+              </Tabs>
+            ) : (
+              <ResponseForm key="new" />
+            )}
             {rule ? (
               <section className="space-y-3 rounded-xl border border-error/40 bg-canvas p-5 sm:p-6">
                 <h2 className="type-title-md text-ink">Danger zone</h2>
@@ -346,7 +467,17 @@ function RuleForm({ rule, services }: { rule?: MockRule; services: Service[] | u
             ) : null}
           </div>
           <div className="min-w-0 xl:sticky xl:top-20 xl:col-span-5">
-            <RuleSummary control={form.control} services={services} ruleId={rule?.id} />
+            <RuleSummary
+              control={form.control}
+              services={services}
+              ruleId={rule?.id}
+              isEnabled={rule?.isEnabled}
+              activeScenarioName={
+                rule && selected && selected.id !== rule.activeResponseId
+                  ? rule.responses.find((r) => r.id === rule.activeResponseId)?.name
+                  : undefined
+              }
+            />
           </div>
         </div>
 
@@ -373,6 +504,37 @@ function RuleForm({ rule, services }: { rule?: MockRule; services: Service[] | u
         destructive
         onConfirm={() => blocker.proceed?.()}
       />
+
+      <ConfirmDialog
+        open={pendingScenarioAction !== null}
+        onOpenChange={(open) => !open && setPendingScenarioAction(null)}
+        title="Discard unsaved scenario edits?"
+        description="You changed this scenario and haven't saved. Showing another one replaces those edits."
+        confirmLabel="Discard edits"
+        cancelLabel="Keep editing"
+        destructive
+        onConfirm={() => {
+          pendingScenarioAction?.()
+          setPendingScenarioAction(null)
+        }}
+      />
+
+      {rule && selected ? (
+        <ConfirmDialog
+          open={confirmDeleteScenario}
+          onOpenChange={setConfirmDeleteScenario}
+          title={`Delete scenario “${selected.name}”?`}
+          description={
+            selected.id === rule.activeResponseId
+              ? "It is the active scenario: another one becomes active. This can't be undone."
+              : "This can't be undone."
+          }
+          confirmLabel="Delete scenario"
+          destructive
+          pending={deleteResponse.isPending}
+          onConfirm={removeScenario}
+        />
+      ) : null}
 
       {rule ? (
         <ConfirmDialog

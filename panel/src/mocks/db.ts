@@ -2,9 +2,9 @@
  * In-memory Admin API state for MSW. In the browser it is persisted to sessionStorage so a reload keeps
  * your changes; `?mswScenario=<name>` resets it to a named scenario (see Frontend/testing.md).
  */
-import type { Developer, DeveloperServiceSetting, MockRule, Service } from "@/api/types"
+import type { Developer, DeveloperServiceSetting, MockRule, RequestLogEntry, Service } from "@/api/types"
 
-import { developerFixture, rulesFixture, serviceSettingsFixture, servicesFixture } from "./fixtures"
+import { developerFixture, logsFixture, rulesFixture, serviceSettingsFixture, servicesFixture } from "./fixtures"
 
 export interface MockDb {
   signedIn: boolean
@@ -14,6 +14,8 @@ export interface MockDb {
   services: Service[]
   serviceSettings: DeveloperServiceSetting[]
   rules: MockRule[]
+  /** The request log, newest first (PR-12). */
+  logs: RequestLogEntry[]
 }
 
 export const SCENARIOS = {
@@ -25,6 +27,7 @@ export const SCENARIOS = {
     services: servicesFixture(),
     serviceSettings: serviceSettingsFixture(),
     rules: rulesFixture(),
+    logs: logsFixture(),
   }),
   /** First login: signed out, no slug, no rules (PRD §6 journey). */
   new: (): MockDb => ({
@@ -34,9 +37,10 @@ export const SCENARIOS = {
     services: servicesFixture(),
     serviceSettings: [],
     rules: [],
+    logs: [],
   }),
-  /** Slug claimed, no rules yet. */
-  empty: (): MockDb => ({ ...SCENARIOS.default(), rules: [], serviceSettings: [] }),
+  /** Slug claimed, no rules and no traffic yet. */
+  empty: (): MockDb => ({ ...SCENARIOS.default(), rules: [], serviceSettings: [], logs: [] }),
   /** Non-admin Developer. */
   member: (): MockDb => ({ ...SCENARIOS.default(), developer: developerFixture({ isAdmin: false }) }),
   /** Disabled Developer. */
@@ -54,7 +58,7 @@ function load(): MockDb {
   if (canPersist) {
     try {
       const raw = sessionStorage.getItem(STORAGE_KEY)
-      if (raw) return JSON.parse(raw) as MockDb
+      if (raw) return { ...SCENARIOS.default(), ...(JSON.parse(raw) as Partial<MockDb>) }
     } catch {
       // Ignore — fall back to the default scenario.
     }

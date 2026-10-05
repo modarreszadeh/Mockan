@@ -2,7 +2,15 @@
  * SCR-04 Rules (PR-05, PR-08, PR-18, US-03, US-06): every MockRule in gateway precedence order (arch §7.2),
  * with search and filters (kept in the URL), optimistic toggles, duplicate and delete.
  */
-import { CopyIcon, MoreHorizontalIcon, PencilIcon, PlusIcon, SlidersHorizontalIcon, Trash2Icon } from "lucide-react"
+import {
+  CopyIcon,
+  MoreHorizontalIcon,
+  PencilIcon,
+  PlusIcon,
+  SlidersHorizontalIcon,
+  Trash2Icon,
+  UploadIcon,
+} from "lucide-react"
 import { useMemo, useState, type MouseEvent, type ReactNode } from "react"
 import { Link, useNavigate, useSearchParams } from "react-router"
 import { toast } from "sonner"
@@ -45,6 +53,8 @@ import { useIsMobile } from "@/hooks/use-mobile"
 import { absoluteTime, pluralize, relativeTime } from "@/lib/format"
 import { sortByPrecedence } from "@/lib/precedence"
 import { cn } from "@/lib/utils"
+
+import { ExportRulesButton, ImportRulesDialog } from "./rules-transfer-ui"
 
 const ALL = "all"
 const NO_SERVICE = "none"
@@ -344,6 +354,7 @@ export function RulesPage() {
   const { filters, set, clear, active } = useFilters()
   const [deleting, setDeleting] = useState<MockRule | null>(null)
   const [confirmDisableAll, setConfirmDisableAll] = useState(false)
+  const [importing, setImporting] = useState(false)
 
   const sorted = useMemo(() => sortByPrecedence(rules.data ?? []), [rules.data])
   const visible = useMemo(() => applyFilters(sorted, filters), [sorted, filters])
@@ -356,12 +367,19 @@ export function RulesPage() {
       description="Requests that match an enabled rule get its mock response; everything else is proxied."
       actions={
         hasRules ? (
-          <Button asChild>
-            <Link to="/rules/new">
-              <PlusIcon aria-hidden />
-              New rule
-            </Link>
-          </Button>
+          <>
+            <ExportRulesButton />
+            <Button variant="outline" onClick={() => setImporting(true)}>
+              <UploadIcon aria-hidden />
+              Import
+            </Button>
+            <Button asChild>
+              <Link to="/rules/new">
+                <PlusIcon aria-hidden />
+                New rule
+              </Link>
+            </Button>
+          </>
         ) : null
       }
     />
@@ -392,11 +410,18 @@ export function RulesPage() {
           title="Mock your first route"
           description="No rules yet — all traffic is proxied. Create your first mock."
           action={
-            <Button asChild>
-              <Link to="/rules/new">Create your first mock</Link>
-            </Button>
+            <div className="flex flex-wrap items-center gap-2">
+              <Button asChild>
+                <Link to="/rules/new">Create your first mock</Link>
+              </Button>
+              <Button variant="outline" onClick={() => setImporting(true)}>
+                <UploadIcon aria-hidden />
+                Import rules
+              </Button>
+            </div>
           }
         />
+        <ImportRulesDialog open={importing} onOpenChange={setImporting} existingRuleCount={0} />
       </div>
     )
   }
@@ -500,6 +525,7 @@ export function RulesPage() {
           })
         }
       />
+      <ImportRulesDialog open={importing} onOpenChange={setImporting} existingRuleCount={sorted.length} />
       <ConfirmDialog
         open={confirmDisableAll}
         onOpenChange={setConfirmDisableAll}
