@@ -54,7 +54,7 @@ import { absoluteTime, pluralize, relativeTime } from "@/lib/format"
 import { sortByPrecedence } from "@/lib/precedence"
 import { cn } from "@/lib/utils"
 
-import { ExportRulesButton, ImportRulesDialog } from "./rules-transfer-ui"
+import { ExportRulesButton, ImportRulesModal } from "./rules-transfer-ui"
 
 const ALL = "all"
 const NO_SERVICE = "none"
@@ -421,7 +421,7 @@ export function RulesPage() {
             </div>
           }
         />
-        <ImportRulesDialog open={importing} onOpenChange={setImporting} existingRuleCount={0} />
+        <ImportRulesModal open={importing} onOpenChange={setImporting} existingRuleCount={0} />
       </div>
     )
   }
@@ -525,7 +525,7 @@ export function RulesPage() {
           })
         }
       />
-      <ImportRulesDialog open={importing} onOpenChange={setImporting} existingRuleCount={sorted.length} />
+      <ImportRulesModal open={importing} onOpenChange={setImporting} existingRuleCount={sorted.length} />
       <ConfirmDialog
         open={confirmDisableAll}
         onOpenChange={setConfirmDisableAll}

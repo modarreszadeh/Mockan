@@ -1,4 +1,4 @@
-/** Export button and Import dialog for the Rules screen (PR-14). */
+/** Export button and Import modal for the Rules screen (PR-14). */
 import { DownloadIcon, UploadIcon } from "lucide-react"
 import { useRef, useState, type ChangeEvent } from "react"
 import { toast } from "sonner"
@@ -7,16 +7,17 @@ import { ApiError } from "@/api/client"
 import { useMe } from "@/api/queries/me"
 import { useExportRules, useImportRules } from "@/api/queries/rules"
 import type { ImportMode } from "@/api/types"
-import { ProblemAlert } from "@/components/mockan"
-import { Button } from "@/components/ui/button"
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
+  Modal,
+  ModalBody,
+  ModalContent,
+  ModalDescription,
+  ModalFooter,
+  ModalHeader,
+  ModalTitle,
+  ProblemAlert,
+} from "@/components/mockan"
+import { Button } from "@/components/ui/button"
 import { downloadJson } from "@/lib/download"
 import { pluralize } from "@/lib/format"
 import { cn } from "@/lib/utils"
@@ -61,7 +62,7 @@ const MODES: { value: ImportMode; title: string; hint: string }[] = [
 
 const SHOWN_PROBLEMS = 10
 
-export function ImportRulesDialog({
+export function ImportRulesModal({
   open,
   onOpenChange,
   existingRuleCount,
@@ -124,23 +125,23 @@ export function ImportRulesDialog({
   }
 
   return (
-    <Dialog
+    <Modal
       open={open}
       onOpenChange={(next) => {
         onOpenChange(next)
         if (!next) reset()
       }}
     >
-      <DialogContent className="sm:max-w-xl">
-        <DialogHeader>
-          <DialogTitle>Import rules</DialogTitle>
-          <DialogDescription className="text-body">
+      <ModalContent size="md">
+        <ModalHeader>
+          <ModalTitle>Import rules</ModalTitle>
+          <ModalDescription>
             Choose a file exported from Mockan. It is checked as a whole first: if anything in it is invalid, nothing is
             imported.
-          </DialogDescription>
-        </DialogHeader>
+          </ModalDescription>
+        </ModalHeader>
 
-        <div className="space-y-4">
+        <ModalBody className="space-y-4">
           <div className="space-y-1.5">
             <label htmlFor="import-file" className="type-caption text-ink">
               Export file (.json)
@@ -212,9 +213,9 @@ export function ImportRulesDialog({
           ) : importRules.isError ? (
             <ProblemAlert error={importRules.error} />
           ) : null}
-        </div>
+        </ModalBody>
 
-        <DialogFooter>
+        <ModalFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
@@ -226,8 +227,8 @@ export function ImportRulesDialog({
             <UploadIcon aria-hidden />
             {importRules.isPending ? "Importing…" : mode === "replace" ? "Replace and import" : "Import"}
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </ModalFooter>
+      </ModalContent>
+    </Modal>
   )
 }
