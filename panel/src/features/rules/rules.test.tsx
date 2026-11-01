@@ -74,6 +74,69 @@ describe("SCR-04 Rules", () => {
     expect(router.state.location.pathname).toBe("/rules")
   })
 
+  it("S-9 shares a rule: copies the public link, shows the Shared badge, and offers Copy / Stop sharing", async () => {
+    const { user, router } = renderRoute("/rules")
+    await screen.findByText("Sorted by match precedence")
+    expect(within(rowOf("Limsa dashboard")).queryByText("Shared")).not.toBeInTheDocument()
+
+    await user.click(within(rowOf("Limsa dashboard")).getByRole("button", { name: "Actions for Limsa dashboard" }))
+    expect(screen.queryByRole("menuitem", { name: "Copy share link" })).not.toBeInTheDocument()
+    await user.click(await screen.findByRole("menuitem", { name: "Share" }))
+
+    expect(await screen.findByText("Public link copied — anyone with the link can view this rule")).toBeInTheDocument()
+    const token = db.rules.find((r) => r.name === "Limsa dashboard")!.shareToken
+    expect(token).toMatch(/^[\w-]{32}$/)
+    expect(await navigator.clipboard.readText()).toBe(`${window.location.origin}/shared/${token}`)
+    expect(await within(rowOf("Limsa dashboard")).findByText("Shared")).toBeInTheDocument()
+    expect(router.state.location.pathname).toBe("/rules")
+
+    await user.click(within(rowOf("Limsa dashboard")).getByRole("button", { name: /Actions/ }))
+    expect(screen.queryByRole("menuitem", { name: "Share" })).not.toBeInTheDocument()
+    await user.click(await screen.findByRole("menuitem", { name: "Copy share link" }))
+    expect(await screen.findByText("Share link copied — anyone with the link can view this rule")).toBeInTheDocument()
+    expect(await navigator.clipboard.readText()).toBe(`${window.location.origin}/shared/${token}`)
+  })
+
+  it("Stop sharing revokes the link and removes the badge; sharing again makes a new link", async () => {
+    const { user } = renderRoute("/rules")
+    await screen.findByText("Sorted by match precedence")
+    const share = async () => {
+      await user.click(within(rowOf("Limsa dashboard")).getByRole("button", { name: /Actions/ }))
+      await user.click(await screen.findByRole("menuitem", { name: "Share" }))
+      await within(rowOf("Limsa dashboard")).findByText("Shared")
+    }
+    await share()
+    const first = db.rules.find((r) => r.name === "Limsa dashboard")!.shareToken
+
+    await user.click(within(rowOf("Limsa dashboard")).getByRole("button", { name: /Actions/ }))
+    await user.click(await screen.findByRole("menuitem", { name: "Stop sharing" }))
+
+    expect(await screen.findByText("Stopped sharing — the old link no longer works")).toBeInTheDocument()
+    await waitFor(() => expect(within(rowOf("Limsa dashboard")).queryByText("Shared")).not.toBeInTheDocument())
+    expect(db.rules.find((r) => r.name === "Limsa dashboard")!.shareToken).toBeNull()
+
+    await share()
+    expect(db.rules.find((r) => r.name === "Limsa dashboard")!.shareToken).not.toBe(first)
+  })
+
+  it("a duplicate of a shared rule is not shared", async () => {
+    const rule = db.rules.find((r) => r.name === "Limsa dashboard")!
+    rule.shareToken = "a".repeat(32)
+    let body: Record<string, unknown> = {}
+    server.use(
+      http.post("*/api/v1/me/rules", async ({ request }) => {
+        body = (await request.json()) as Record<string, unknown>
+        return HttpResponse.json({ ...rule, id: "copy", name: "copy", shareToken: null }, { status: 201 })
+      }),
+    )
+    const { user } = renderRoute("/rules")
+    await screen.findByText("Sorted by match precedence")
+    await user.click(within(rowOf("Limsa dashboard")).getByRole("button", { name: /Actions/ }))
+    await user.click(await screen.findByRole("menuitem", { name: "Duplicate" }))
+    await waitFor(() => expect(body.name).toBe("Limsa dashboard (copy)"))
+    expect(body).not.toHaveProperty("shareToken")
+  })
+
   it("filters by search text and keeps it in the URL", async () => {
     const { user, router } = renderRoute("/rules")
     await user.type(await screen.findByRole("searchbox", { name: "Search rules" }), "orders")

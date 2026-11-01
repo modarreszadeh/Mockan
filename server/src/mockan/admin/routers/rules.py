@@ -11,6 +11,7 @@ from mockan.admin.schemas.rule import (
     MockRuleCreateIn,
     MockRuleOut,
     MockRuleUpdateIn,
+    ShareOut,
     ToggleAllOut,
     ToggleIn,
 )
@@ -72,3 +73,20 @@ async def toggle_rule(
     return MockRuleOut.model_validate(
         await rules.toggle_rule(session, developer, rule_id, data.is_enabled)
     )
+
+
+@router.post("/{rule_id}/share", response_model=ShareOut, responses=problems(401, 403, 404))
+async def share_rule(
+    rule_id: uuid.UUID, developer: WritableDeveloper, session: SessionDep
+) -> ShareOut:
+    """Idempotent: makes the rule's public, read-only link and returns its token."""
+    return ShareOut(share_token=await rules.share_rule(session, developer, rule_id))
+
+
+@router.delete("/{rule_id}/share", status_code=204, responses=problems(401, 403, 404))
+async def unshare_rule(
+    rule_id: uuid.UUID, developer: WritableDeveloper, session: SessionDep
+) -> Response:
+    """Idempotent: revokes the link. Sharing again makes a new token."""
+    await rules.unshare_rule(session, developer, rule_id)
+    return Response(status_code=204)

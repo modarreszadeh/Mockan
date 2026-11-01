@@ -18,7 +18,7 @@ export {
   ModalTitle,
   ModalTrigger,
 } from "./modal"
-export { CoralBadge, EnvBadge, MatchTypeBadge, MethodBadge, SourceBadge, StatusCode } from "./badges"
+export { CoralBadge, EnvBadge, MatchTypeBadge, MethodBadge, SharedBadge, SourceBadge, StatusCode } from "./badges"
 export { PageHeader } from "./page-header"
 export { PatternText } from "./pattern-text"
 export { ProblemAlert } from "./problem-alert"

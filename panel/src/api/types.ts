@@ -133,9 +133,34 @@ export interface MockRule {
   priority: number
   isEnabled: boolean
   activeResponseId: string | null
+  /** Secret of the rule's public share link; `null` while the rule isn't shared (S-6). */
+  shareToken: string | null
   /** TODO(OQ-F5): assumed to be embedded in rule payloads. */
   responses: MockResponse[]
   createdAt: string
+  updatedAt: string
+}
+
+/** `POST /me/rules/{id}/share` (S-5). */
+export interface ShareResult {
+  shareToken: string
+}
+
+/** `GET /shared/rules/{token}` (S-3, S-4): a rule's live state for a reviewer who isn't signed in. */
+export interface SharedRule {
+  name: string
+  method: HttpMethodOrAny
+  matchType: MatchType
+  pattern: string
+  queryConditions: Condition[]
+  headerConditions: Condition[]
+  priority: number
+  isEnabled: boolean
+  activeResponseId: string | null
+  responses: MockResponse[]
+  service: { name: string; pathPrefix: string } | null
+  owner: { displayName: string; slug: string | null }
+  publicBaseUrl: string
   updatedAt: string
 }
 

@@ -4,9 +4,12 @@
  */
 import {
   CopyIcon,
+  LinkIcon,
+  Link2OffIcon,
   MoreHorizontalIcon,
   PencilIcon,
   PlusIcon,
+  Share2Icon,
   SlidersHorizontalIcon,
   TerminalIcon,
   Trash2Icon,
@@ -21,8 +24,10 @@ import {
   useDeleteRule,
   useDuplicateRule,
   useRules,
+  useShareRule,
   useToggleAllRules,
   useToggleRule,
+  useUnshareRule,
 } from "@/api/queries/rules"
 import { useMe, usePublicBaseUrl } from "@/api/queries/me"
 import { useServices } from "@/api/queries/services"
@@ -35,6 +40,7 @@ import {
   PageHeader,
   PatternText,
   ProblemAlert,
+  SharedBadge,
   StatusCode,
 } from "@/components/mockan"
 import { Button } from "@/components/ui/button"
@@ -55,6 +61,7 @@ import { useIsMobile } from "@/hooks/use-mobile"
 import { ruleToCurl } from "@/lib/curl"
 import { developerBaseUrl, pluralize, relativeTime } from "@/lib/format"
 import { sortByPrecedence } from "@/lib/precedence"
+import { shareUrl } from "@/lib/share"
 import { cn } from "@/lib/utils"
 
 import { ExportRulesButton, ImportRulesModal } from "./rules-transfer-ui"
@@ -134,6 +141,8 @@ const stop = (event: MouseEvent) => event.stopPropagation()
 function RowMenu({ rule, onDelete }: { rule: MockRule; onDelete: () => void }) {
   const navigate = useNavigate()
   const duplicate = useDuplicateRule()
+  const share = useShareRule()
+  const unshare = useUnshareRule()
   const me = useMe()
   const publicBaseUrl = usePublicBaseUrl()
   const gatewayBase = developerBaseUrl(publicBaseUrl, me.data?.slug ?? "<your-slug>")
@@ -149,6 +158,25 @@ function RowMenu({ rule, onDelete }: { rule: MockRule; onDelete: () => void }) {
       toast.error("Couldn't copy to the clipboard")
     }
   }
+  const copyLink = async (token: string, success: string) => {
+    try {
+      await navigator.clipboard.writeText(shareUrl(token))
+      toast.success(success)
+    } catch {
+      toast.error("Couldn't copy to the clipboard", { description: "Use “Copy share link” to try again." })
+    }
+  }
+  const shareRule = () =>
+    share.mutate(rule.id, {
+      onSuccess: ({ shareToken }) =>
+        void copyLink(shareToken, "Public link copied — anyone with the link can view this rule"),
+      onError: () => toast.error("Couldn't share the rule"),
+    })
+  const stopSharing = () =>
+    unshare.mutate(rule.id, {
+      onSuccess: () => toast.success("Stopped sharing — the old link no longer works"),
+      onError: () => toast.error("Couldn't stop sharing the rule"),
+    })
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -176,6 +204,27 @@ function RowMenu({ rule, onDelete }: { rule: MockRule; onDelete: () => void }) {
           <TerminalIcon aria-hidden />
           Copy as curl
         </DropdownMenuItem>
+        {rule.shareToken ? (
+          <>
+            <DropdownMenuItem
+              onSelect={() =>
+                void copyLink(rule.shareToken!, "Share link copied — anyone with the link can view this rule")
+              }
+            >
+              <LinkIcon aria-hidden />
+              Copy share link
+            </DropdownMenuItem>
+            <DropdownMenuItem onSelect={stopSharing}>
+              <Link2OffIcon aria-hidden />
+              Stop sharing
+            </DropdownMenuItem>
+          </>
+        ) : (
+          <DropdownMenuItem onSelect={shareRule}>
+            <Share2Icon aria-hidden />
+            Share
+          </DropdownMenuItem>
+        )}
         <DropdownMenuSeparator />
         <DropdownMenuItem variant="destructive" onSelect={onDelete}>
           <Trash2Icon aria-hidden />
@@ -253,17 +302,20 @@ function RulesTable({
               <TableCell>
                 <RuleSwitch rule={rule} />
               </TableCell>
-              <TableCell className="max-w-56">
-                <Link
-                  to={`/rules/${rule.id}`}
-                  onClick={stop}
-                  className={cn(
-                    "block truncate rounded-sm font-medium outline-none focus-visible:ring-3 focus-visible:ring-ring/30",
-                    rule.isEnabled ? "text-ink" : "text-muted-foreground",
-                  )}
-                >
-                  {rule.name}
-                </Link>
+              <TableCell className="max-w-64">
+                <div className="flex items-center gap-2">
+                  <Link
+                    to={`/rules/${rule.id}`}
+                    onClick={stop}
+                    className={cn(
+                      "block min-w-0 truncate rounded-sm font-medium outline-none focus-visible:ring-3 focus-visible:ring-ring/30",
+                      rule.isEnabled ? "text-ink" : "text-muted-foreground",
+                    )}
+                  >
+                    {rule.name}
+                  </Link>
+                  {rule.shareToken ? <SharedBadge /> : null}
+                </div>
                 {!rule.isEnabled ? <span className="text-[12px]">Off — proxied</span> : null}
               </TableCell>
               <TableCell>
@@ -326,6 +378,7 @@ function RuleCards({
             >
               {rule.name}
             </Link>
+            {rule.shareToken ? <SharedBadge /> : null}
             <RowMenu rule={rule} onDelete={() => onDelete(rule)} />
           </div>
           <div className="flex flex-wrap items-center gap-2">

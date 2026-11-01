@@ -24,6 +24,7 @@ audience: Backend engineers and AI coding agents
 | Enums | Stored as `varchar` plus a named `CHECK` (`ck_<table>_<column>`). The ORM maps them to the `StrEnum` classes in `mockan.domain.enums`, storing the enum **value** (`"Exact"`, `"stage"`). |
 | JSON columns | `jsonb` with `'[]'` / `'{}'` server defaults: `allowed_origins`, `query_conditions`, `header_conditions`, `headers`, `extra_headers`, `changes`. |
 | Relationships | `lazy="raise"`. Load with `selectinload(...)` explicitly; an accidental lazy load fails loudly instead of doing hidden I/O. |
+| `mock_rules.share_token` | `varchar(64)` null, unique (`uq_mock_rules_share_token`, migration `0003`): the secret of a rule's Share link, null while it isn't shared. Not a matching field; it is never exported or copied, and it dies with the rule. |
 | Extra CHECKs | `mock_rules.method` ∈ ANY + HTTP methods, `priority >= 0`; `mock_responses.status_code` 100–599, `delay_ms` 0–30000; `service_environments.timeout_seconds` 1–3600. They back up the Admin validation (never replace it). |
 
 ## 2. Foreign keys and delete policy

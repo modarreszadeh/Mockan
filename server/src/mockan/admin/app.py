@@ -26,6 +26,7 @@ from mockan.admin.routers import (
     rules_io,
     service_settings,
     services,
+    shared,
     test_route,
 )
 from mockan.admin.spa import mount_panel
@@ -147,6 +148,7 @@ def create_app(
     api.include_router(responses.router)
     api.include_router(request_logs.router)
     api.include_router(test_route.router)
+    api.include_router(shared.router)  # public: no auth dependency (S-3)
     app.include_router(api)
     app.include_router(hubs.router)  # `/hubs/*`: outside `/api/v1`
 

@@ -26,6 +26,9 @@ _Avoid_: Active rule, live rule, on/off
 Create a new scenario of the same rule as a copy of an existing one, to be changed afterwards. Scenarios are made this way, not from blank.
 _Avoid_: Add scenario, clone
 
+**Share link**:
+A public, revocable, read-only link to one MockRule's live state, for review. _Avoid_: Public rule, published rule.
+
 ### Observing
 
 **Request log**:

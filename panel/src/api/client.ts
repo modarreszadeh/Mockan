@@ -101,14 +101,16 @@ export interface RequestOptions {
   method?: "GET" | "POST" | "PUT" | "DELETE"
   body?: unknown
   signal?: AbortSignal
+  /** A public endpoint (share links): a `401` is an ordinary error, never a redirect to the sign-in page. */
+  anonymous?: boolean
 }
 
 export async function apiRequest<T>(path: string, options: RequestOptions = {}): Promise<T> {
-  const { method = "GET", body, signal } = options
+  const { method = "GET", body, signal, anonymous = false } = options
   // Absolute URL so the same code runs in the browser and in Vitest (Node's fetch rejects relative URLs).
   const response = await fetch(new URL(`${API_BASE}${path}`, window.location.origin), {
     method,
-    credentials: "include",
+    credentials: anonymous ? "omit" : "include",
     headers: {
       Accept: "application/json, application/problem+json",
       ...(body !== undefined ? { "Content-Type": "application/json" } : {}),
@@ -117,7 +119,7 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
     signal,
   })
 
-  if (response.status === 401) {
+  if (response.status === 401 && !anonymous) {
     redirectToLogin()
     throw new ApiError(401, { status: 401, title: "Signing you in…", code: "unauthenticated" })
   }
@@ -130,6 +132,8 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
 
 export const api = {
   get: <T>(path: string, signal?: AbortSignal) => apiRequest<T>(path, { signal }),
+  /** GET without credentials and without the 401 redirect, for the public share page. */
+  getPublic: <T>(path: string, signal?: AbortSignal) => apiRequest<T>(path, { signal, anonymous: true }),
   post: <T>(path: string, body?: unknown) => apiRequest<T>(path, { method: "POST", body }),
   put: <T>(path: string, body?: unknown) => apiRequest<T>(path, { method: "PUT", body }),
   delete: <T = void>(path: string) => apiRequest<T>(path, { method: "DELETE" }),

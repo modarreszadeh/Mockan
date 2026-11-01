@@ -87,6 +87,9 @@ A **disabled** Developer can still read (`GET /me` returns `isEnabled: false`, w
 | DELETE | `/me/rules/{id}` | Writer | → `204` | Its responses go with it. |
 | POST | `/me/rules/{id}/toggle` | Writer | `{isEnabled}` → `MockRule` | Idempotent (FR-11). |
 | POST | `/me/rules/toggle-all` | Writer | `{isEnabled}` → `{updated}` | One bulk `UPDATE` of the rules that differ; `updated` counts them (FR-11). |
+| POST | `/me/rules/{id}/share` | Writer | → `{shareToken}` | Makes the rule's **Share link** and returns its secret; idempotent (an already shared rule returns its existing token). The Panel builds the URL `{panel}/shared/{token}`. See §4.5. |
+| DELETE | `/me/rules/{id}/share` | Writer | → `204` | Revokes the Share link; idempotent. Sharing again makes a **new** token. |
+| GET | `/shared/rules/{token}` | **none (public)** | → `SharedRule` | The rule's **live** state for a reviewer without a session. Unknown or revoked token, or a disabled owner → `404 not_found`. Responses carry `Cache-Control: no-store` and `X-Robots-Tag: noindex`. See §4.5. |
 | POST | `/me/rules/{id}/responses` | Writer | `MockResponseInput` → `201 MockResponse` | Later responses wait to be activated. |
 | PUT | `/me/rules/{id}/responses/{responseId}` | Writer | `MockResponseInput` → `MockResponse` | |
 | DELETE | `/me/rules/{id}/responses/{responseId}` | Writer | → `204` | The last response → `409 last_response` (G-3). Deleting the active one activates the next. |
@@ -137,7 +140,7 @@ Each entry's `serviceEnvironmentId` must belong to its `serviceId`, each Service
 
 ### 4.4 `MockRule` and `MockResponse` (B6)
 
-`MockRule` = `id`, `developerId`, `serviceId` (`null` = any), `name`, `method`, `matchType`, `pattern`, `queryConditions`, `headerConditions`, `priority`, `isEnabled`, `activeResponseId`, `responses`, `createdAt`, `updatedAt`. `MockResponse` = `id`, `ruleId`, `name`, `statusCode`, `headers`, `contentType`, `body`, `bodyMode`, `delayMs`, `createdAt`, `updatedAt`. A condition is `{key, operator, value?}`; `value` is **absent** (not `null`) for `exists`.
+`MockRule` = `id`, `developerId`, `serviceId` (`null` = any), `name`, `method`, `matchType`, `pattern`, `queryConditions`, `headerConditions`, `priority`, `isEnabled`, `activeResponseId`, `shareToken` (`null` unless shared, §4.5), `responses`, `createdAt`, `updatedAt`. `MockResponse` = `id`, `ruleId`, `name`, `statusCode`, `headers`, `contentType`, `body`, `bodyMode`, `delayMs`, `createdAt`, `updatedAt`. A condition is `{key, operator, value?}`; `value` is **absent** (not `null`) for `exists`.
 
 `MockRuleCreate` / `MockRuleUpdate` fields (create adds `responses`, 1–50 entries):
 
@@ -169,6 +172,16 @@ NUL is rejected everywhere because PostgreSQL `text`/`jsonb` can't store it. All
 
 **Gateway notification.** ORM writes notify with the Developer id (a response names its rule's owner). `toggle-all` is a bulk `UPDATE`, which skips the ORM events, so it calls `notify.mark(session, developer.id)` explicitly; `tests/admin/test_admin_to_gateway.py` fails without it.
 
+### 4.5 Share link (S-1..S-8)
+
+A frontend Developer shares a new mock with a backend teammate to review the contract together. The **Share link** is a public, revocable, read-only link to one rule's live state.
+
+- **Token.** `mock_rules.share_token` (`varchar(64)`, nullable, unique), `secrets.token_urlsafe(24)` = 32 URL-safe characters, 192 bits. One link per rule. `MockRule.shareToken` tells the Panel whether the rule is shared; the Panel builds the URL `{panel origin}{base path}/shared/{token}`.
+- **Owner routes** (`/me/rules/{id}/share`, Writer, a foreign id is `404`). Sharing is not an edit: `updatedAt` does not change. Both are idempotent and audited as `update` on `mock_rule` with `changes = {shared: {from, to}}` (booleans; **the token is never written to the audit trail**); a repeat writes no row.
+- **Public route** (`GET /shared/rules/{token}`, no session, no auth dependency). `SharedRule` = `name`, `method`, `matchType`, `pattern`, `queryConditions`, `headerConditions`, `priority`, `isEnabled`, `activeResponseId`, `responses` (full `MockResponse`s: status, delay, content type, headers, body), `service` (`{name, pathPrefix}` or `null`), `owner` (`{displayName, slug}`), `publicBaseUrl` (as in `GET /me`), `updatedAt`. It never carries `developerId`, `ssoSubject` or the token. The view is **live**, not a snapshot: edits show on the next load. A disabled owner's links answer `404`. Mockan is reachable on the internal network only (NFR-05), so "anyone with the link" means anyone on that network who has it.
+- **Not carried over.** The token is not in the export file, is not copied by Duplicate (the Panel builds the copy's body field by field), is never set by import, and dies with the rule. The inputs `extra="forbid"` reject a `shareToken`.
+- **Gateway.** Sharing does not change matching. The Gateway ignores the column; the ORM write sends the usual notification, which is harmless.
+
 ## 5. Errors
 
 Every error is `application/problem+json`, `Cache-Control: no-store`:
@@ -191,7 +204,7 @@ Every error is `application/problem+json`, `Cache-Control: no-store`:
 | `unauthenticated` | 401 | No valid session or bearer token; a failed OIDC callback. |
 | `forbidden` | 403 | Not an admin. |
 | `developer_disabled` | 403 | A write by a disabled Developer. |
-| `not_found` | 404 | Unknown or foreign id (rule, response), a response that belongs to another rule, a malformed id, an unknown route. |
+| `not_found` | 404 | Unknown or foreign id (rule, response), an unknown or revoked Share link token, a disabled owner's Share link, a response that belongs to another rule, a malformed id, an unknown route. |
 | `validation_failed` | 422 | Field errors. Also any other 4xx FastAPI raises on its own (e.g. `405`, with its `Allow` header). |
 | `upstream_host_not_allowed` | 422 | `baseUrl` host outside the allowlist. |
 | `slug_taken` | 409 | The slug belongs to another Developer. |
@@ -232,6 +245,7 @@ If `src/mockan/admin/static/index.html` exists (the Panel build, git-ignored), t
 | `test_problems.py` | The problem shape, `errors` map, JSON-only writes, malformed ids, 500 without internals. |
 | `test_auth_dev.py` | Dev login, sessions, first-login upsert, admin bootstrap/promotion, parallel first logins, disabled Developers. |
 | `test_auth_oidc.py` | The real code flow (PKCE, state) and bearer validation against `tests/support/fake_idp.py` (a live provider on a real socket): wrong audience/issuer, expiry, unknown key, key rotation, HS256 confusion, unreachable provider, startup misconfiguration. |
+| `test_shared_api.py` | Share link: share is idempotent and shows in the list, sharing keeps `updatedAt`, public read without a cookie with no `developerId`/`shareToken` in the payload, live edits, unshare → `404` and a re-share has a new token, another Developer's rule is `404`, a disabled owner's link is `404`, deleting the rule kills the link, export/import never carry the token, audit has no token. |
 | `test_rules_api.py`, `test_responses_api.py` | Rules and responses: contract shape, every validation rule (pattern messages come from the shared compiler), isolation (another Developer's id is a 404 on every route), toggles, audit without bodies, notifications. `builders.py` holds the request bodies. |
 | `test_admin_to_gateway.py` | **PR-07 across processes:** the Admin takes the write, a real Gateway (own lifespan, LISTEN, debounce) on the same PostgreSQL serves it within 2 s: create → mocked, activate → other response, toggle off → proxied to a live upstream, toggle-all, edit pattern, delete; and one Developer's rules never answer another's slug (PR-01). |
 | `test_me_api.py`, `test_services_api.py`, `test_service_settings_api.py` | Every route: happy path, `422` shape, other Developer's data, non-admin `403`, audit rows, `pg_notify` payloads, races. |

@@ -4,6 +4,7 @@ import { logHandlers } from "./logs"
 import { meHandlers } from "./me"
 import { ruleHandlers } from "./rules"
 import { serviceHandlers } from "./services"
+import { sharedHandlers } from "./shared"
 import { testRouteHandlers } from "./test-route"
 import { transferHandlers } from "./transfer"
 
@@ -14,6 +15,7 @@ export const handlers = [
   ...serviceHandlers,
   ...transferHandlers,
   ...ruleHandlers,
+  ...sharedHandlers,
   ...logHandlers,
   ...testRouteHandlers,
 ]

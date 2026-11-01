@@ -74,6 +74,9 @@ export const ruleFields = (input: MockRuleUpdate) => ({
   priority: input.priority,
 })
 
+/** 32 URL-safe characters, like the real API's `secrets.token_urlsafe(24)`. */
+const newToken = () => crypto.randomUUID().replaceAll("-", "")
+
 const findRule = (id: unknown) => db.rules.find((r) => r.id === id)
 
 export const ruleHandlers = [
@@ -116,6 +119,7 @@ export const ruleHandlers = [
       ...ruleFields(input),
       isEnabled: input.isEnabled ?? true,
       activeResponseId: responses[0]?.id ?? null,
+      shareToken: null,
       responses,
       createdAt: now(),
       updatedAt: now(),
@@ -169,6 +173,28 @@ export const ruleHandlers = [
     Object.assign(rule, { isEnabled, updatedAt: now() })
     persist()
     return HttpResponse.json(rule)
+  }),
+
+  http.post("*/api/v1/me/rules/:ruleId/share", async ({ params }) => {
+    await delay()
+    const stop = guard("write")
+    if (stop) return stop
+    const rule = findRule(params.ruleId)
+    if (!rule) return notFound("MockRule")
+    rule.shareToken ??= newToken()
+    persist()
+    return HttpResponse.json({ shareToken: rule.shareToken })
+  }),
+
+  http.delete("*/api/v1/me/rules/:ruleId/share", async ({ params }) => {
+    await delay()
+    const stop = guard("write")
+    if (stop) return stop
+    const rule = findRule(params.ruleId)
+    if (!rule) return notFound("MockRule")
+    rule.shareToken = null
+    persist()
+    return new HttpResponse(null, { status: 204 })
   }),
 
   http.post("*/api/v1/me/rules/:ruleId/responses", async ({ params, request }) => {

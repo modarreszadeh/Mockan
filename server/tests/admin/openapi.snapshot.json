@@ -817,6 +817,17 @@
             ],
             "title": "Serviceid"
           },
+          "shareToken": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sharetoken"
+          },
           "updatedAt": {
             "format": "date-time",
             "title": "Updatedat",
@@ -836,6 +847,7 @@
           "priority",
           "isEnabled",
           "activeResponseId",
+          "shareToken",
           "responses",
           "createdAt",
           "updatedAt"
@@ -1429,6 +1441,163 @@
           "serviceEnvironmentId"
         ],
         "title": "ServiceSettingOut",
+        "type": "object"
+      },
+      "ShareOut": {
+        "description": "The secret of a rule's public share link; the Panel builds the URL (S-5, S-6).",
+        "properties": {
+          "shareToken": {
+            "title": "Sharetoken",
+            "type": "string"
+          }
+        },
+        "required": [
+          "shareToken"
+        ],
+        "title": "ShareOut",
+        "type": "object"
+      },
+      "SharedOwnerOut": {
+        "properties": {
+          "displayName": {
+            "title": "Displayname",
+            "type": "string"
+          },
+          "slug": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Slug"
+          }
+        },
+        "required": [
+          "displayName",
+          "slug"
+        ],
+        "title": "SharedOwnerOut",
+        "type": "object"
+      },
+      "SharedRuleOut": {
+        "properties": {
+          "activeResponseId": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Activeresponseid"
+          },
+          "headerConditions": {
+            "items": {
+              "$ref": "#/components/schemas/ConditionOut"
+            },
+            "title": "Headerconditions",
+            "type": "array"
+          },
+          "isEnabled": {
+            "title": "Isenabled",
+            "type": "boolean"
+          },
+          "matchType": {
+            "$ref": "#/components/schemas/MatchType"
+          },
+          "method": {
+            "title": "Method",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "owner": {
+            "$ref": "#/components/schemas/SharedOwnerOut"
+          },
+          "pattern": {
+            "title": "Pattern",
+            "type": "string"
+          },
+          "priority": {
+            "title": "Priority",
+            "type": "integer"
+          },
+          "publicBaseUrl": {
+            "title": "Publicbaseurl",
+            "type": "string"
+          },
+          "queryConditions": {
+            "items": {
+              "$ref": "#/components/schemas/ConditionOut"
+            },
+            "title": "Queryconditions",
+            "type": "array"
+          },
+          "responses": {
+            "items": {
+              "$ref": "#/components/schemas/MockResponseOut"
+            },
+            "title": "Responses",
+            "type": "array"
+          },
+          "service": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SharedServiceOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "title": "Updatedat",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "method",
+          "matchType",
+          "pattern",
+          "queryConditions",
+          "headerConditions",
+          "priority",
+          "isEnabled",
+          "activeResponseId",
+          "responses",
+          "service",
+          "owner",
+          "publicBaseUrl",
+          "updatedAt"
+        ],
+        "title": "SharedRuleOut",
+        "type": "object"
+      },
+      "SharedServiceOut": {
+        "properties": {
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "pathPrefix": {
+            "title": "Pathprefix",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "pathPrefix"
+        ],
+        "title": "SharedServiceOut",
         "type": "object"
       },
       "TestRouteIn": {
@@ -2740,6 +2909,125 @@
         ]
       }
     },
+    "/api/v1/me/rules/{rule_id}/share": {
+      "delete": {
+        "description": "Idempotent: revokes the link. Sharing again makes a new token.",
+        "operationId": "unshare_rule_api_v1_me_rules__rule_id__share_delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "rule_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Rule Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Not signed in (`unauthenticated`)."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`forbidden` (not an admin) or `developer_disabled`."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`not_found`: unknown, or someone else's."
+          }
+        },
+        "summary": "Unshare Rule",
+        "tags": [
+          "rules"
+        ]
+      },
+      "post": {
+        "description": "Idempotent: makes the rule's public, read-only link and returns its token.",
+        "operationId": "share_rule_api_v1_me_rules__rule_id__share_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "rule_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Rule Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShareOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Not signed in (`unauthenticated`)."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`forbidden` (not an admin) or `developer_disabled`."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`not_found`: unknown, or someone else's."
+          }
+        },
+        "summary": "Share Rule",
+        "tags": [
+          "rules"
+        ]
+      }
+    },
     "/api/v1/me/rules/{rule_id}/toggle": {
       "post": {
         "description": "Idempotent: sets `isEnabled` to the given value.",
@@ -3497,6 +3785,49 @@
         "summary": "Update Environment",
         "tags": [
           "services"
+        ]
+      }
+    },
+    "/api/v1/shared/rules/{token}": {
+      "get": {
+        "description": "Unknown, revoked and disabled-owner links are all `404 not_found`.",
+        "operationId": "get_shared_rule_api_v1_shared_rules__token__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "token",
+            "required": true,
+            "schema": {
+              "title": "Token",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SharedRuleOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`not_found`: unknown, or someone else's."
+          }
+        },
+        "summary": "Get Shared Rule",
+        "tags": [
+          "shared"
         ]
       }
     }

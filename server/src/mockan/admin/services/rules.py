@@ -1,6 +1,7 @@
 """MockRules and their MockResponses (FR-05..FR-07, FR-11, PR-05, PR-06, PR-08, PR-15)."""
 
 import hashlib
+import secrets
 import uuid
 from collections.abc import AsyncIterator, Sequence
 from contextlib import asynccontextmanager
@@ -9,7 +10,7 @@ from typing import Any
 from sqlalchemy import exists, func, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
+from sqlalchemy.orm import attributes, selectinload
 
 from mockan.admin.problems import DomainError, not_found, validation_error
 from mockan.admin.schemas.rule import (
@@ -30,6 +31,8 @@ from mockan.matching.compile import compile_rule
 from mockan.matching.errors import PatternError
 from mockan.matching.model import Condition
 from mockan.matching.templating import compile_template
+
+SHARE_TOKEN_BYTES = 24  # 32 URL-safe characters, 192 bits
 
 # ---- reading ----
 
@@ -298,6 +301,52 @@ async def toggle_all(session: AsyncSession, developer: Developer, is_enabled: bo
     )
     await session.commit()
     return updated
+
+
+# ---- sharing (S-1, S-5) ----
+
+
+def _set_share_token(rule: MockRule, token: str | None) -> None:
+    """Sharing is not an edit: keep `updated_at` (an explicit value beats the column's onupdate)."""
+    rule.share_token = token
+    attributes.flag_modified(rule, "updated_at")
+
+
+async def share_rule(session: AsyncSession, developer: Developer, rule_id: uuid.UUID) -> str:
+    """Idempotent: the rule's public link token; the first call mints it."""
+    rule = await get_rule(session, developer, rule_id)
+    if rule.share_token is not None:
+        return rule.share_token
+    token = secrets.token_urlsafe(SHARE_TOKEN_BYTES)
+    _set_share_token(rule, token)
+    # The audit trail says that the rule was shared, never the secret itself.
+    audit.record(
+        session,
+        developer,
+        AuditAction.UPDATE,
+        AuditEntityType.MOCK_RULE,
+        rule.id,
+        diff({"shared": False}, {"shared": True}),
+    )
+    await session.commit()
+    return token
+
+
+async def unshare_rule(session: AsyncSession, developer: Developer, rule_id: uuid.UUID) -> None:
+    """Idempotent: revokes the link; sharing again makes a new token."""
+    rule = await get_rule(session, developer, rule_id)
+    if rule.share_token is None:
+        return
+    _set_share_token(rule, None)
+    audit.record(
+        session,
+        developer,
+        AuditAction.UPDATE,
+        AuditEntityType.MOCK_RULE,
+        rule.id,
+        diff({"shared": True}, {"shared": False}),
+    )
+    await session.commit()
 
 
 # ---- responses ----

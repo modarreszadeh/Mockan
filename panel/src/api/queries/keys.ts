@@ -9,6 +9,11 @@ export const ruleKeys = {
   detail: (ruleId: string) => [...ruleKeys.all, "detail", ruleId] as const,
 }
 
+export const sharedKeys = {
+  all: ["shared"] as const,
+  rule: (token: string) => [...sharedKeys.all, "rule", token] as const,
+}
+
 export const serviceKeys = {
   all: ["services"] as const,
   list: () => [...serviceKeys.all, "list"] as const,

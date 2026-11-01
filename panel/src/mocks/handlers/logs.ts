@@ -59,6 +59,7 @@ export const logHandlers = [
       priority: 100,
       isEnabled: true,
       activeResponseId: null,
+      shareToken: null,
       responses: [],
       createdAt: now(),
       updatedAt: now(),

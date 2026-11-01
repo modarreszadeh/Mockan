@@ -33,6 +33,16 @@ describe("api client", () => {
     expect((error as ApiError).message).toBe("Broken")
   })
 
+  it("S-3 an anonymous request never redirects to the login page, even on 401", async () => {
+    const assign = vi.fn()
+    vi.spyOn(window, "location", "get").mockReturnValue({ ...window.location, assign, origin: "http://localhost:3000" })
+    server.use(http.get("*/api/v1/shared/rules/x", () => new HttpResponse(null, { status: 401 })))
+    const error = await api.getPublic("/shared/rules/x").catch((e: unknown) => e)
+    expect(error).toBeInstanceOf(ApiError)
+    expect((error as ApiError).status).toBe(401)
+    expect(assign).not.toHaveBeenCalled()
+  })
+
   it("redirects the browser to the login page on 401 (full navigation)", async () => {
     const assign = vi.fn()
     vi.spyOn(window, "location", "get").mockReturnValue({ ...window.location, assign, origin: "http://localhost:3000" })

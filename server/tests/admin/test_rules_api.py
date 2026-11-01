@@ -52,6 +52,7 @@ async def test_creating_a_rule_returns_the_panel_contract_and_activates_the_firs
         "priority",
         "isEnabled",
         "activeResponseId",
+        "shareToken",
         "responses",
         "createdAt",
         "updatedAt",

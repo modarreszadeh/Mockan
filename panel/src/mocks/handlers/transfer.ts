@@ -87,6 +87,7 @@ export const transferHandlers = [
         ...ruleFields({ ...exported, serviceId, method: exported.method as never }),
         isEnabled: exported.isEnabled ?? true,
         activeResponseId: responses[exported.activeResponse ?? 0]?.id ?? responses[0]!.id,
+        shareToken: null,
         responses,
         createdAt: now(),
         updatedAt: now(),

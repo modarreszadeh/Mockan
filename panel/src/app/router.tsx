@@ -45,6 +45,11 @@ export const routes: RouteObject[] = [
         lazy: () => import("@/features/login/login-page").then((m) => ({ Component: m.LoginPage })),
       },
       {
+        // Public: a share link works without signing in, so it sits outside <AuthGate> (S-3).
+        path: "shared/:token",
+        lazy: () => import("@/features/shared/shared-rule-page").then((m) => ({ Component: m.SharedRulePage })),
+      },
+      {
         element: <AuthGate />,
         children: [
           {

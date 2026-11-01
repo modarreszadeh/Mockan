@@ -93,7 +93,7 @@ Rows of key / operator / value for headers, query conditions and header conditio
 | `allowExists?` | `boolean` | Conditions only. |
 | `errors?` | `({ key?, value? } \| undefined)[]` | Per-row messages. |
 
-## Badges — MethodBadge, MatchTypeBadge, SourceBadge, StatusCode, EnvBadge, CoralBadge
+## Badges — MethodBadge, MatchTypeBadge, SourceBadge, StatusCode, EnvBadge, CoralBadge, SharedBadge
 
 See [design-tokens.md §5](design-tokens.md#5-status-language). All carry text; dots are `aria-hidden`. `MethodBadge` takes any verb string (a logged request can use one the editor doesn't offer).
 

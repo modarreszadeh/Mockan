@@ -3,6 +3,8 @@
  * Contrast note: `muted` and `error` text fail 4.5:1 on `surface-card`, so `ANY` and `DELETE` pills use
  * the canvas fill with a hairline border instead (see docs/frontend/design-tokens.md).
  */
+import { Share2Icon } from "lucide-react"
+
 import type { EnvironmentName, HttpMethodOrAny, MatchType, RequestSource } from "@/api/types"
 import { cn } from "@/lib/utils"
 
@@ -80,6 +82,16 @@ export function EnvBadge({ environment, isDefault, isOverride, className }: EnvB
       <span className="font-mono">{environment}</span>
       {isDefault ? <span className="text-body">· default</span> : null}
       {isOverride ? <span className="sr-only">(not the Service default)</span> : null}
+    </span>
+  )
+}
+
+/** A rule with a public share link. The text carries the meaning; the icon is decoration. */
+export function SharedBadge({ className }: { className?: string }) {
+  return (
+    <span className={cn(pill, "gap-1 bg-surface-card type-caption text-ink", className)}>
+      <Share2Icon aria-hidden className="size-3" />
+      Shared
     </span>
   )
 }

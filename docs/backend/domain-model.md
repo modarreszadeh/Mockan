@@ -23,7 +23,7 @@ audience: Backend engineers and AI coding agents
 | `Service` | `models.Service`, `ServiceEntry` | Catalog entry (admin-managed): `path_prefix`, `strip_prefix`, `rewrite_origin`, `default_environment`. |
 | `ServiceEnvironment` | `models.ServiceEnvironment`, `EnvironmentEntry` | `dev` or `stage`; `base_url`, `timeout_seconds`, `extra_headers`. One per (Service, environment). |
 | Environment choice | `models.DeveloperServiceSetting` | No row = the Service's default environment. |
-| `MockRule` | `models.MockRule`, `CompiledRule` | Owned by one Developer. Matching fields + `priority` + `is_enabled` + `active_response_id`. |
+| `MockRule` | `models.MockRule`, `CompiledRule` | Owned by one Developer. Matching fields + `priority` + `is_enabled` + `active_response_id`, and `share_token` (null unless the rule has a **Share link**, which is not a matching field). |
 | `MockResponse` | `models.MockResponse`, `CompiledResponse` | A rule has 1..n; exactly one is active (the "scenario" the Gateway serves). |
 
 ## 2. Deciding one request

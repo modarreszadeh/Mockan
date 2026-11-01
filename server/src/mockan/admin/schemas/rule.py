@@ -168,9 +168,16 @@ class MockRuleOut(CamelModel):
     priority: int
     is_enabled: bool
     active_response_id: uuid.UUID | None
+    share_token: str | None
     responses: list[MockResponseOut]
     created_at: datetime
     updated_at: datetime
+
+
+class ShareOut(CamelModel):
+    """The secret of a rule's public share link; the Panel builds the URL (S-5, S-6)."""
+
+    share_token: str
 
 
 class ToggleIn(CamelInput):

@@ -12,7 +12,7 @@ related:
 
 # Mockan Panel — Screens
 
-> **Summary:** every Panel screen (SCR-01 … SCR-10): route, data (Admin API routes from arch §10 only), content, states and acceptance criteria. Moved from the build brief (prompt §5) and kept current with the code. Every screen implements four states: **loading** (skeletons shaped like the content), **empty**, **error** (`ProblemAlert` + retry) and **success**.
+> **Summary:** every Panel screen (SCR-01 … SCR-11): route, data (Admin API routes from arch §10 only), content, states and acceptance criteria. Moved from the build brief (prompt §5) and kept current with the code. Every screen implements four states: **loading** (skeletons shaped like the content), **empty**, **error** (`ProblemAlert` + retry) and **success**.
 
 ## Navigation and access
 
@@ -28,6 +28,7 @@ flowchart LR
     OV --> ST["SCR-08 Settings"]
     OV --> LOG["SCR-09 Live log"]
     OV --> TR["SCR-10 Test route"]
+    RL -. "Share link" .-> SH["SCR-11 Shared rule<br/>public, no sign-in"]
 ```
 
 | Screen | Route | Status |
@@ -42,6 +43,7 @@ flowchart LR
 | SCR-08 Settings | `/settings` | Built (M2) |
 | SCR-09 Live log | `/logs` | Built (M5) |
 | SCR-10 Test route | `/test-route` | Built (M5) |
+| SCR-11 Shared rule | `/shared/:token` | Built, **public** (outside `AuthGate`) |
 | Style guide (dev only) | `/__design` | Built (M0) |
 
 **Sidebar:** Overview · Rules · Live log · Test route · Services · Settings; Admin group (only when `isAdmin`): Service catalog.
@@ -89,9 +91,10 @@ flowchart LR
 
 ## SCR-04 Rules — PR-05, PR-08, PR-18, US-03, US-06
 
-- **Data:** `GET /me/rules`, `POST /me/rules/{ruleId}/toggle`, `POST /me/rules/toggle-all`, `DELETE /me/rules/{ruleId}`, `POST /me/rules` (duplicate), `GET /me/rules/export`, `POST /me/rules/import?mode=` (PR-14).
+- **Data:** `GET /me/rules`, `POST /me/rules/{ruleId}/toggle`, `POST /me/rules/toggle-all`, `DELETE /me/rules/{ruleId}`, `POST /me/rules` (duplicate), `POST`/`DELETE /me/rules/{ruleId}/share` (Share link), `GET /me/rules/export`, `POST /me/rules/import?mode=` (PR-14).
 - **Content:** `PageHeader` "Mock rules" + primary "New rule"; toolbar: search (name or pattern), filters (state, method, match type, Service); "Disable all / Enable all".
-- **Columns:** Switch · Name · Method · Match type · Pattern (mono, truncated with tooltip) · Service (or "Any") · row menu (Edit, Duplicate, Copy as curl, Delete). Stacked cards below 768 px.
+- **Columns:** Switch · Name · Method · Match type · Pattern (mono, truncated with tooltip) · Service (or "Any") · row menu (Edit, Duplicate, Copy as curl, Share, Delete). Stacked cards below 768 px.
+- **Share link:** the menu's **Share** creates (or reuses) the rule's public link `{panel}/shared/{token}`, copies it and toasts "Public link copied — anyone with the link can view this rule". A shared rule shows a **Shared** badge next to its name (table and cards), and its menu offers **Copy share link** and **Stop sharing** instead of Share. Stop sharing revokes the link (the old URL shows "This link isn't available"); sharing again makes a new token. Duplicate never copies the link.
 - **Export / Import (PR-14, FR-12):** header buttons "Export" (downloads `mockan-rules-<slug>-<date>.json`, with a toast that headers and bodies are exported as stored, so secrets may be in it) and "Import" (also in the empty state). The Import modal (a bottom sheet on mobile) takes a `.json` file, checks it in the browser (JSON, `version: 1`, a non-empty `rules` list, at most 200), shows "N rules, M scenarios", and asks **Add to my rules** (merge, the default; importing a file twice duplicates) or **Replace my rules** (names how many current rules it deletes; destructive button). The server validates the whole file first and writes all or nothing: every problem comes back as `rules.<i>.<field>` / `rules.<i>.responses.<j>.<field>` and is listed as `Rule 2 “Name” → scenario 1 → body: …` (first 10, then "and N more"); nothing was imported.
 - **Sort:** gateway precedence (arch §7.2), labelled "Sorted by match precedence".
 - **Behaviour:** filters live in the URL (`?q=&state=&method=&type=&service=`); "Disable all" confirms when more than one rule is enabled; Duplicate creates a disabled copy "<name> (copy)"; the header's "New rule" is hidden in the empty state so the view keeps one primary button.
@@ -100,6 +103,7 @@ flowchart LR
   - [x] Row click opens the editor; the switch and row menu don't trigger navigation.
   - [x] Empty state uses the PRD copy.
   - [x] Toggles are optimistic with rollback + toast on error; success toast "Saved — live in about 2 seconds" (PR-07).
+  - [x] Share copies the public link and shows the Shared badge; Copy share link and Stop sharing follow; sharing again makes a new link; a duplicate of a shared rule is not shared.
   - [x] Export downloads a rules file without ids; import merge/replace works; a bad file lists every problem and changes nothing (`src/features/rules/transfer.test.tsx`).
 
 ## SCR-05 Rule editor — PR-05, PR-06, US-03, US-04, US-12
@@ -147,6 +151,18 @@ flowchart LR
 - **Behaviour:** one form; Save is enabled only when something changed; server field errors map onto `displayName` / `allowedOrigins.N`.
 - **Accept** (tests: `src/features/settings/settings.test.tsx`):
   - [x] Saving an empty origins list asks for confirmation ("browser calls will fail CORS").
+
+## SCR-11 Shared rule — S-1..S-9 (Share link)
+
+- **Route:** `/shared/:token`, **outside `AuthGate`** and the app shell: no sign-in, no `GET /me`, no sidebar. The Admin API serves the Panel's `index.html` for it without auth (`spa.py`).
+- **Data:** `GET /shared/rules/{token}` only (`api.getPublic`: no credentials, and a `401` is an ordinary error, never the redirect to `/login`).
+- **Content:** header with the Mockan wordmark and a "Read-only preview" tag; the rule name (`<h1>`), "Shared by {owner} · Updated {time}" and a note that the page is the rule as it is right now. **Request** card: method and match-type badges, the pattern, Service (name and path prefix, or "Any"), priority, enabled/disabled, query and header conditions (tables, or "None"), and the Mock URL `{publicBaseUrl}/{ownerSlug}{pattern}` with a copy button for Exact rules. **Scenarios** card: one tab per scenario (the active one marked "Active", selected first); each shows status code and reason phrase, delay, content type, body mode, response headers and the body in `CodeBlock` (pretty-printed JSON).
+- **States:** loading skeletons; unknown or revoked token (`404`) → "This link isn't available" without the app shell; any other error → `ProblemAlert` with retry. The document title is "{rule name} · Mockan" and the page sets `<meta name="robots" content="noindex">`.
+- **Behaviour:** live, not a snapshot: refresh to see the owner's edits. Works at 390 px and 1440 px with no horizontal page scroll (wide content scrolls inside its own block).
+- **Accept** (tests: `src/features/shared/shared-rule.test.tsx`, `src/api/client.test.ts`):
+  - [x] A visitor with no session sees the rule and its active scenario; no redirect to login (axe clean).
+  - [x] Conditions, every scenario, headers and a pretty-printed body are shown; the page follows later edits.
+  - [x] Unknown or revoked token → the friendly page; a server error is a retryable problem.
 
 ## Screenshots
 

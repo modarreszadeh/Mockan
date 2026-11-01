@@ -207,6 +207,8 @@ class MockRule(TimestampMixin, Base):
     )
     priority: Mapped[int] = mapped_column(Integer, default=100, server_default=text("100"))
     is_enabled: Mapped[bool] = mapped_column(Boolean, default=True, server_default=text("true"))
+    # The public share link's secret (S-1): null while the rule isn't shared. Not a matching field.
+    share_token: Mapped[str | None] = mapped_column(String(64), unique=True)
     # Circular with mock_responses.rule_id: created with use_alter, SET NULL when the response goes.
     active_response_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey(

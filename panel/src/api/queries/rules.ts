@@ -12,6 +12,7 @@ import type {
   ImportMode,
   ImportResult,
   RulesExport,
+  ShareResult,
   ToggleAllResult,
 } from "../types"
 import { ruleKeys } from "./keys"
@@ -199,6 +200,32 @@ export function useDuplicateRule() {
       return api.post<MockRule>("/me/rules", body)
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ruleKeys.list() }),
+  })
+}
+
+// ---- Share link (S-5): a public, revocable, read-only link to one rule ----
+
+/** Make (or reuse) the rule's share link; the caches learn the token, the caller gets it to copy. */
+export function useShareRule() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (ruleId: string) => api.post<ShareResult>(`/me/rules/${ruleId}/share`),
+    onSuccess: ({ shareToken }, ruleId) => {
+      patchRuleCaches(queryClient, (rule) => (rule.id === ruleId ? { ...rule, shareToken } : rule))
+      void queryClient.invalidateQueries({ queryKey: ruleKeys.all })
+    },
+  })
+}
+
+/** Revoke the link. Sharing again makes a new token. */
+export function useUnshareRule() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (ruleId: string) => api.delete(`/me/rules/${ruleId}/share`),
+    onSuccess: (_void, ruleId) => {
+      patchRuleCaches(queryClient, (rule) => (rule.id === ruleId ? { ...rule, shareToken: null } : rule))
+      void queryClient.invalidateQueries({ queryKey: ruleKeys.all })
+    },
   })
 }
 

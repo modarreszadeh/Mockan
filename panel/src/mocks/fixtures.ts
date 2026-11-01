@@ -167,6 +167,7 @@ export function rulesFixture(): MockRule[] {
       headerConditions: [],
       priority: 100,
       activeResponseId: r.id,
+      shareToken: null,
       responses: [r],
       createdAt: hoursAgo((10 - n) * 24),
       updatedAt: hoursAgo(n * 7 + 1),
