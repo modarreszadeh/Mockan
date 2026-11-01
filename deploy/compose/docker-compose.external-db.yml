@@ -1,0 +1,18 @@
+# Layer used by deploy.sh when MOCKAN_DB_MODE=external: the app talks to an existing, shared
+# PostgreSQL that is reachable on an external Docker network (MOCKAN_DB_NETWORK, default `pg`) at the
+# host named in MOCKAN_DATABASE_URL (e.g. `postgres`). The bundled postgres service is never started.
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml -f docker-compose.external-db.yml up -d
+
+services:
+  postgres:
+    profiles: ["bundled-db"]
+  admin:
+    depends_on: !reset null
+    networks: [default, db]
+  gateway:
+    networks: [default, db]
+
+networks:
+  db:
+    name: ${MOCKAN_DB_NETWORK:-pg}
+    external: true

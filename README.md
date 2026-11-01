@@ -127,6 +127,8 @@ On the first run `deploy.sh` creates `.env` from [`.env.production.example`](dep
 | `./deploy.sh --check-db` | Show the database revision. |
 | `./deploy.sh --no-pull` | Use the images already on the machine. |
 
+By default it runs its own PostgreSQL container. To use a shared PostgreSQL that is reachable on a Docker network instead, set `MOCKAN_DB_MODE=external`, `MOCKAN_DB_NETWORK` and `MOCKAN_DATABASE_URL` in `.env` (create a role and database for Mockan there first). If Docker Hub is blocked on the server, set `MOCKAN_NGINX_IMAGE` to an nginx image it already has; nginx and PostgreSQL images are only pulled when missing.
+
 Production runs OIDC sign-in (never dev mode) and publishes one port, nginx on `MOCKAN_BIND:MOCKAN_PORT` (default `127.0.0.1:8765`). Put your TLS reverse proxy in front of it and forward `https://<domain>/` to that port. Register `https://<domain>/api/v1/auth/callback` as the redirect URI in Keycloak. See [operations](docs/backend/operations.md) for the details.
 
 ## How it works

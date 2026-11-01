@@ -6,13 +6,17 @@
 #   ./deploy.sh abc1234          # deploy a specific git SHA (or branch) tag
 #   ./deploy.sh --rollback       # redeploy the tag that was running before the last deploy
 #   ./deploy.sh --dry-run        # validate .env and show the plan; changes nothing
-#   ./deploy.sh --check-db       # show the database revision (starts PostgreSQL only)
+#   ./deploy.sh --check-db       # show the database revision
 #   ./deploy.sh --no-pull        # use the images already on this machine
 #   IMAGE_TAG=abc1234 ./deploy.sh
 #
 # What it does with .env: creates it from .env.production.example when missing, generates the
-# secrets that are empty (POSTGRES_PASSWORD, MOCKAN_SESSION_SECRET) without printing them, and stops
-# with a list of the required values you still have to fill (Keycloak, admin subjects, ...).
+# secrets that are empty (MOCKAN_SESSION_SECRET, and for the bundled database POSTGRES_PASSWORD and
+# MOCKAN_DATABASE_URL) without printing them, and stops with a list of the required values you still
+# have to fill (Keycloak, admin subjects, ...).
+# Database: MOCKAN_DB_MODE=bundled (default) runs a PostgreSQL container next to the app;
+# MOCKAN_DB_MODE=external uses a shared PostgreSQL reachable on a Docker network (MOCKAN_DB_NETWORK)
+# at the MOCKAN_DATABASE_URL you put in .env.
 # Updating compose files or nginx.conf is a `git pull` in this checkout; the images come from GHCR.
 #
 # Needs: Docker with Compose >= 2.24, openssl, curl (health check; skipped when missing).
@@ -69,6 +73,17 @@ env_set() {  # env_set KEY VALUE: replace the line or append it (value never sho
 
 random_hex() { openssl rand -hex 32; }
 
+start_database() {
+  if [ "$DB_MODE" = bundled ]; then
+    say "Starting the bundled PostgreSQL..."
+    $COMPOSE up -d --wait postgres
+  else
+    docker network inspect "$DB_NETWORK" >/dev/null 2>&1 \
+      || die "Docker network '${DB_NETWORK}' not found (MOCKAN_DB_NETWORK). Is the shared PostgreSQL running?"
+    say "Using the external database on Docker network '${DB_NETWORK}'"
+  fi
+}
+
 # ── Preflight ────────────────────────────────────────────────────────────────
 command -v docker >/dev/null 2>&1 || die "Docker is not installed."
 compose_version=$(docker compose version --short 2>/dev/null || true)
@@ -91,13 +106,31 @@ if [ ! -f "$ENV_FILE" ]; then
   fi
 fi
 
+DB_MODE=$(env_get MOCKAN_DB_MODE); DB_MODE=${DB_MODE:-bundled}
+DB_NETWORK=$(env_get MOCKAN_DB_NETWORK); DB_NETWORK=${DB_NETWORK:-pg}
+case "$DB_MODE" in
+  bundled) ;;
+  external) COMPOSE="$COMPOSE -f docker-compose.external-db.yml" ;;
+  *) die "MOCKAN_DB_MODE must be bundled or external (found: ${DB_MODE})." ;;
+esac
+
 generated=()
-for key in POSTGRES_PASSWORD MOCKAN_SESSION_SECRET; do
-  if [ -z "$(env_get "$key")" ]; then
-    generated+=("$key")
-    if [ "$DRY_RUN" = false ]; then env_set "$key" "$(random_hex)"; fi
+if [ "$DB_MODE" = bundled ]; then
+  if [ -z "$(env_get POSTGRES_PASSWORD)" ]; then
+    generated+=(POSTGRES_PASSWORD)
+    if [ "$DRY_RUN" = false ]; then env_set POSTGRES_PASSWORD "$(random_hex)"; fi
   fi
-done
+  if [ -z "$(env_get MOCKAN_DATABASE_URL)" ]; then
+    generated+=(MOCKAN_DATABASE_URL)
+    if [ "$DRY_RUN" = false ]; then
+      env_set MOCKAN_DATABASE_URL "postgresql+asyncpg://mockan:$(env_get POSTGRES_PASSWORD)@postgres:5432/mockan"
+    fi
+  fi
+fi
+if [ -z "$(env_get MOCKAN_SESSION_SECRET)" ]; then
+  generated+=(MOCKAN_SESSION_SECRET)
+  if [ "$DRY_RUN" = false ]; then env_set MOCKAN_SESSION_SECRET "$(random_hex)"; fi
+fi
 if [ "${#generated[@]}" -gt 0 ]; then
   if [ "$DRY_RUN" = true ]; then
     say "[dry-run] would generate: ${generated[*]}"
@@ -107,9 +140,9 @@ if [ "${#generated[@]}" -gt 0 ]; then
 fi
 
 missing=()
-for key in MOCKAN_PUBLIC_BASE_URL MOCKAN_ALLOWED_UPSTREAM_HOSTS MOCKAN_OIDC_ISSUER \
+for key in MOCKAN_DATABASE_URL MOCKAN_PUBLIC_BASE_URL MOCKAN_ALLOWED_UPSTREAM_HOSTS MOCKAN_OIDC_ISSUER \
            MOCKAN_OIDC_CLIENT_ID MOCKAN_OIDC_CLIENT_SECRET MOCKAN_ADMIN_SSO_SUBJECTS; do
-  [ -n "$(env_get "$key")" ] || missing+=("$key")
+  if [ -z "$(env_get "$key")" ] && [[ " ${generated[*]-} " != *" $key "* ]]; then missing+=("$key"); fi  # dry-run: still to be generated
 done
 
 problems=()
@@ -130,6 +163,13 @@ for key in MOCKAN_ALLOWED_UPSTREAM_HOSTS MOCKAN_ADMIN_SSO_SUBJECTS; do
     esac
   fi
 done
+db_url=$(env_get MOCKAN_DATABASE_URL)
+if [ -n "$db_url" ]; then
+  case "$db_url" in
+    postgresql+asyncpg://*) ;;
+    *) problems+=("MOCKAN_DATABASE_URL must start with postgresql+asyncpg://") ;;
+  esac
+fi
 password=$(env_get POSTGRES_PASSWORD)
 if [ -n "$password" ] && ! printf '%s' "$password" | grep -qE '^[A-Za-z0-9._~-]+$'; then
   problems+=("POSTGRES_PASSWORD may only contain letters, digits and . _ ~ - (it is placed in a URL)")
@@ -181,7 +221,11 @@ if [ "$DRY_RUN" = true ]; then
   echo
   say "[dry-run] plan, nothing was changed:"
   echo "    1. pull  ${REPO}/admin:${IMAGE_TAG}  and  ${REPO}/gateway:${IMAGE_TAG}"
-  echo "    2. start PostgreSQL and wait until it is healthy"
+  if [ "$DB_MODE" = bundled ]; then
+    echo "    2. start the bundled PostgreSQL and wait until it is healthy"
+  else
+    echo "    2. check the external database is reachable on Docker network '${DB_NETWORK}'"
+  fi
   echo "    3. stop nginx, gateway and admin, then run: alembic upgrade head"
   echo "    4. start everything, wait for health, probe the Panel and the Gateway through nginx"
   echo "    5. remember ${current_tag} in ${TAG_FILE} (for --rollback), set IMAGE_TAG=${IMAGE_TAG}"
@@ -190,8 +234,7 @@ fi
 
 # ── --check-db ───────────────────────────────────────────────────────────────
 if [ "$CHECK_DB" = true ]; then
-  say "Starting PostgreSQL..."
-  $COMPOSE up -d --wait postgres
+  start_database
   say "Current database revision:"
   $COMPOSE run --rm --no-deps admin alembic current
   say "Latest revision in image ${IMAGE_TAG}:"
@@ -202,9 +245,12 @@ fi
 say "Deploying Mockan: tag ${IMAGE_TAG} (currently ${current_tag})"
 
 # ── Pull ─────────────────────────────────────────────────────────────────────
+aux_services=(nginx)
+if [ "$DB_MODE" = bundled ]; then aux_services+=(postgres); fi
 if [ "$NO_PULL" = false ]; then
   say "Pulling images from GHCR..."
-  if ! $COMPOSE pull admin gateway nginx postgres; then
+  # nginx/postgres come from a public registry that may be blocked: pull them only when missing.
+  if ! $COMPOSE pull admin gateway || ! $COMPOSE pull --policy missing "${aux_services[@]}"; then
     warn "Pull failed. Check the tag exists, or for a private package: docker login ghcr.io -u <user>"
     die "Nothing was stopped: the running version is untouched."
   fi
@@ -213,8 +259,24 @@ else
 fi
 
 # ── Database first, so a failure here costs no downtime ──────────────────────
-say "Starting PostgreSQL..."
-$COMPOSE up -d --wait postgres
+start_database
+
+say "Checking the database connection (nothing has been stopped yet)..."
+if ! $COMPOSE run --rm --no-deps -T admin python - <<'PY'
+import asyncio, os
+import asyncpg
+
+async def main() -> None:
+    dsn = os.environ["MOCKAN_DATABASE_URL"].replace("postgresql+asyncpg://", "postgresql://", 1)
+    conn = await asyncpg.connect(dsn, timeout=10)
+    print("  connected as", await conn.fetchval("select current_user"))
+    await conn.close()
+
+asyncio.run(main())
+PY
+then
+  die "Cannot connect to the database with MOCKAN_DATABASE_URL. Nothing was stopped: the running version is untouched."
+fi
 
 say "Stopping app containers for the migration..."
 $COMPOSE stop nginx gateway admin >/dev/null 2>&1 || true

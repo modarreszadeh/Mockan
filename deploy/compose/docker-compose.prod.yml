@@ -5,7 +5,7 @@
 #   - Admin and Gateway run the images CI publishes to GHCR (no local build).
 #   - OIDC sign-in (never dev mode), a real database password and session secret, all from .env.
 #   - Migrations are an explicit deploy step (deploy.sh), not MOCKAN_MIGRATE_ON_STARTUP.
-#   - PostgreSQL is not published on the host; only nginx is, on MOCKAN_BIND:MOCKAN_PORT.
+#   - PostgreSQL (bundled, or a shared one: docker-compose.external-db.yml) is not published on the host; only nginx is, on MOCKAN_BIND:MOCKAN_PORT.
 #   - Restart policies and rotated JSON logs on every service; no demo upstream.
 # Needs Docker Compose >= 2.24 (`!reset` / `!override`).
 
@@ -15,13 +15,13 @@ x-logging: &default-logging
     max-size: "20m"
     max-file: "5"
 
-x-database-url: &database-url postgresql+asyncpg://mockan:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@postgres:5432/mockan
+x-database-url: &database-url ${MOCKAN_DATABASE_URL:?set MOCKAN_DATABASE_URL in .env}
 
 services:
   postgres:
     ports: !reset []  # reachable only on the Docker network
     environment:
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-}  # bundled mode only; deploy.sh generates it
     restart: unless-stopped
     logging: *default-logging
 
@@ -40,6 +40,9 @@ services:
       MOCKAN_SESSION_SECRET: ${MOCKAN_SESSION_SECRET:?set MOCKAN_SESSION_SECRET in .env}
       MOCKAN_ADMIN_SSO_SUBJECTS: ${MOCKAN_ADMIN_SSO_SUBJECTS:?set MOCKAN_ADMIN_SSO_SUBJECTS in .env}
       MOCKAN_MIGRATE_ON_STARTUP: "false"
+      # The Admin builds the OIDC redirect URI from the request, so it must trust the scheme and host
+      # the proxy chain forwards (its only clients are the nginx containers; port 8081 is not published).
+      FORWARDED_ALLOW_IPS: "*"
     restart: unless-stopped
     logging: *default-logging
 
@@ -55,6 +58,8 @@ services:
     logging: *default-logging
 
   nginx:
+    # Docker Hub may be blocked on the server: point MOCKAN_NGINX_IMAGE at an image it already has.
+    image: ${MOCKAN_NGINX_IMAGE:-nginx:1-alpine}
     # The only published port. Bind to 127.0.0.1 when a TLS proxy on this host fronts it.
     ports: !override
       - "${MOCKAN_BIND:-127.0.0.1}:${MOCKAN_PORT:-8765}:80"
