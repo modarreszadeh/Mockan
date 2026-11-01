@@ -1,6 +1,6 @@
 /** Vitest setup: DOM matchers, axe matcher, MSW server with a fresh db per test, jsdom polyfills. */
 import "@testing-library/jest-dom/vitest"
-import { cleanup } from "@testing-library/react"
+import { cleanup, configure } from "@testing-library/react"
 import { afterAll, afterEach, beforeAll, beforeEach, expect, vi } from "vitest"
 import * as axeMatchers from "vitest-axe/matchers"
 
@@ -8,6 +8,9 @@ import { resetDb } from "@/mocks/db"
 import { server } from "@/mocks/server"
 
 expect.extend(axeMatchers)
+
+// findBy*/waitFor default to 1s, which a cold route render can exceed on a loaded CI runner.
+configure({ asyncUtilTimeout: 5_000 })
 
 // Monaco can't run in jsdom: swap the lazy editor surface for a textarea with the same props.
 vi.mock("@/components/mockan/monaco-surface", async () => {
